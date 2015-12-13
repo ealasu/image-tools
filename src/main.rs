@@ -1,19 +1,12 @@
 extern crate regex;
 
 mod image;
+mod star_finder;
 
 
 fn main() {
-    let im = image::Image::load("data/a.gray.tif");
-
-    println!("max: {}", im.pixels().iter().max().unwrap());
-    println!("min: {}", im.pixels().iter().min().unwrap());
-
-    let average: f64 = im.pixels().iter().map(|&v| v as f64).fold(0f64, |sum, i| sum + i) /
-        im.pixels().len() as f64;
-    println!("average: {}", average);
-
-    for i in 1..10 {
-        println!("at {},8: {}", i, im.at(i, 8));
-    }
+    let image = image::Image::load("data/a.gray.tif");
+    let f = star_finder::StarFinder::new(image);
+    let stars = f.find();
+    println!("stars: {:?}", stars);
 }
