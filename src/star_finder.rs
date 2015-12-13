@@ -1,18 +1,14 @@
+use std::cmp::{min, max};
 use image::Image;
+use point::{Point, IPoint};
+use spiral::spiral;
+
 
 #[derive(Debug)]
-pub struct Point {
-    pub x: u16,
-    pub y: u16,
-}
-
-#[derive(Debug)]
-pub struct Star<'a> {
+pub struct Star {
     x: usize,
     y: usize,
-    w: usize,
-    h: usize,
-    data: &'a [u16],
+    image: Image,
 }
 
 pub struct StarFinder<'a> {
@@ -49,22 +45,61 @@ impl<'a> StarFinder<'a> {
 }
 
 impl<'a> Iterator for StarFinder<'a> {
-    type Item = Star<'a>;
+    type Item = Star;
 
-    fn next(&mut self) -> Option<Star<'a>> {
+    fn next(&mut self) -> Option<Star> {
         let pixels = self.image.pixels();
 
         // search for a bright pixel
-        loop {
+        'outer: loop {
             if pixels[self.pos] > self.fg_threshold {
                 // found a match
                 let v = pixels[self.pos];
 
-                let x = self.pos % self.image.width;
-                let y = self.pos / self.image.width;
+                let center_x = self.pos % self.image.width;
+                let center_y = self.pos / self.image.width;
                 //println!("match: {},{}", x, y);
 
-                // TODO: spiral around to determine the full extents of the star
+                // spiral around to determine the full extents of the star
+                let min_radius = 2;
+                let max_radius = 8;
+
+                let mut left: usize = 0;
+                let mut right: usize = 0;
+                let mut top: usize = 0;
+                let mut bottom: usize = 0;
+
+                'spiral: for (r, mut side_points) in spiral() {
+                    if r > max_radius {
+                        // TODO: optimization: block out this square
+                        continue 'outer;
+                    }
+                    let mut side_max_v: u16 = 0;
+                    for IPoint {x,y} in side_points {
+                        if x < 0 || y < 0 || x >= self.image.width as isize || y >= self.image.height as isize {
+                            break 'spiral;
+                        }
+                        left = min(left, x as usize);
+                        right = max(right, x as usize);
+                        top = min(top, y as usize);
+                        bottom = max(bottom, y as usize);
+
+                        side_max_v = max(side_max_v, self.image.at(x as usize, y as usize));
+                    }
+                    if side_max_v < self.bg_threshold {
+                        if r < min_radius {
+                            // TODO: optimization: block out this square?
+                            continue 'outer;
+                        }
+                        // TODO: block out this square
+                        return Some(Star {
+                            x: left,
+                            y: top,
+                            image: self.image.crop(left, top, right, bottom),
+                        });
+                    }
+                }
+
             }
             self.pos += 1;
             if self.pos >= pixels.len() {

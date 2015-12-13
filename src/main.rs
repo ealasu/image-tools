@@ -1,5 +1,7 @@
 extern crate regex;
 
+mod point;
+mod spiral;
 mod image;
 mod star_finder;
 
