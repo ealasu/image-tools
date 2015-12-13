@@ -1,7 +1,7 @@
 use std::cmp::{min, max};
 use image::Image;
 use point::{Point, IPoint};
-use spiral::spiral;
+use spiral::Spiral;
 
 
 #[derive(Debug)]
@@ -69,7 +69,7 @@ impl<'a> Iterator for StarFinder<'a> {
                 let mut top: usize = 0;
                 let mut bottom: usize = 0;
 
-                'spiral: for (r, mut side_points) in spiral() {
+                'spiral: for (r, mut side_points) in Spiral::new() {
                     if r > max_radius {
                         // TODO: optimization: block out this square
                         continue 'outer;
