@@ -31,7 +31,7 @@ impl<'a> StarFinder<'a> {
         println!("average: {}", average);
         let background = average;
 
-        let bg_threshold = ((max - background) * 0.01 + background) as u16;
+        let bg_threshold = ((max - background) * 0.00 + background) as u16;
         let fg_threshold = ((max - background) * 0.75 + background) as u16;
         println!("bg_threshold: {}", bg_threshold);
         println!("fg_threshold: {}", fg_threshold);
@@ -53,7 +53,7 @@ impl<'a> Iterator for StarFinder<'a> {
 
         // search for a bright pixel
         'outer: for pos in &mut self.pos_iter {
-            println!("pos: {}", pos);
+            println!("pos: {} ({},{})", pos, pos % self.image.width, pos / self.image.width);
             if pixels[pos] > self.fg_threshold {
                 // found a match
                 let v = pixels[pos];
@@ -75,11 +75,13 @@ impl<'a> Iterator for StarFinder<'a> {
                     println!("r: {}", r);
                     if r > max_radius {
                         // TODO: optimization: block out this square
+                        println!("bigger than max radius");
                         continue 'outer;
                     }
                     let mut side_max_v: u16 = 0;
                     for IPoint {x,y} in side_points {
                         if x < 0 || y < 0 || x >= self.image.width as isize || y >= self.image.height as isize {
+                            println!("break");
                             break 'spiral;
                         }
                         left = min(left, x as usize);
@@ -90,8 +92,10 @@ impl<'a> Iterator for StarFinder<'a> {
                         side_max_v = max(side_max_v, self.image.at(x as usize, y as usize));
                     }
                     if side_max_v < self.bg_threshold {
+                        println!("side_max_v: {}", side_max_v);
                         if r < min_radius {
                             // TODO: optimization: block out this square?
+                            println!("radius too small");
                             continue 'outer;
                         }
                         // TODO: block out this square
