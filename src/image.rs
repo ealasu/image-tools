@@ -5,8 +5,8 @@ use regex::Regex;
 
 
 pub struct Image {
-    pub width: u16,
-    pub height: u16,
+    pub width: usize,
+    pub height: usize,
     data: Vec<u16>
 }
 
@@ -35,8 +35,8 @@ impl Image {
         }
     }
 
-    pub fn at(&self, x: u16, y: u16) -> u16 {
-        self.data[x as usize + y as usize * self.width as usize]
+    pub fn at(&self, x: usize, y: usize) -> u16 {
+        self.data[x + y * self.width]
     }
 
     pub fn pixels(&self) -> &Vec<u16> {
