@@ -18,7 +18,8 @@ pub struct Star<'a> {
 pub struct StarFinder<'a> {
     image: &'a Image,
     pos: usize,
-    threshold: u16,
+    bg_threshold: u16,
+    fg_threshold: u16,
 }
 
 impl<'a> StarFinder<'a> {
@@ -33,12 +34,16 @@ impl<'a> StarFinder<'a> {
         println!("average: {}", average);
         let background = average;
 
-        let threshold = ((max - background) * 0.75 + background) as u16;
+        let bg_threshold = ((max - background) * 0.01 + background) as u16;
+        let fg_threshold = ((max - background) * 0.75 + background) as u16;
+        println!("bg_threshold: {}", bg_threshold);
+        println!("fg_threshold: {}", fg_threshold);
 
         StarFinder {
             image: image,
             pos: 0,
-            threshold: threshold ,
+            bg_threshold: bg_threshold,
+            fg_threshold: fg_threshold,
         }
     }
 }
@@ -51,13 +56,15 @@ impl<'a> Iterator for StarFinder<'a> {
 
         // search for a bright pixel
         loop {
-            if pixels[self.pos] > self.threshold {
+            if pixels[self.pos] > self.fg_threshold {
                 // found a match
                 let v = pixels[self.pos];
 
                 let x = self.pos % self.image.width;
                 let y = self.pos / self.image.width;
-                println!("match: {},{}", x, y);
+                //println!("match: {},{}", x, y);
+
+                // TODO: spiral around to determine the full extents of the star
             }
             self.pos += 1;
             if self.pos >= pixels.len() {
