@@ -10,15 +10,13 @@ pub struct Spiral {
     y: isize,
 }
 
-impl Spiral {
-    pub fn new() -> Spiral {
-        Spiral {
-            r: 1,
-            tx: 1,
-            ty: 0,
-            x: 0,
-            y: 0,
-        }
+pub fn spiral() -> Spiral {
+    Spiral {
+        r: 1,
+        tx: 1,
+        ty: 0,
+        x: 0,
+        y: 0,
     }
 }
 
@@ -83,7 +81,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let mut s = Spiral::new();
+        let mut s = spiral();
 
         let (r, p) = s.next().unwrap();
         assert_eq!(r, 1);

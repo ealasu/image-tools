@@ -5,10 +5,11 @@ use std::process::Command;
 use regex::Regex;
 
 
+#[derive(PartialEq)]
 pub struct Image {
     pub width: usize,
     pub height: usize,
-    data: Vec<u16>
+    data: Vec<u16>,
 }
 
 impl fmt::Debug for Image {

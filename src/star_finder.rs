@@ -1,10 +1,11 @@
 use std::cmp::{min, max};
+use std::ops::Range;
 use image::Image;
 use point::{Point, IPoint};
-use spiral::Spiral;
+use spiral::spiral;
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Star {
     x: usize,
     y: usize,
@@ -13,7 +14,7 @@ pub struct Star {
 
 pub struct StarFinder<'a> {
     image: &'a Image,
-    pos: usize,
+    pos_iter: Range<usize>,
     bg_threshold: u16,
     fg_threshold: u16,
 }
@@ -37,7 +38,7 @@ impl<'a> StarFinder<'a> {
 
         StarFinder {
             image: image,
-            pos: 0,
+            pos_iter: 0..image.pixels().len(),
             bg_threshold: bg_threshold,
             fg_threshold: fg_threshold,
         }
@@ -51,13 +52,14 @@ impl<'a> Iterator for StarFinder<'a> {
         let pixels = self.image.pixels();
 
         // search for a bright pixel
-        'outer: loop {
-            if pixels[self.pos] > self.fg_threshold {
+        'outer: for pos in &mut self.pos_iter {
+            println!("pos: {}", pos);
+            if pixels[pos] > self.fg_threshold {
                 // found a match
-                let v = pixels[self.pos];
+                let v = pixels[pos];
 
-                let center_x = self.pos % self.image.width;
-                let center_y = self.pos / self.image.width;
+                let center_x = pos % self.image.width;
+                let center_y = pos / self.image.width;
                 //println!("match: {},{}", x, y);
 
                 // spiral around to determine the full extents of the star
@@ -69,7 +71,8 @@ impl<'a> Iterator for StarFinder<'a> {
                 let mut top: usize = 0;
                 let mut bottom: usize = 0;
 
-                'spiral: for (r, mut side_points) in Spiral::new() {
+                'spiral: for (r, mut side_points) in spiral() {
+                    println!("r: {}", r);
                     if r > max_radius {
                         // TODO: optimization: block out this square
                         continue 'outer;
@@ -101,10 +104,24 @@ impl<'a> Iterator for StarFinder<'a> {
                 }
 
             }
-            self.pos += 1;
-            if self.pos >= pixels.len() {
-                return None;
-            }
         }
+        None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::Image;
+
+    #[test]
+    fn test() {
+        let image = Image::load("data/star.tiff");
+        println!("input: {:?}", image);
+
+        let finder = StarFinder::new(&image);
+        let stars: Vec<_> = finder.collect();
+
+        assert_eq!(stars, vec![]);
     }
 }
