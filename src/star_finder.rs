@@ -1,11 +1,11 @@
 use std::cmp::{min, max};
 use std::ops::Range;
+use std::f32;
 use image::Image;
 use point::Point;
-use spiral::spiral;
 
 
-pub type Star = Point<f32>;
+pub type Star = Point<usize>;
 
 pub struct StarFinder<'a> {
     image: &'a Image,
@@ -16,10 +16,13 @@ pub struct StarFinder<'a> {
 
 impl<'a> StarFinder<'a> {
     pub fn new(image: &'a Image) -> StarFinder {
-        //let max = *image.pixels().iter().max().unwrap() as f32;
-        //let min = *image.pixels().iter().min().unwrap() as f32;
-        //println!("max: {}", max);
-        //println!("min: {}", min);
+        let min = image.pixels().iter().fold(f32::MAX, |acc, &v| acc.min(v));
+        let max = image.pixels().iter().fold(f32::MIN, |acc, &v| acc.max(v));
+        println!("max: {}", max);
+        println!("min: {}", min);
+
+        let peak_min = (max - min) * 0.5 + min;
+        let peak_max = max;
 
         //let average: f32 = image.pixels().iter().map(|&v| v as f32).fold(0f32, |sum, i| sum + i) /
             //image.pixels().len() as f32;
@@ -34,8 +37,8 @@ impl<'a> StarFinder<'a> {
         StarFinder {
             image: image,
             pos_iter: 0..image.pixels().len(),
-            peak_min: 0f32,
-            peak_max: 1f32,
+            peak_min: peak_min,
+            peak_max: peak_max,
         }
     }
 }
@@ -46,10 +49,14 @@ impl<'a> Iterator for StarFinder<'a> {
     fn next(&mut self) -> Option<Star> {
         let image = self.image;
         for pos in &mut self.pos_iter {
-            println!("pos: {} ({},{})", pos, pos % image.width, pos / image.width);
+            //println!("pos: {} ({},{})", pos, pos % image.width, pos / image.width);
             let pixel = image.pixels()[pos];
 
-            if pixel < self.peak_min || pixel > self.peak_max {
+            if pixel < self.peak_min {
+                continue;
+            }
+            if pixel > self.peak_max {
+                //println!("too bright");
                 continue;
             }
 
@@ -58,14 +65,27 @@ impl<'a> Iterator for StarFinder<'a> {
             if x < 2 || x > image.width - 2 || y < 2 || y > image.height - 2 {
                 continue;
             }
+            //println!("pixel: {}", pixel);
 
-            let bingo = (y - 1..y + 1).all(|yy| {
-                (x - 1..x + 1).all(|xx| {
-                    (yy == y && xx == x) || image.at(xx, yy) < pixel
+            // 1 pixel left, right, above, and below
+            let bingo = (y - 1..y + 2).all(|yy| {
+                (x - 1..x + 2).all(|xx| {
+                    let neighbor = image.at(xx, yy);
+                    //println!("n ({},{}): {}", xx, yy, neighbor);
+                    if neighbor > pixel {
+                        return false;
+                    } else if pixel == neighbor {
+                        if xx != x || yy != y {
+                            if (xx >= x && yy <= y) || (xx > x && yy < y) {
+                                return false;
+                            }
+                        }
+                    }
+                    true
                 })
             });
             if bingo {
-                return Some(Star {x: x as f32, y: y as f32});
+                return Some(Star {x: x, y: y});
             }
         }
         None
@@ -85,6 +105,6 @@ mod tests {
         let finder = StarFinder::new(&image);
         let stars: Vec<_> = finder.collect();
 
-        assert_eq!(stars, vec![]);
+        assert_eq!(stars, vec![Star {x: 10, y: 7}]);
     }
 }
