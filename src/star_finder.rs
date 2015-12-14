@@ -117,6 +117,16 @@ mod tests {
 
     #[test]
     #[ignore]
+    fn test_small() {
+        let image = Image::load("data/small.tiff");
+        let finder = StarFinder::new(&image);
+        let stars: Vec<_> = finder.collect();
+
+        assert_eq!(stars.len(), 80);
+    }
+
+    #[test]
+    #[ignore]
     fn test_big() {
         let image = Image::load("data/big-1.tiff");
         let finder = StarFinder::new(&image);
