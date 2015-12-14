@@ -98,13 +98,30 @@ mod tests {
     use image::Image;
 
     #[test]
-    fn test() {
+    fn test_star() {
         let image = Image::load("data/star.tiff");
-        println!("input: {:?}", image);
-
         let finder = StarFinder::new(&image);
         let stars: Vec<_> = finder.collect();
 
         assert_eq!(stars, vec![Star {x: 10, y: 7}]);
+    }
+
+    #[test]
+    fn test_tiny() {
+        let image = Image::load("data/tiny.tiff");
+        let finder = StarFinder::new(&image);
+        let stars: Vec<_> = finder.collect();
+
+        assert_eq!(stars, vec![Star {x: 66, y: 19}, Star {x: 61, y: 41}]);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_big() {
+        let image = Image::load("data/big-1.tiff");
+        let finder = StarFinder::new(&image);
+        let stars: Vec<_> = finder.collect();
+
+        assert_eq!(stars.len(), 223);
     }
 }
