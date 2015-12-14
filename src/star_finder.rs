@@ -144,6 +144,14 @@ mod tests {
             let _: Vec<_> = finder.collect();
         });
     }
+
+    #[bench]
+    fn bench_setup_start(b: &mut Bencher) {
+        let image = Image::load("data/star.tiff");
+        b.iter(|| {
+            let _ = StarFinder::new(&image);
+        });
+    }
     
     #[bench]
     fn bench_setup_tiny(b: &mut Bencher) {
