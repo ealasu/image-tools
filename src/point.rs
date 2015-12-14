@@ -1,11 +1,8 @@
-#[derive(Debug, PartialEq)]
-pub struct Point {
-    pub x: usize,
-    pub y: usize,
-}
+use std::fmt::Debug;
+
 
 #[derive(Debug, PartialEq)]
-pub struct IPoint {
-    pub x: isize,
-    pub y: isize,
+pub struct Point<T: Debug + PartialEq> {
+    pub x: T,
+    pub y: T,
 }

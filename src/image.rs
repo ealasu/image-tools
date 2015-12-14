@@ -5,11 +5,13 @@ use std::process::Command;
 use regex::Regex;
 
 
+pub type Pixel = f32;
+
 #[derive(PartialEq)]
 pub struct Image {
     pub width: usize,
     pub height: usize,
-    data: Vec<u16>,
+    data: Vec<Pixel>,
 }
 
 impl fmt::Debug for Image {
@@ -24,7 +26,7 @@ impl Image {
             .arg("-map")
             .arg("i")
             .arg("-storage-type")
-            .arg("short")
+            .arg("float")
             .arg("-verbose")
             .arg(path)
             .arg("-")
@@ -35,10 +37,10 @@ impl Image {
         let captures = re.captures(stderr).unwrap();
         let width = captures[1].parse().unwrap();
         let height = captures[2].parse().unwrap();
-        Self::new(width, height, vec_of_u8_to_u16(out.stdout))
+        Self::new(width, height, vec_of_u8_to_f32(out.stdout))
     }
 
-    pub fn new(width: usize, height: usize, data: Vec<u16>) -> Image {
+    pub fn new(width: usize, height: usize, data: Vec<Pixel>) -> Image {
         Image {
             width: width,
             height: height,
@@ -46,15 +48,17 @@ impl Image {
         }
     }
 
-    pub fn at(&self, x: usize, y: usize) -> u16 {
+    #[inline(always)]
+    pub fn at(&self, x: usize, y: usize) -> Pixel {
         self.data[x + y * self.width]
     }
 
-    pub fn pixels(&self) -> &Vec<u16> {
+    #[inline(always)]
+    pub fn pixels(&self) -> &Vec<Pixel> {
         &self.data
     }
 
-    pub fn row(&self, y: usize, left: usize, right: usize) -> &[u16] {
+    pub fn row(&self, y: usize, left: usize, right: usize) -> &[Pixel] {
         let start = y * self.width;
         &self.data[start + left .. start + right]
     }
@@ -72,13 +76,13 @@ impl Image {
     }
 }
 
-fn vec_of_u8_to_u16(mut data: Vec<u8>) -> Vec<u16> {
+fn vec_of_u8_to_f32(mut data: Vec<u8>) -> Vec<f32> {
     data.shrink_to_fit();
     let p = data.as_mut_ptr();
-    let len = data.len() / 2;
+    let len = data.len() / 4;
     unsafe {
         mem::forget(data);
-        Vec::from_raw_parts(p as *mut u16, len, len)
+        Vec::from_raw_parts(p as *mut f32, len, len)
     }
 }
 

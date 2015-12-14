@@ -1,4 +1,4 @@
-use point::IPoint;
+use point::Point;
 
 
 #[derive(Debug)]
@@ -60,14 +60,14 @@ pub struct SpiralPoints {
 }
 
 impl Iterator for SpiralPoints {
-    type Item = IPoint;
+    type Item = Point<isize>;
 
-    fn next(&mut self) -> Option<IPoint> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.points_left == 0 {
             return None;
         }
         self.points_left -= 1;
-        let ret = IPoint {x: self.x, y: self.y};
+        let ret = Point {x: self.x, y: self.y};
         self.x += self.tx;
         self.y += self.ty;
         Some(ret)
@@ -77,7 +77,7 @@ impl Iterator for SpiralPoints {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use point::IPoint;
+    use point::Point;
 
     #[test]
     fn test() {
@@ -86,37 +86,37 @@ mod tests {
         let (r, p) = s.next().unwrap();
         assert_eq!(r, 1);
         assert_eq!(p.collect::<Vec<_>>(), vec![
-                   IPoint {x: 1, y: 0}]);
+                   Point {x: 1, y: 0}]);
 
         let (r, p) = s.next().unwrap();
         assert_eq!(r, 1);
         assert_eq!(p.collect::<Vec<_>>(), vec![
-                   IPoint {x: 1, y: 1}]);
+                   Point {x: 1, y: 1}]);
 
         let (r, p) = s.next().unwrap();
         assert_eq!(r, 2);
         assert_eq!(p.collect::<Vec<_>>(), vec![
-                   IPoint {x: 0, y: 1},
-                   IPoint {x: -1, y: 1}]);
+                   Point {x: 0, y: 1},
+                   Point {x: -1, y: 1}]);
 
         let (r, p) = s.next().unwrap();
         assert_eq!(r, 2);
         assert_eq!(p.collect::<Vec<_>>(), vec![
-                   IPoint {x: -1, y: 0},
-                   IPoint {x: -1, y: -1}]);
+                   Point {x: -1, y: 0},
+                   Point {x: -1, y: -1}]);
 
         let (r, p) = s.next().unwrap();
         assert_eq!(r, 3);
         assert_eq!(p.collect::<Vec<_>>(), vec![
-                   IPoint {x: 0, y: -1},
-                   IPoint {x: 1, y: -1},
-                   IPoint {x: 2, y: -1}]);
+                   Point {x: 0, y: -1},
+                   Point {x: 1, y: -1},
+                   Point {x: 2, y: -1}]);
 
         let (r, p) = s.next().unwrap();
         assert_eq!(r, 3);
         assert_eq!(p.collect::<Vec<_>>(), vec![
-                   IPoint {x: 2, y: 0},
-                   IPoint {x: 2, y: 1},
-                   IPoint {x: 2, y: 2}]);
+                   Point {x: 2, y: 0},
+                   Point {x: 2, y: 1},
+                   Point {x: 2, y: 2}]);
     }
 }
