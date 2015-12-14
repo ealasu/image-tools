@@ -18,8 +18,8 @@ impl<'a> StarFinder<'a> {
     pub fn new(image: &'a Image) -> StarFinder {
         let min = image.pixels().iter().fold(f32::MAX, |acc, &v| acc.min(v));
         let max = image.pixels().iter().fold(f32::MIN, |acc, &v| acc.max(v));
-        println!("max: {}", max);
-        println!("min: {}", min);
+        //println!("max: {}", max);
+        //println!("min: {}", min);
 
         let peak_min = (max - min) * 0.5 + min;
         let peak_max = max;
@@ -94,6 +94,7 @@ impl<'a> Iterator for StarFinder<'a> {
 
 #[cfg(test)]
 mod tests {
+    use test::Bencher;
     use super::*;
     use image::Image;
 
@@ -133,5 +134,31 @@ mod tests {
         let stars: Vec<_> = finder.collect();
 
         assert_eq!(stars.len(), 223);
+    }
+
+    #[bench]
+    fn bench_star(b: &mut Bencher) {
+        let image = Image::load("data/star.tiff");
+        b.iter(|| {
+            let finder = StarFinder::new(&image);
+            let _: Vec<_> = finder.collect();
+        });
+    }
+    
+    #[bench]
+    fn bench_setup_tiny(b: &mut Bencher) {
+        let image = Image::load("data/tiny.tiff");
+        b.iter(|| {
+            let _ = StarFinder::new(&image);
+        });
+    }
+
+    #[bench]
+    fn bench_tiny(b: &mut Bencher) {
+        let image = Image::load("data/tiny.tiff");
+        b.iter(|| {
+            let finder = StarFinder::new(&image);
+            let _: Vec<_> = finder.collect();
+        });
     }
 }

@@ -1,3 +1,6 @@
+#![feature(test)]
+
+extern crate test;
 extern crate regex;
 
 mod point;

@@ -58,22 +58,22 @@ impl Image {
         &self.data
     }
 
-    pub fn row(&self, y: usize, left: usize, right: usize) -> &[Pixel] {
-        let start = y * self.width;
-        &self.data[start + left .. start + right]
-    }
+    //pub fn row(&self, y: usize, left: usize, right: usize) -> &[Pixel] {
+        //let start = y * self.width;
+        //&self.data[start + left .. start + right]
+    //}
 
-    pub fn crop(&self, left: usize, top: usize, right: usize, bottom: usize) -> Image {
-        assert!(right > left);
-        assert!(bottom > top);
-        let width = right - left;
-        let height = bottom - top;
-        let mut data = Vec::with_capacity(width * height);
-        for y in top..bottom {
-            data.extend_from_slice(self.row(y, left, right));
-        }
-        Self::new(width, height, data)
-    }
+    //pub fn crop(&self, left: usize, top: usize, right: usize, bottom: usize) -> Image {
+        //assert!(right > left);
+        //assert!(bottom > top);
+        //let width = right - left;
+        //let height = bottom - top;
+        //let mut data = Vec::with_capacity(width * height);
+        //for y in top..bottom {
+            //data.extend_from_slice(self.row(y, left, right));
+        //}
+        //Self::new(width, height, data)
+    //}
 }
 
 fn vec_of_u8_to_f32(mut data: Vec<u8>) -> Vec<f32> {
