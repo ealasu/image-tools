@@ -7,6 +7,7 @@ mod point;
 mod spiral;
 mod image;
 mod star_finder;
+mod refine_center;
 
 
 fn main() {
