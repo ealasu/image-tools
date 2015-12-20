@@ -19,6 +19,22 @@ impl Sub for Point<Unit> {
     }
 }
 
+impl Add<Vector> for Point<Unit> {
+    type Output = Self;
+
+    fn add(self, rhs: Vector) -> Self::Output {
+        Point {x: self.x + rhs.x, y: self.y + rhs.y}
+    }
+}
+
+impl Sub<Vector> for Point<Unit> {
+    type Output = Self;
+
+    fn sub(self, rhs: Vector) -> Self::Output {
+        Point {x: self.x - rhs.x, y: self.y - rhs.y}
+    }
+}
+
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct Vector {

@@ -55,8 +55,13 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
         stars.iter().find(|&&c| {
             let ca = distance(c, a);
             let cb = distance(c, b);
-            (are_close(ca, c_to_a, EPSILON) && are_close(cb, b_to_c, EPSILON)) ||
-            (are_close(cb, c_to_a, EPSILON) && are_close(ca, b_to_c, EPSILON))
+            let v_ab = b - a; // vector to get from a to b
+            let v_ac = c - a; // vector to get from a to c
+            let has_correct_spin = v_ab.cross_product(v_ac) < 0.0;
+
+            has_correct_spin &&
+            ((are_close(ca, c_to_a, EPSILON) && are_close(cb, b_to_c, EPSILON)) ||
+             (are_close(cb, c_to_a, EPSILON) && are_close(ca, b_to_c, EPSILON)))
         }).map(|&c| {
             //let m_b_to_c = distance(b, c);
             //let m_c_to_a = distance(c, a);
