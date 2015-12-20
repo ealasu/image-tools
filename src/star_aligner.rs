@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use point::Point;
+use point::*;
 use types::*;
 use triangle::Triangle;
 use math::*;
@@ -93,7 +93,7 @@ pub fn find_matching_triangles(ref_stars: &[Star], other_stars: &[Star]) -> Vec<
     }).collect()
 }
 
-pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Point<f32> {
+pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Vector {
     let matches = find_matching_triangles(ref_stars, other_stars);
     println!("matching triangles: {}", matches.len());
     for &(t, m) in matches.iter() {
@@ -103,7 +103,7 @@ pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Point<f32> {
     }
     //println!("{},{},{},{},{},{}", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y);
 
-    panic!()
+    Vector {x: 0.0, y: 0.0}
 }
 
 #[cfg(test)]

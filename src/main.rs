@@ -16,7 +16,7 @@ mod math;
 mod triangle;
 
 use simple_parallel::Pool;
-use point::Point;
+use point::*;
 use types::*;
 
 // steps:
@@ -69,7 +69,7 @@ fn align_images(images: ImagesWithStars) -> ImagesWithAlignment {
             (filename.clone(), star_aligner::compute_transform(ref_stars, other_stars))
         }).collect::<ImagesWithAlignment>()
     });
-    res.insert(first_image.clone(), Point {x: 0.0, y: 0.0});
+    res.insert(first_image.clone(), Vector {x: 0.0, y: 0.0});
     res
 }
 
