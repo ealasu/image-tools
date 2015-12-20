@@ -7,12 +7,13 @@ extern crate simple_parallel;
 extern crate itertools;
 
 mod point;
-mod spiral;
 mod image;
 mod star_finder;
 mod refine_center;
 mod star_aligner;
 mod types;
+mod math;
+mod triangle;
 
 use std::collections::HashMap;
 use simple_parallel::Pool;

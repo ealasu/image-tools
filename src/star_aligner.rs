@@ -3,50 +3,17 @@ use std::collections::BTreeSet;
 use itertools::Itertools;
 use point::Point;
 use types::*;
+use triangle::Triangle;
+use math::*;
 
 
-fn distance(p1: Star, p2: Star) -> f32 {
-    let a = p2.x - p1.x;
-    let b = p2.y - p1.y;
-    ((a * a) + (b * b)).sqrt()
-}
+const EPSILON: f32 = 1.0;
 
-
-#[derive(Copy, Clone, Debug)]
-struct Triangle {
-    a: Star,
-    b: Star,
-    c: Star,
-    a_to_b: f32,
-    b_to_c: f32,
-    c_to_a: f32,
-}
-
-impl Triangle {
-    fn new(a: Star, b: Star, c: Star) -> Triangle {
-        Triangle {
-            a: a,
-            b: b,
-            c: c,
-            a_to_b: distance(a, b),
-            b_to_c: distance(b, c),
-            c_to_a: distance(c, a),
-        }
-    }
-}
-
-impl PartialEq for Triangle {
-    fn eq(&self, other: &Self) -> bool {
-        (self.a == other.a && self.b == other.b && self.c == other.c) ||
-        (self.a == other.b && self.b == other.c && self.c == other.a) ||
-        (self.a == other.c && self.b == other.a && self.c == other.b)
-    }
-}
 
 enum Sides {
-    AtoB,
-    BtoC,
-    CtoA,
+    AB,
+    BC,
+    CA,
 }
 
 
@@ -81,46 +48,66 @@ fn make_triangles(stars: &[Star]) -> Vec<Triangle> {
     deduped_triangles 
 }
 
-fn is_close(a: f32, b: f32) -> bool {
-    (a - b).abs() < 2.1
-}
 
 fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
-    let side = stars.iter().combinations().filter_map(|(&a, &b)| {
+    let mut matches = stars.iter().combinations().filter_map(|(&a, &b)| {
         let d = distance(a, b);
-        if is_close(d, t.a_to_b) {
-            Some((a, b, Sides::AtoB))
-        } else if is_close(d, t.b_to_c) {
-            Some((a, b, Sides::BtoC))
-        } else if is_close(d, t.c_to_a) {
-            Some((a, b, Sides::CtoA))
+        if are_close(d, t.a_to_b, EPSILON) {
+            Some((a, b, Sides::AB))
+        } else if are_close(d, t.b_to_c, EPSILON) {
+            Some((a, b, Sides::BC))
+        } else if are_close(d, t.c_to_a, EPSILON) {
+            Some((a, b, Sides::CA))
         } else {
             None
         }
-    }).next();
-    side.and_then(|(a, b, side)| {
-        let (b_to_c, c_to_a) = match side {
-            Sides::AtoB => (t.b_to_c, t.c_to_a),
-            Sides::BtoC => (t.c_to_a, t.a_to_b),
-            Sides::CtoA => (t.a_to_b, t.b_to_c),
+    }).filter_map(|(a, b, side)| {
+        let (c_to_a, b_to_c) = match side {
+            Sides::AB => (t.c_to_a, t.b_to_c),
+            Sides::BC => (t.a_to_b, t.c_to_a),
+            Sides::CA => (t.b_to_c, t.a_to_b),
         };
         stars.iter().find(|&&p| {
-            is_close(distance(p, a), c_to_a) &&
-            is_close(distance(p, b), b_to_c)
+            are_close(distance(p, a), c_to_a, EPSILON) &&
+            are_close(distance(p, b), b_to_c, EPSILON)
         }).map(|&c| {
+            //let m_b_to_c = distance(b, c);
+            //let m_c_to_a = distance(c, a);
+            //let (a, b) = if m_b_to_c > m_c_to_a && b_to_c < c_to_a {
+                //(b, a)
+            //} else {
+                //(a, b)
+            //};
+            let (a, b, c) = match side {
+                Sides::AB => (a, b, c),
+                Sides::BC => (b, c, a),
+                Sides::CA => (c, a, b),
+            };
             Triangle::new(a, b, c)
         })
-    })
+    }).collect::<Vec<_>>();
+    matches.dedup();
+    println!("tri matches: {}", matches.len());
+    if matches.len() > 1 {
+        for t in matches.iter() {
+            println!("{:?}", t);
+        }
+    }
+    matches.into_iter().next()
 }
 
 pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Point<f32> {
     let ts = make_triangles(ref_stars);
     println!("triangles:");
-    for t in ts {
-        let m = find_triangle(t, other_stars);
-        println!("match: {:?}", m);
-        //println!("{},{},{},{},{},{}", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y);
+    let matches = ts.iter().filter_map(|&t| {
+        find_triangle(t, other_stars).map(|m| (t, m))
+    }).collect::<Vec<_>>();
+    println!("matches: {}", matches.len());
+    for &(t, m) in matches.iter() {
+        println!("t: {:?}, d: {}", t, distance(t.a, m.a));
     }
+    //println!("{},{},{},{},{},{}", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y);
 
     panic!()
 }
+
