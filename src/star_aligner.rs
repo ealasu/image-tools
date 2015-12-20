@@ -1,4 +1,3 @@
-use std::cmp::PartialOrd;
 use itertools::Itertools;
 use point::Point;
 use types::*;
@@ -8,25 +7,12 @@ use math::*;
 
 const EPSILON: f32 = 0.9;
 
-
 enum Sides {
     AB,
     BC,
     CA,
 }
 
-
-fn max_by<I,F,C>(iter: I, start: C, compare: F) -> I::Item
-where I: Iterator, C: PartialOrd, F: Fn(&I::Item) -> C {
-    iter.fold((start, None), |(max_c, max_v), v| {
-        let c = compare(&v);
-        if c > max_c {
-            (c, Some(v))
-        } else {
-            (max_c, max_v)
-        }
-    }).1.unwrap()
-}
 
 fn make_triangles(stars: &[Star]) -> Vec<Triangle> {
     let triangles = stars.iter().map(|&first_star| {
@@ -116,4 +102,3 @@ pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Point<f32> {
 
     panic!()
 }
-

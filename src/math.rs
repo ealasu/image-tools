@@ -10,3 +10,15 @@ pub fn distance(p1: Star, p2: Star) -> f32 {
 pub fn are_close(a: f32, b: f32, epsilon: f32) -> bool {
     (a - b).abs() < epsilon
 }
+
+pub fn max_by<I,F,C>(iter: I, start: C, compare: F) -> I::Item
+where I: Iterator, C: PartialOrd, F: Fn(&I::Item) -> C {
+    iter.fold((start, None), |(max_c, max_v), v| {
+        let c = compare(&v);
+        if c > max_c {
+            (c, Some(v))
+        } else {
+            (max_c, max_v)
+        }
+    }).1.unwrap()
+}
