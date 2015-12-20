@@ -86,13 +86,16 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
     matches.into_iter().next()
 }
 
-pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Point<f32> {
-    let ts = make_triangles(ref_stars);
-    println!("triangles:");
-    let matches = ts.iter().filter_map(|&t| {
+pub fn find_matching_triangles(ref_stars: &[Star], other_stars: &[Star]) -> Vec<(Triangle, Triangle)> {
+    let ref_triangles = make_triangles(ref_stars);
+    ref_triangles.iter().filter_map(|&t| {
         find_triangle(t, other_stars).map(|m| (t, m))
-    }).collect::<Vec<_>>();
-    println!("matches: {}", matches.len());
+    }).collect()
+}
+
+pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Point<f32> {
+    let matches = find_matching_triangles(ref_stars, other_stars);
+    println!("matching triangles: {}", matches.len());
     for &(t, m) in matches.iter() {
         println!("match: {}", distance(t.a, m.a));
         println!("t: {:?}", t);
@@ -101,4 +104,29 @@ pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Point<f32> {
     //println!("{},{},{},{},{},{}", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y);
 
     panic!()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use types::*;
+    use point::*;
+    use triangle::*;
+
+    #[test]
+    fn test_1() {
+        let stars_1 = vec![Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0}];
+        let stars_2 = vec![Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0}];
+        let matches = find_matching_triangles(&stars_1, &stars_2);
+        let t = Triangle::new(Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0});
+        assert_eq!(matches, vec![(t, t)]);
+    }
+
+    #[test]
+    fn test_2() {
+        let stars_1 = vec![Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0}];
+        let stars_2 = vec![Star {x: 0.0, y: 0.0}, Star {x: 0.0, y: 1.0}, Star {x: 2.0, y: 2.0}];
+        let matches = find_matching_triangles(&stars_1, &stars_2);
+        assert_eq!(matches, vec![]);
+    }
 }
