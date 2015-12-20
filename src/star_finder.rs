@@ -12,17 +12,21 @@ pub struct StarFinder<'a> {
     pos_iter: Range<usize>,
     peak_min: f32,
     peak_max: f32,
+    x_min: usize,
+    x_max: usize,
+    y_min: usize,
+    y_max: usize,
 }
 
 impl<'a> StarFinder<'a> {
     pub fn new(image: &'a Image) -> StarFinder {
-        let min = image.pixels().iter().fold(f32::MAX, |acc, &v| acc.min(v));
-        let max = image.pixels().iter().fold(f32::MIN, |acc, &v| acc.max(v));
+        let min_pixel = image.pixels().iter().fold(f32::MAX, |acc, &v| acc.min(v));
+        let max_pixel = image.pixels().iter().fold(f32::MIN, |acc, &v| acc.max(v));
         //println!("max: {}", max);
         //println!("min: {}", min);
 
-        let peak_min = (max - min) * 0.5 + min;
-        let peak_max = max;
+        let peak_min = (max_pixel - min_pixel) * 0.8 + min_pixel;
+        let peak_max = max_pixel;
 
         //let average: f32 = image.pixels().iter().map(|&v| v as f32).fold(0f32, |sum, i| sum + i) /
             //image.pixels().len() as f32;
@@ -33,12 +37,19 @@ impl<'a> StarFinder<'a> {
         //let fg_threshold = ((max - background) * 0.75 + background) as u16;
         //println!("bg_threshold: {}", bg_threshold);
         //println!("fg_threshold: {}", fg_threshold);
+        let kernel_size = 2;
+        let x_padding = max(kernel_size, image.width / 2 / 3);
+        let y_padding = max(kernel_size, image.height / 2 / 3);
 
         StarFinder {
             image: image,
             pos_iter: 0..image.pixels().len(),
             peak_min: peak_min,
             peak_max: peak_max,
+            x_min: x_padding,
+            x_max: image.width - x_padding,
+            y_min: y_padding,
+            y_max: image.height - y_padding,
         }
     }
 }
@@ -62,7 +73,10 @@ impl<'a> Iterator for StarFinder<'a> {
 
             let x = pos % image.width;
             let y = pos / image.width;
-            if x < 2 || x > image.width - 2 || y < 2 || y > image.height - 2 {
+            if x < self.x_min ||
+               x > self.x_max ||
+               y < self.y_min ||
+               y > self.y_max {
                 continue;
             }
             //println!("pixel: {}", pixel);
