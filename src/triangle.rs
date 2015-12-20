@@ -17,8 +17,7 @@ impl Triangle {
         // make a -> b -> c always be clockwise
         let v_ab = b - a; // vector to get from a to b
         let v_ac = c - a; // vector to get from a to c
-        let cross_product = v_ab.x * v_ac.y - v_ab.y * v_ac.x;
-        let (b, c) = if cross_product < 0.0 {
+        let (b, c) = if v_ab.cross_product(v_ac) < 0.0 {
             (b, c)
         } else {
             (c, b)

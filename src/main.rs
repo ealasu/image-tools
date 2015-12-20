@@ -15,7 +15,6 @@ mod types;
 mod math;
 mod triangle;
 
-use std::collections::HashMap;
 use simple_parallel::Pool;
 use point::Point;
 use types::*;
@@ -41,7 +40,7 @@ fn main() {
         //}
     //}
     let res = align_images(res);
-    let res = stack_images(res);
+    let _res = stack_images(res);
     // TODO: save res
 }
 
@@ -74,6 +73,6 @@ fn align_images(images: ImagesWithStars) -> ImagesWithAlignment {
     res
 }
 
-fn stack_images(images: ImagesWithAlignment) {
+fn stack_images(_images: ImagesWithAlignment) {
 }
 

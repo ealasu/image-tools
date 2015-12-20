@@ -1,4 +1,3 @@
-use std::cmp::max;
 use std::f32;
 use image::Image;
 use point::Point;

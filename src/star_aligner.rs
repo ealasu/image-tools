@@ -1,5 +1,4 @@
 use std::cmp::PartialOrd;
-use std::collections::BTreeSet;
 use itertools::Itertools;
 use point::Point;
 use types::*;
@@ -7,7 +6,7 @@ use triangle::Triangle;
 use math::*;
 
 
-const EPSILON: f32 = 1.0;
+const EPSILON: f32 = 0.9;
 
 
 enum Sides {
@@ -67,9 +66,11 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
             Sides::BC => (t.a_to_b, t.c_to_a),
             Sides::CA => (t.b_to_c, t.a_to_b),
         };
-        stars.iter().find(|&&p| {
-            are_close(distance(p, a), c_to_a, EPSILON) &&
-            are_close(distance(p, b), b_to_c, EPSILON)
+        stars.iter().find(|&&c| {
+            let ca = distance(c, a);
+            let cb = distance(c, b);
+            (are_close(ca, c_to_a, EPSILON) && are_close(cb, b_to_c, EPSILON)) ||
+            (are_close(cb, c_to_a, EPSILON) && are_close(ca, b_to_c, EPSILON))
         }).map(|&c| {
             //let m_b_to_c = distance(b, c);
             //let m_c_to_a = distance(c, a);
@@ -87,11 +88,14 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
         })
     }).collect::<Vec<_>>();
     matches.dedup();
-    println!("tri matches: {}", matches.len());
+    //println!("tri matches: {}", matches.len());
+    // TODO: not needed after star filtering is impld.
     if matches.len() > 1 {
+        println!("too many matches: {}", matches.len());
         for t in matches.iter() {
             println!("{:?}", t);
         }
+        return None;
     }
     matches.into_iter().next()
 }
@@ -104,7 +108,9 @@ pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Point<f32> {
     }).collect::<Vec<_>>();
     println!("matches: {}", matches.len());
     for &(t, m) in matches.iter() {
-        println!("t: {:?}, d: {}", t, distance(t.a, m.a));
+        println!("match: {}", distance(t.a, m.a));
+        println!("t: {:?}", t);
+        println!("m: {:?}", m);
     }
     //println!("{},{},{},{},{},{}", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y);
 

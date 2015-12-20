@@ -1,4 +1,4 @@
-use std::cmp::{min, max};
+use std::cmp::max;
 use std::ops::Range;
 use std::f32;
 use image::Image;
