@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use std::ops::*;
 
 
-type Unit = f32;
+pub type Unit = f32;
 
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -11,27 +11,27 @@ pub struct Point<T: Debug + PartialEq> {
     pub y: T,
 }
 
-impl<T> Sub for Point<T>
-where T: Debug + PartialEq + Sub<T>, T::Output: Debug + PartialEq  {
-    type Output = Vector<T::Output>;
+impl Sub for Point<Unit> {
+    type Output = Vector;
 
-    fn sub(self, rhs: Point<T>) -> Self::Output {
+    fn sub(self, rhs: Self) -> Self::Output {
         Vector {x: self.x - rhs.x, y: self.y - rhs.y}
     }
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Vector<T: Debug + PartialEq> {
-    pub x: T,
-    pub y: T,
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+pub struct Vector {
+    pub x: Unit,
+    pub y: Unit,
 }
 
-impl<T> Vector<T>
-where T: Debug + PartialEq + Mul, <T as Mul>::Output: Sub {
-    pub fn cross_product(self, other: Self) -> <<T as Mul>::Output as Sub>::Output {
+impl Vector {
+    pub fn cross_product(self, other: Self) -> Unit {
         self.x * other.y - self.y * other.x
     }
 
-    pub fn length(self) -> 
+    pub fn length(self) -> Unit {
+        (self.x * self.x + self.y * self.y).sqrt()
+    }
 }
