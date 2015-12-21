@@ -5,8 +5,9 @@ use triangle::Triangle;
 use math::*;
 
 
-const EPSILON: f32 = 0.9;
+const EPSILON: f32 = 0.1;
 
+#[derive(Debug)]
 enum Sides {
     AB,
     BC,
@@ -35,47 +36,55 @@ fn make_triangles(stars: &[Star]) -> Vec<Triangle> {
 
 
 fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
-    let mut matches = stars.iter().combinations().filter_map(|(&a, &b)| {
-        let d = distance(a, b);
+    // TODO: support rotation transforms
+
+    let mut matches = stars.iter().combinations().filter_map(|(&ap, &bp)| {
+        let d = distance(ap, bp);
         if are_close(d, t.a_to_b, EPSILON) {
-            Some((a, b, Sides::AB))
+            Some((ap, bp, Sides::AB))
         } else if are_close(d, t.b_to_c, EPSILON) {
-            Some((a, b, Sides::BC))
+            Some((ap, bp, Sides::BC))
         } else if are_close(d, t.c_to_a, EPSILON) {
-            Some((a, b, Sides::CA))
+            Some((ap, bp, Sides::CA))
         } else {
             None
         }
-    }).filter_map(|(a, b, side)| {
-        let (c_to_a, b_to_c) = match side {
-            Sides::AB => (t.c_to_a, t.b_to_c),
-            Sides::BC => (t.a_to_b, t.c_to_a),
-            Sides::CA => (t.b_to_c, t.a_to_b),
-        };
-        stars.iter().find(|&&c| {
-            let ca = distance(c, a);
-            let cb = distance(c, b);
-            let v_ab = b - a; // vector to get from a to b
-            let v_ac = c - a; // vector to get from a to c
-            let has_correct_spin = v_ab.cross_product(v_ac) < 0.0;
+    }).filter_map(|(ap, bp, side)| {
+        println!("{:?}", side);
+        /*
+         steps (to find the possible locations of c'):
+         find vector ac (c - a)
+         for each orientation of a'b' (a'b' or b'a'):
+             find the matrix m_ab_to_apbp that transforms ab to a'b' (rotation + translation, maybe ignore rotation for now)
+             multiply ac by m_ab_to_apbp to get c'
 
-            has_correct_spin &&
-            ((are_close(ca, c_to_a, EPSILON) && are_close(cb, b_to_c, EPSILON)) ||
-             (are_close(cb, c_to_a, EPSILON) && are_close(ca, b_to_c, EPSILON)))
-        }).map(|&c| {
-            //let m_b_to_c = distance(b, c);
-            //let m_c_to_a = distance(c, a);
-            //let (a, b) = if m_b_to_c > m_c_to_a && b_to_c < c_to_a {
-                //(b, a)
-            //} else {
-                //(a, b)
-            //};
-            let (a, b, c) = match side {
-                Sides::AB => (a, b, c),
-                Sides::BC => (b, c, a),
-                Sides::CA => (c, a, b),
+         then all you have to do is find a star that's close to c'
+         */
+
+        // redefine a,b,c based on the side that was found
+        let (a, b, c) = match side {
+            Sides::AB => (t.a, t.b, t.c),
+            Sides::BC => (t.b, t.c, t.a),
+            Sides::CA => (t.c, t.a, t.b),
+        };
+
+        // vector ac
+        let ac = c - a;
+
+        // TODO: when we support rotation transforms, do this for each orientation of a'b'
+        let m_ab_to_apbp = ap - a;
+        let cp = ac + m_ab_to_apbp;
+
+        stars.iter().find(|&&star| {
+            are_close(star.x, cp.x, EPSILON) && 
+            are_close(star.y, cp.y, EPSILON)
+        }).map(|&cp| {
+            let (ap, bp, cp) = match side {
+                Sides::AB => (ap, bp, cp),
+                Sides::BC => (bp, cp, ap),
+                Sides::CA => (cp, ap, bp),
             };
-            Triangle::new(a, b, c)
+            Triangle::new(ap, bp, cp)
         })
     }).collect::<Vec<_>>();
     matches.dedup();
@@ -118,6 +127,7 @@ mod tests {
     use point::*;
     use triangle::*;
 
+    // same
     #[test]
     fn test_1() {
         let stars_1 = vec![Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0}];
@@ -127,11 +137,44 @@ mod tests {
         assert_eq!(matches, vec![(t, t)]);
     }
 
+    // flipped
     #[test]
     fn test_2() {
         let stars_1 = vec![Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0}];
         let stars_2 = vec![Star {x: 0.0, y: 0.0}, Star {x: 0.0, y: 1.0}, Star {x: 2.0, y: 2.0}];
         let matches = find_matching_triangles(&stars_1, &stars_2);
         assert_eq!(matches, vec![]);
+    }
+
+    // shifted right
+    #[test]
+    fn test_3() {
+        let t1 = Triangle::new(Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0});
+        let t2 = Triangle::new(Star {x: 2.0, y: 0.0}, Star {x: 3.0, y: 0.0}, Star {x: 4.0, y: 2.0});
+        let stars_1 = vec![t1.a, t1.b, t1.c];
+        let stars_2 = vec![t2.a, t2.b, t2.c];
+        let matches = find_matching_triangles(&stars_1, &stars_2);
+        assert_eq!(matches, vec![(t1, t2)]);
+    }
+
+    // shifted up
+    #[test]
+    fn test_4() {
+        let t1 = Triangle::new(Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0});
+        let t2 = Triangle::new(Star {x: 0.0, y: 2.0}, Star {x: 1.0, y: 2.0}, Star {x: 2.0, y: 4.0});
+        let stars_1 = vec![t1.a, t1.b, t1.c];
+        let stars_2 = vec![t2.a, t2.b, t2.c];
+        let matches = find_matching_triangles(&stars_1, &stars_2);
+        assert_eq!(matches, vec![(t1, t2)]);
+    }
+
+    // same
+    #[test]
+    fn test_5() {
+        let stars_1 = vec![Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0}];
+        let stars_2 = vec![Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0}, Star {x: 0.0, y: 0.0}];
+        let matches = find_matching_triangles(&stars_1, &stars_2);
+        let t = Triangle::new(Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0});
+        assert_eq!(matches, vec![(t, t)]);
     }
 }

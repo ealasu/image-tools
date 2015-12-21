@@ -51,3 +51,19 @@ impl Vector {
         (self.x * self.x + self.y * self.y).sqrt()
     }
 }
+
+impl Add for Vector {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Vector {x: self.x + rhs.x, y: self.y + rhs.y}
+    }
+}
+
+impl Sub for Vector {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Vector {x: self.x - rhs.x, y: self.y - rhs.y}
+    }
+}
