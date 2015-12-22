@@ -68,6 +68,13 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
             Sides::CA => (t.c, t.a, t.b),
         };
 
+        // make sure they're oriented right
+        let (ap, bp) = if (ap + (b - a)).is_close_to(bp, EPSILON) {
+            (ap, bp)
+        } else {
+            (bp, ap)
+        };
+
         // vector ac
         let ac = c - a;
 

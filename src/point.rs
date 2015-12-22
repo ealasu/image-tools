@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::ops::*;
+use math::*;
 
 
 pub type Unit = f32;
@@ -9,6 +10,13 @@ pub type Unit = f32;
 pub struct Point<T: Debug + PartialEq> {
     pub x: T,
     pub y: T,
+}
+
+impl Point<Unit> {
+    pub fn is_close_to(self, other: Self, epsilon: f32) -> bool {
+        are_close(self.x, other.x, epsilon) &&
+        are_close(self.y, other.y, epsilon)
+    }
 }
 
 impl Sub for Point<Unit> {
@@ -49,6 +57,11 @@ impl Vector {
 
     pub fn length(self) -> Unit {
         (self.x * self.x + self.y * self.y).sqrt()
+    }
+
+    pub fn is_close_to(self, other: Self, epsilon: f32) -> bool {
+        are_close(self.x, other.x, epsilon) &&
+        are_close(self.y, other.y, epsilon)
     }
 }
 
