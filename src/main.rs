@@ -15,6 +15,8 @@ mod types;
 mod math;
 mod triangle;
 
+use std::fs;
+use std::path::Path;
 use simple_parallel::Pool;
 use point::*;
 use types::*;
@@ -31,17 +33,28 @@ use types::*;
 
 
 fn main() {
-    let images = vec![
-        "data/big-1-c.tiff".to_string(),
-        "data/big-2-c.tiff".to_string()
-    ];
+    //let images = vec![
+        //"data/big-1-c.tiff".to_string(),
+        //"data/big-2-c.tiff".to_string()
+    //];
+    let images = fs::read_dir(Path::new("data/images")).unwrap().map(|f| {
+        f.unwrap()
+    }).filter(|f| {
+        f.metadata().unwrap().is_file()
+    }).map(|f| {
+        f.path().to_str().unwrap().to_string()
+    }).collect::<Vec<_>>();
+    //let images = vec![
+        //"data/images/IMG_5450.tif".to_string(),
+        //"data/images/IMG_5463.tif".to_string(),
+    //];
     let res = find_stars(images);
-    //for (ref f, ref v) in res.iter() {
-        //println!("found {} stars in {:?}", v.len(), f);
-        //for star in v.iter() {
-            //println!("{},{}", star.x, star.y);
-        //}
-    //}
+    for (ref f, ref v) in res.iter() {
+        println!("found {} stars in {:?}", v.len(), f);
+        for star in v.iter() {
+            println!("{},{}", star.x, star.y);
+        }
+    }
     let res = align_images(res);
     println!("aligned:");
     for img in res.iter() {
@@ -67,7 +80,7 @@ fn find_stars(images: Vec<String>) -> ImagesWithStars {
 }
 
 fn align_images(images: ImagesWithStars) -> ImagesWithAlignment {
-    let mut pool = Pool::new(1);
+    let mut pool = Pool::new(4);
     let mut images_iter = (&images).into_iter();
     let (first_image, ref_stars) = images_iter.next().unwrap();
     let mut res = crossbeam::scope(|scope| {

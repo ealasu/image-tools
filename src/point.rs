@@ -55,14 +55,14 @@ impl Vector {
         self.x * other.y - self.y * other.x
     }
 
-    pub fn length(self) -> Unit {
-        (self.x * self.x + self.y * self.y).sqrt()
-    }
+    //pub fn length(self) -> Unit {
+        //(self.x * self.x + self.y * self.y).sqrt()
+    //}
 
-    pub fn is_close_to(self, other: Self, epsilon: f32) -> bool {
-        are_close(self.x, other.x, epsilon) &&
-        are_close(self.y, other.y, epsilon)
-    }
+    //pub fn is_close_to(self, other: Self, epsilon: f32) -> bool {
+        //are_close(self.x, other.x, epsilon) &&
+        //are_close(self.y, other.y, epsilon)
+    //}
 }
 
 impl Add for Vector {

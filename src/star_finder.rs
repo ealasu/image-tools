@@ -25,7 +25,7 @@ impl<'a> StarFinder<'a> {
         //println!("max: {}", max);
         //println!("min: {}", min);
 
-        let peak_min = (max_pixel - min_pixel) * 0.8 + min_pixel;
+        let peak_min = (max_pixel - min_pixel) * 0.7 + min_pixel;
         let peak_max = max_pixel;
 
         //let average: f32 = image.pixels().iter().map(|&v| v as f32).fold(0f32, |sum, i| sum + i) /

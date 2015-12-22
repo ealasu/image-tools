@@ -104,7 +104,7 @@ pub fn find_matching_triangles(ref_stars: &[Star], other_stars: &[Star]) -> Vec<
 
 pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Vector {
     let matches = find_matching_triangles(ref_stars, other_stars);
-    //println!("matching triangles: {}", matches.len());
+    println!("matching triangles: {}", matches.len());
     //for &(t, m) in matches.iter() {
         //println!("match: {}", distance(t.a, m.a));
         //println!("t: {:?}", t);
