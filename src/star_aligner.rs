@@ -5,7 +5,7 @@ use triangle::Triangle;
 use math::*;
 
 
-const EPSILON: f32 = 0.1;
+const EPSILON: f32 = 0.7;
 
 #[derive(Debug)]
 enum Sides {
