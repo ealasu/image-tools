@@ -50,7 +50,7 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
             None
         }
     }).filter_map(|(ap, bp, side)| {
-        println!("{:?}", side);
+        //println!("{:?}", side);
         /*
          steps (to find the possible locations of c'):
          find vector ac (c - a)
@@ -71,20 +71,20 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
         // make sure they're oriented right
         let (ap, bp) = if (ap + (b - a)).is_close_to(bp, EPSILON) {
             (ap, bp)
-        } else {
+        } else if (bp + (a - b)).is_close_to(ap, EPSILON) {
             (bp, ap)
+        } else {
+            return None;
         };
 
-        // vector ac
-        let ac = c - a;
-
         // TODO: when we support rotation transforms, do this for each orientation of a'b'
-        let m_ab_to_apbp = ap - a;
-        let cp = ac + m_ab_to_apbp;
+        let cp = c + (ap - a);
+        //c - a + (ap - a)
+        //println!("abc: {:?} {:?} {:?} ", a, b, c);
+        //println!("a'b'c': {:?} {:?} {:?} ", ap, bp, cp);
 
         stars.iter().find(|&&star| {
-            are_close(star.x, cp.x, EPSILON) && 
-            are_close(star.y, cp.y, EPSILON)
+            star.is_close_to(cp, EPSILON)
         }).map(|&cp| {
             let (ap, bp, cp) = match side {
                 Sides::AB => (ap, bp, cp),
@@ -183,5 +183,15 @@ mod tests {
         let matches = find_matching_triangles(&stars_1, &stars_2);
         let t = Triangle::new(Star {x: 0.0, y: 0.0}, Star {x: 1.0, y: 0.0}, Star {x: 2.0, y: 2.0});
         assert_eq!(matches, vec![(t, t)]);
+    }
+
+    #[test]
+    fn test_6() {
+        let t1 = Triangle::new(Star {x: 1.0, y: 1.0}, Star {x: 2.0, y: 1.0}, Star {x: 3.0, y: 3.0});
+        let t2 = Triangle::new(Star {x: 3.0, y: 0.0}, Star {x: 4.0, y: 0.0}, Star {x: 5.0, y: 2.0});
+        let stars_1 = vec![t1.a, t1.b, t1.c];
+        let stars_2 = vec![t2.a, t2.b, t2.c];
+        let matches = find_matching_triangles(&stars_1, &stars_2);
+        assert_eq!(matches, vec![(t1, t2)]);
     }
 }
