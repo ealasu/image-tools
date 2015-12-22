@@ -37,6 +37,8 @@ fn make_triangles(stars: &[Star]) -> Vec<Triangle> {
 
 fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
     // TODO: support rotation transforms
+    let (a, b, c) = (t.a, t.b, t.c);
+    //println!("abc: {:?} {:?} {:?} ", a, b, c);
 
     let mut matches = stars.iter().combinations().filter_map(|(&ap, &bp)| {
         let d = distance(ap, bp);
@@ -50,22 +52,11 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
             None
         }
     }).filter_map(|(ap, bp, side)| {
-        //println!("{:?}", side);
-        /*
-         steps (to find the possible locations of c'):
-         find vector ac (c - a)
-         for each orientation of a'b' (a'b' or b'a'):
-             find the matrix m_ab_to_apbp that transforms ab to a'b' (rotation + translation, maybe ignore rotation for now)
-             multiply ac by m_ab_to_apbp to get c'
-
-         then all you have to do is find a star that's close to c'
-         */
-
         // redefine a,b,c based on the side that was found
         let (a, b, c) = match side {
-            Sides::AB => (t.a, t.b, t.c),
-            Sides::BC => (t.b, t.c, t.a),
-            Sides::CA => (t.c, t.a, t.b),
+            Sides::AB => (a, b, c),
+            Sides::BC => (b, c, a),
+            Sides::CA => (c, a, b),
         };
 
         // make sure they're oriented right
@@ -77,26 +68,23 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
             return None;
         };
 
-        // TODO: when we support rotation transforms, do this for each orientation of a'b'
+        // when we support rotation transforms, do this for each orientation of a'b'
         let cp = c + (ap - a);
-        //c - a + (ap - a)
-        //println!("abc: {:?} {:?} {:?} ", a, b, c);
-        //println!("a'b'c': {:?} {:?} {:?} ", ap, bp, cp);
+        //println!("side: {:?}", side);
 
         stars.iter().find(|&&star| {
             star.is_close_to(cp, EPSILON)
         }).map(|&cp| {
             let (ap, bp, cp) = match side {
                 Sides::AB => (ap, bp, cp),
-                Sides::BC => (bp, cp, ap),
-                Sides::CA => (cp, ap, bp),
+                Sides::BC => (cp, ap, bp),
+                Sides::CA => (bp, cp, ap),
             };
+            //println!("a'b'c': {:?} {:?} {:?} ", ap, bp, cp);
             Triangle::new(ap, bp, cp)
         })
     }).collect::<Vec<_>>();
     matches.dedup();
-    //println!("tri matches: {}", matches.len());
-    // TODO: not needed after star filtering is impld.
     if matches.len() > 1 {
         println!("too many matches: {}", matches.len());
         for t in matches.iter() {
@@ -189,6 +177,26 @@ mod tests {
     fn test_6() {
         let t1 = Triangle::new(Star {x: 1.0, y: 1.0}, Star {x: 2.0, y: 1.0}, Star {x: 3.0, y: 3.0});
         let t2 = Triangle::new(Star {x: 3.0, y: 0.0}, Star {x: 4.0, y: 0.0}, Star {x: 5.0, y: 2.0});
+        let stars_1 = vec![t1.a, t1.b, t1.c];
+        let stars_2 = vec![t2.a, t2.b, t2.c];
+        let matches = find_matching_triangles(&stars_1, &stars_2);
+        assert_eq!(matches, vec![(t1, t2)]);
+    }
+
+    #[test]
+    fn test_7() {
+        let t1 = Triangle::new(Point { x: 4134.224, y: 1553.7593 }, Point { x: 1289.2603, y: 1295.592 }, Point { x: 1780.352, y: 2829.1196 });
+        let t2 = Triangle::new(Point { x: 4080.8955, y: 1563.5502 }, Point { x: 1236.1643, y: 1305.9685 }, Point { x: 1727.9224, y: 2839.7646 });
+        let stars_1 = vec![t1.a, t1.b, t1.c];
+        let stars_2 = vec![t2.a, t2.b, t2.c];
+        let matches = find_matching_triangles(&stars_1, &stars_2);
+        assert_eq!(matches, vec![(t1, t2)]);
+    }
+
+    #[test]
+    fn test_8() {
+        let t1 = Triangle { a: Point { x: 1744.9852, y: 2597.812 }, b: Point { x: 3941.397, y: 835.62366 }, c: Point { x: 1289.2603, y: 1295.592 }, a_to_b: 2815.9424, b_to_c: 2691.728, c_to_a: 1379.6602 };
+        let t2 = Triangle { a: Point { x: 1236.1643, y: 1305.9685 }, b: Point { x: 1692.487, y: 2608.3726 }, c: Point { x: 3888.0122, y: 845.60425 }, a_to_b: 1380.0315, b_to_c: 2815.614, c_to_a: 2691.5112 };
         let stars_1 = vec![t1.a, t1.b, t1.c];
         let stars_2 = vec![t2.a, t2.b, t2.c];
         let matches = find_matching_triangles(&stars_1, &stars_2);
