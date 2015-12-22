@@ -31,7 +31,10 @@ use types::*;
 
 
 fn main() {
-    let images = vec!["data/big-1.tiff".to_string(), "data/big-2.tiff".to_string()];
+    let images = vec![
+        "data/big-1-c.tiff".to_string(),
+        "data/big-2-c.tiff".to_string()
+    ];
     let res = find_stars(images);
     //for (ref f, ref v) in res.iter() {
         //println!("found {} stars in {:?}", v.len(), f);
@@ -40,6 +43,10 @@ fn main() {
         //}
     //}
     let res = align_images(res);
+    println!("aligned:");
+    for img in res.iter() {
+        println!("{:?}", img);
+    }
     let _res = stack_images(res);
     // TODO: save res
 }

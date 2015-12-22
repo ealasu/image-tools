@@ -111,12 +111,13 @@ pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Vector {
         //println!("m: {:?}", m);
     //}
     //println!("{},{},{},{},{},{}", t.a.x, t.a.y, t.b.x, t.b.y, t.c.x, t.c.y);
-    matches.into_iter().map(|(r, m)| {
+    let transforms = matches.into_iter().map(|(r, m)| {
         // average of all three transforms
         ((r.a - m.a) + (r.b - m.b) + (r.c - m.c)) / 3.0
-    });
-
-    Vector {x: 0.0, y: 0.0}
+        //vec![(r.a - m.a), (r.b - m.b), (r.c - m.c)]
+    }).collect::<Vec<Vector>>();
+    let avg = transforms.iter().fold(Vector {x: 0.0, y: 0.0}, |acc, &i| acc + i) / transforms.len() as f32;
+    avg
 }
 
 #[cfg(test)]

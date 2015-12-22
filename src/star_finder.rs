@@ -38,8 +38,8 @@ impl<'a> StarFinder<'a> {
         //println!("bg_threshold: {}", bg_threshold);
         //println!("fg_threshold: {}", fg_threshold);
         let kernel_size = 2;
-        let x_padding = max(kernel_size, image.width / 2 / 3);
-        let y_padding = max(kernel_size, image.height / 2 / 3);
+        let x_padding = max(kernel_size, image.width / 4);
+        let y_padding = max(kernel_size, image.height / 4);
 
         StarFinder {
             image: image,
