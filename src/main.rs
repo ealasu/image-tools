@@ -43,6 +43,8 @@ fn main() {
         f.metadata().unwrap().is_file()
     }).map(|f| {
         f.path().to_str().unwrap().to_string()
+    }).filter(|f| {
+        f.ends_with(".tif") || f.ends_with(".tiff")
     }).collect::<Vec<_>>();
     //let images = vec![
         //"data/images/IMG_5450.tif".to_string(),
