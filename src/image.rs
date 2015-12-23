@@ -83,6 +83,11 @@ impl Image {
         &self.data
     }
 
+    #[inline(always)]
+    pub fn pixels_mut(&mut self) -> &mut Vec<Pixel> {
+        &mut self.data
+    }
+
     //pub fn iter_pixels(&mut self) -> () {
         //let mut i = (0..);
         //(0..self.height).map(|y| {

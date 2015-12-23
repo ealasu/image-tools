@@ -4,10 +4,6 @@ use image::Image;
 use point::*;
 
 
-struct ImageStack {
-    image: Image,
-}
-
 pub fn resample(image: &Image, x: f32, y: f32) -> f32 {
     let mut src_val = 0f32;
     let dx = x.ceil() - x;
@@ -41,10 +37,17 @@ pub fn resample(image: &Image, x: f32, y: f32) -> f32 {
     src_val
 }
 
+
+pub struct ImageStack {
+    image: Image,
+    count: usize,
+}
+
 impl ImageStack {
     pub fn new(width: usize, height: usize) -> ImageStack {
         ImageStack {
             image: Image::new(width, height),
+            count: 0,
         }
     }
 
@@ -55,9 +58,14 @@ impl ImageStack {
                 *self.image.at_mut(x, y) += resample(image, src_pos.x, src_pos.y);
             }
         }
+        self.count += 1;
     }
 
-    pub fn to_image(self) -> Image {
+    pub fn to_image(mut self) -> Image {
+        let d = self.count as f32;
+        for pixel in self.image.pixels_mut() {
+            *pixel /= d;
+        }
         self.image
     }
 }
@@ -89,7 +97,9 @@ pub fn stack(images: &BTreeMap<String, Vector>) -> Image {
 
 #[cfg(test)]
 mod tests {
+    use test::Bencher;
     use super::*;
+    use point::*;
     use image::Image;
 
     #[test]
@@ -123,5 +133,67 @@ mod tests {
         ]);
         let v = resample(&image, -0.75, -0.75);
         assert_eq!(v, 0.25 * 0.25 * 0.5);
+    }
+
+    #[bench]
+    fn bench_resample(b: &mut Bencher) {
+        let image = Image::from_data(3, 3, vec![
+            0.5, 0.5, 0.5,
+            0.5, 1.0, 0.5,
+            0.5, 0.5, 0.5,
+        ]);
+        b.iter(|| {
+            resample(&image, 1.0, 1.0);
+        });
+    }
+
+    #[test]
+    fn test_stack_1() {
+        let image1 = Image::from_data(3, 3, vec![
+            0.5, 0.5, 0.5,
+            0.5, 1.0, 0.5,
+            0.5, 0.5, 0.5,
+        ]);
+        let mut stacker = ImageStack::new(3, 3);
+        stacker.add(&image1, Vector {x: 0.0, y: 0.0});
+        assert_eq!(*stacker.to_image().pixels(), vec![
+            0.5, 0.5, 0.5,
+            0.5, 1.0, 0.5,
+            0.5, 0.5, 0.5,
+        ]);
+    }
+
+    #[test]
+    fn test_stack_2() {
+        let image1 = Image::from_data(3, 3, vec![
+            0.5, 0.5, 0.5,
+            0.5, 1.0, 0.5,
+            0.5, 0.5, 0.5,
+        ]);
+        let mut stacker = ImageStack::new(3, 3);
+        stacker.add(&image1, Vector {x: 0.0, y: 0.0});
+        stacker.add(&image1, Vector {x: 0.0, y: 0.0});
+        assert_eq!(*stacker.to_image().pixels(), vec![
+            0.5, 0.5, 0.5,
+            0.5, 1.0, 0.5,
+            0.5, 0.5, 0.5,
+        ]);
+    }
+
+    #[test]
+    fn test_stack_3() {
+        let image1 = Image::from_data(3, 3, vec![
+            0.5, 0.5, 0.5,
+            0.5, 1.0, 0.5,
+            0.5, 0.5, 0.5,
+        ]);
+        let mut stacker = ImageStack::new(3, 3);
+        stacker.add(&image1, Vector {x: 0.0, y: 0.0});
+        stacker.add(&image1, Vector {x: 0.5, y: 0.5});
+        assert_eq!(*stacker.to_image().pixels(), vec![
+            0.3125, 0.375, 0.375,
+            0.375, 0.8125, 0.5625,
+            0.375, 0.5625, 0.5625,
+        ]);
     }
 }
