@@ -83,6 +83,15 @@ impl Image {
         &self.data
     }
 
+    //pub fn iter_pixels(&mut self) -> () {
+        //let mut i = (0..);
+        //(0..self.height).map(|y| {
+            //(0..self.width).map(|x| {
+                //(x, y, self.data[i.next().unwrap()]);
+            //})
+        //})
+    //}
+
     //pub fn row(&self, y: usize, left: usize, right: usize) -> &[Pixel] {
         //let start = y * self.width;
         //&self.data[start + left .. start + right]

@@ -8,6 +8,15 @@ struct ImageStack {
     image: Image,
 }
 
+fn resample(image: &Image, x: f32, y: f32) -> f32 {
+    let mut src_val = 0f32;
+    // SW
+    let xf = 0.5f32 - (src_pos.x - floor(src_pos.x));
+    let yf = 1.0f32 - (src_pos.y - floor(src_pos.y));
+    src_val += image.at(src_pos.x, src_pos.y);
+    src_val
+}
+
 impl ImageStack {
     pub fn new(width: usize, height: usize) -> ImageStack {
         ImageStack {
@@ -16,7 +25,12 @@ impl ImageStack {
     }
 
     pub fn add(&mut self, image: &Image, transform: Vector) {
-
+        for y in (0..self.image.height) {
+            for x in (0..self.image.width) {
+                let src_pos = Point {x: x as f32, y: y as f32} - transform;
+                self.image.at_mut(x, y) += resample(image, src_pos.x, src_pos.y);
+            }
+        }
     }
 
     pub fn to_image(self) -> Image {
