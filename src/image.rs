@@ -3,6 +3,11 @@ use std::mem;
 use std::fmt;
 use std::process::Command;
 use std::iter::repeat;
+use std::process::Stdio;
+use std::io::prelude::*;
+use std::fs::File;
+use std::f32;
+use std::u16;
 use regex::Regex;
 
 
@@ -22,7 +27,7 @@ impl fmt::Debug for Image {
 }
 
 impl Image {
-    pub fn load(path: &str) -> Image {
+    pub fn open(path: &str) -> Image {
         let out = Command::new("stream")
             .arg("-map")
             .arg("i")
@@ -39,6 +44,30 @@ impl Image {
         let width = captures[1].parse().unwrap();
         let height = captures[2].parse().unwrap();
         Self::from_data(width, height, vec_of_u8_to_f32(out.stdout))
+    }
+
+    pub fn save(&self, path: &str) {
+        let shorts = vec_of_f32_to_u16(&self.data);
+        let data = vec_of_u16_to_u8(shorts);
+
+        //let data = vec_of_f32_to_u8(self.data.clone());
+        //let mut f = File::create(path).unwrap();
+        //f.write_all(&data).unwrap();
+        //return;
+
+        // convert -size 5184x3456 -depth 16 gray:data/a.dat  data/x.tiff
+        let mut child = Command::new("convert")
+            .arg("-size").arg(format!("{}x{}", self.width, self.height))
+            .arg("-depth").arg("16")
+            //.arg("-define").arg("quantum:format=floating-point")
+            .arg("gray:-")
+            //.arg("FITS:-")
+            .arg(path)
+            .stdin(Stdio::piped())
+            .spawn().unwrap();
+        child.stdin.unwrap().write_all(&data).unwrap();
+        //child.stdin.unwrap().flush().unwrap();
+        //child.wait().unwrap();
     }
 
     pub fn identify(path: &str) -> (usize, usize) {
@@ -70,11 +99,15 @@ impl Image {
 
     #[inline(always)]
     pub fn at(&self, x: usize, y: usize) -> Pixel {
+        //assert!(x < self.width);
+        //assert!(y < self.height);
         self.data[x + y * self.width]
     }
 
     #[inline(always)]
     pub fn at_mut(&mut self, x: usize, y: usize) -> &mut Pixel {
+        //assert!(x < self.width);
+        //assert!(y < self.height);
         &mut self.data[x + y * self.width]
     }
 
@@ -125,3 +158,38 @@ fn vec_of_u8_to_f32(mut data: Vec<u8>) -> Vec<f32> {
     }
 }
 
+fn vec_of_u16_to_u8(mut data: Vec<u16>) -> Vec<u8> {
+    data.shrink_to_fit();
+    let p = data.as_mut_ptr();
+    let len = data.len() * 2;
+    unsafe {
+        mem::forget(data);
+        Vec::from_raw_parts(p as *mut u8, len, len)
+    }
+}
+
+fn vec_of_f32_to_u16(data: &[f32]) -> Vec<u16> {
+    // rescale
+    let src_min = data.iter().fold(f32::MAX, |acc, &v| acc.min(v));
+    let src_max = data.iter().fold(f32::MIN, |acc, &v| acc.max(v));
+    let src_d = src_max - src_min;
+    let dst_min = u16::MIN as f32;
+    let dst_max = u16::MAX as f32;
+    let dst_d = dst_max - dst_min;
+
+    let mut out: Vec<u16> = Vec::with_capacity(data.len());
+    for v in data.iter() {
+        out.push((((*v - src_min) * dst_d) / src_d) as u16);
+    }
+    out
+}
+
+fn vec_of_f32_to_u8(mut data: Vec<f32>) -> Vec<u8> {
+    data.shrink_to_fit();
+    let p = data.as_mut_ptr();
+    let len = data.len() * 4;
+    unsafe {
+        mem::forget(data);
+        Vec::from_raw_parts(p as *mut u8, len, len)
+    }
+}

@@ -39,19 +39,22 @@ fn main() {
         "data/big-1-c.tiff".to_string(),
         "data/big-2-c.tiff".to_string()
     ];
-    //let images = fs::read_dir(Path::new("data/images")).unwrap().map(|f| {
-        //f.unwrap()
-    //}).filter(|f| {
-        //f.metadata().unwrap().is_file()
-    //}).map(|f| {
-        //f.path().to_str().unwrap().to_string()
-    //}).filter(|f| {
-        //f.ends_with(".tif") || f.ends_with(".tiff")
-    //}).collect::<Vec<_>>();
+
+    let images = fs::read_dir(Path::new("data/images")).unwrap().map(|f| {
+        f.unwrap()
+    }).filter(|f| {
+        f.metadata().unwrap().is_file()
+    }).map(|f| {
+        f.path().to_str().unwrap().to_string()
+    }).filter(|f| {
+        f.ends_with(".tif") || f.ends_with(".tiff")
+    }).collect::<Vec<_>>();
+
     //let images = vec![
         //"data/images/IMG_5450.tif".to_string(),
         //"data/images/IMG_5463.tif".to_string(),
     //];
+
     println!("finding stars");
     let res = find_stars(images);
     for (ref f, ref v) in res.iter() {
@@ -70,8 +73,9 @@ fn main() {
 
     println!("stacking");
     let res = star_stacker::stack(&res);
-    // TODO: save res
     println!("res: {:?}", res);
+    //let res = image::Image::open("data/big-1-c.tiff");
+    res.save("data/out.tiff");
 }
 
 fn find_stars(images: Vec<String>) -> ImagesWithStars {
@@ -79,7 +83,7 @@ fn find_stars(images: Vec<String>) -> ImagesWithStars {
     let mut pool = Pool::new(4);
     crossbeam::scope(|scope| {
         pool.map(scope, &images, |filename| {
-            let image = image::Image::load(filename);
+            let image = image::Image::open(filename);
             let stars = star_finder::StarFinder::new(&image);
             let refined_stars = stars.map(|approx_center| {
                 refine_center::refine_star_center(&image, approx_center, aperture)

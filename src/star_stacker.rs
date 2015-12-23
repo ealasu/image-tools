@@ -21,16 +21,19 @@ pub fn resample(image: &Image, x: f32, y: f32) -> f32 {
     let w_x = e_x - 1;
     let n_y = s_y - 1;
 
-    if n_y >= 0 && w_x >= 0 {
+    let w = image.width as isize;
+    let h = image.height as isize;
+
+    if n_y >= 0 && n_y < h && w_x >= 0 && w_x < w {
         src_val += image.at(w_x as usize, n_y as usize) * nw;
     }
-    if n_y >= 0 && e_x < image.width as isize {
+    if n_y >= 0 && n_y < h && e_x >= 0 && e_x < w {
         src_val += image.at(e_x as usize, n_y as usize) * ne;
     }
-    if s_y < image.height as isize && e_x < image.width as isize {
+    if s_y >= 0 && s_y < h && e_x >= 0 && e_x < w {
         src_val += image.at(e_x as usize, s_y as usize) * se;
     }
-    if s_y < image.height as isize && w_x >= 0 {
+    if s_y >= 0 && s_y < h && w_x >= 0 && w_x < w {
         src_val += image.at(w_x as usize, s_y as usize) * sw;
     }
 
@@ -85,12 +88,13 @@ pub fn stack(images: &BTreeMap<String, Vector>) -> Image {
     let bottom = d.iter().map(|&(_, _, bottom, _)| bottom).min().unwrap();
     let top = d.iter().map(|&(top, _, _, _)| top).max().unwrap();
     let height = max(0, bottom - top) as usize;
+    let stack_tx = Vector {x: -(left as f32), y: -(top as f32)};
     assert!(width > 0);
     assert!(height > 0);
     let mut stack = ImageStack::new(width, height);
     for (filename, &tx) in images.iter() {
-        let image = Image::load(filename);
-        stack.add(&image, tx);
+        let image = Image::open(filename);
+        stack.add(&image, tx + stack_tx);
     }
     stack.to_image()
 }
