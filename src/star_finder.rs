@@ -1,14 +1,14 @@
 use std::cmp::max;
 use std::ops::Range;
 use std::f32;
-use image::*;
+use image::Image;
 use point::Point;
 
 
 pub type Star = Point<usize>;
 
 pub struct StarFinder<'a> {
-    image: &'a Image<GrayPixel>,
+    image: &'a Image,
     pos_iter: Range<usize>,
     peak_min: f32,
     peak_max: f32,
@@ -19,7 +19,7 @@ pub struct StarFinder<'a> {
 }
 
 impl<'a> StarFinder<'a> {
-    pub fn new(image: &'a Image<GrayPixel>) -> StarFinder {
+    pub fn new(image: &'a Image) -> StarFinder {
         let min_pixel = image.pixels().iter().fold(f32::MAX, |acc, &v| acc.min(v));
         let max_pixel = image.pixels().iter().fold(f32::MIN, |acc, &v| acc.max(v));
         //println!("max: {}", max);

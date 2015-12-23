@@ -22,7 +22,7 @@ use std::path::Path;
 use simple_parallel::Pool;
 use point::*;
 use types::*;
-use image::*;
+use image::Image;
 
 // steps:
 // - find stars
@@ -84,7 +84,7 @@ fn find_stars(images: Vec<String>) -> ImagesWithStars {
     let mut pool = Pool::new(4);
     crossbeam::scope(|scope| {
         pool.map(scope, &images, |filename| {
-            let image: Image<GrayPixel> = Image::open(filename);
+            let image = image::Image::open(filename);
             let stars = star_finder::StarFinder::new(&image);
             let refined_stars = stars.map(|approx_center| {
                 refine_center::refine_star_center(&image, approx_center, aperture)

@@ -1,9 +1,9 @@
 use std::f32;
-use image::*;
+use image::Image;
 use point::Point;
 
 
-pub fn refine_star_center(image: &Image<GrayPixel>, start: Point<usize>, aperture: usize) -> Point<f32> {
+pub fn refine_star_center(image: &Image, start: Point<usize>, aperture: usize) -> Point<f32> {
     assert!(aperture <= start.x);
     assert!(aperture <= image.width - start.x);
     assert!(aperture <= start.y);
@@ -51,7 +51,7 @@ pub fn centroid(data: &[f32]) -> f32 {
 mod tests {
     use test::Bencher;
     use super::*;
-    use image::*;
+    use image::Image;
     use point::Point;
 
     #[test]
