@@ -1,10 +1,10 @@
 use std::cmp::*;
 use std::collections::BTreeMap;
-use image::Image;
+use image::*;
 use point::*;
 
 
-pub fn resample(image: &Image, x: f32, y: f32) -> f32 {
+pub fn resample<P: Pixel>(image: &Image<P>, x: f32, y: f32) -> f32 {
     let mut src_val = 0f32;
     let dx = x.ceil() - x;
     let dy = y.ceil() - y;
@@ -41,20 +41,20 @@ pub fn resample(image: &Image, x: f32, y: f32) -> f32 {
 }
 
 
-pub struct ImageStack {
-    image: Image,
+pub struct ImageStack<P: Pixel> {
+    image: Image<P>,
     count: usize,
 }
 
-impl ImageStack {
-    pub fn new(width: usize, height: usize) -> ImageStack {
+impl<P: Pixel> ImageStack<P> {
+    pub fn new(width: usize, height: usize) -> Self {
         ImageStack {
             image: Image::new(width, height),
             count: 0,
         }
     }
 
-    pub fn add(&mut self, image: &Image, transform: Vector) {
+    pub fn add(&mut self, image: &Image<P>, transform: Vector) {
         for y in 0..self.image.height {
             for x in 0..self.image.width {
                 let src_pos = Point {x: x as f32, y: y as f32} - transform;
@@ -64,7 +64,7 @@ impl ImageStack {
         self.count += 1;
     }
 
-    pub fn to_image(mut self) -> Image {
+    pub fn to_image(mut self) -> Image<P> {
         let d = self.count as f32;
         for pixel in self.image.pixels_mut() {
             *pixel /= d;
@@ -73,7 +73,7 @@ impl ImageStack {
     }
 }
 
-pub fn stack(images: &BTreeMap<String, Vector>) -> Image {
+pub fn stack<P: Pixel>(images: &BTreeMap<String, Vector>) -> Image<P> {
     let d = images.iter().map(|(filename, &tx)| {
         let (width, height) = Image::identify(&filename);
         let top = tx.y as isize;

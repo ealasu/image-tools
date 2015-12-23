@@ -1,5 +1,6 @@
 use std::str;
 use std::fmt;
+use std::mem;
 use std::process::Command;
 use std::iter::repeat;
 use std::process::Stdio;
@@ -9,26 +10,72 @@ use regex::Regex;
 use convert::Wrap;
 
 
-pub type Pixel = f32;
-
-#[derive(PartialEq)]
-pub struct Image {
-    pub width: usize,
-    pub height: usize,
-    data: Vec<Pixel>,
+pub trait Pixel: Copy + Clone {
+    fn magick_map() -> &'static str;
+    //fn each_component<F>(&self, f: F) where F: Fn(f32);
+    //fn write_as_u16<W: Writer>(w: W) -> IoResult<()>;
 }
 
-impl fmt::Debug for Image {
+#[repr(C, packed)]
+#[derive(Clone, Copy, Debug)]
+pub struct GrayPixel<T: Copy + Clone + Debug>(pub T);
+
+impl<T> Pixel for GrayPixel<T> {
+    fn magick_map() -> &'static str { "i" }
+
+    //fn each_component<F>(&self, f: F) where F: Fn(T) {
+        //f(self.0);
+    //}
+
+    //fn write_as_u16<W: Writer>(w: W) -> IoResult<()> {
+        //w.write(self as 
+    //}
+}
+
+impl From<GrayPixel<f32>> for GrayPixel<u16> {
+    fn from(p: GrayPixel<f32>) -> Self {
+        GrayPixel(p as u16)
+    }
+}
+
+
+#[repr(C, packed)]
+#[derive(Clone, Copy, Debug)]
+pub struct RgbPixel<T: Copy + Clone + Debug> {
+    pub r: T,
+    pub g: T,
+    pub b: T,
+}
+
+impl<T> Pixel for RgbPixel<T> {
+    fn magick_map() -> &'static str { "rgb" }
+
+    //fn each_component<F>(&self, f: F) where F: Fn(f32) {
+        //f(self.r);
+        //f(self.g);
+        //f(self.b);
+    //}
+}
+
+
+#[derive(PartialEq)]
+pub struct Image<P: Pixel> {
+    pub width: usize,
+    pub height: usize,
+    data: Vec<P>,
+}
+
+impl<P: Pixel> fmt::Debug for Image<P> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[image {}x{}]", self.width, self.height)
     }
 }
 
-impl Image {
-    pub fn open(path: &str) -> Image {
+impl<P: Pixel> Image<P> {
+    pub fn open(path: &str) -> Self {
         let out = Command::new("stream")
             .arg("-map")
-            .arg("i")
+            .arg(P::magick_map())
             .arg("-storage-type")
             .arg("float")
             .arg("-verbose")
@@ -46,8 +93,10 @@ impl Image {
     }
 
     pub fn save(&self, path: &str) {
-        let Wrap(shorts): Wrap<Vec<u16>> = Wrap::from(self.data.clone());
-        let Wrap(data) = Wrap::from(shorts);
+        // convert to u16
+        let shorts: Vec<u16> = Wrap(self.data.clone()).into();
+        // then coerce to u8
+        let data = Wrap(shorts).into();
 
         //let data = vec_of_f32_to_u8(self.data.clone());
         //let mut f = File::create(path).unwrap();
@@ -82,13 +131,13 @@ impl Image {
         (width, height)
     }
 
-    pub fn new(width: usize, height: usize) -> Image {
+    pub fn new(width: usize, height: usize) -> Self {
         let mut data = Vec::with_capacity(width * height);
         data.extend(repeat(0.0).take(width * height));
         Self::from_data(width, height, data)
     }
 
-    pub fn from_data(width: usize, height: usize, data: Vec<Pixel>) -> Image {
+    pub fn from_data(width: usize, height: usize, data: Vec<P>) -> Self {
         Image {
             width: width,
             height: height,
@@ -97,26 +146,26 @@ impl Image {
     }
 
     #[inline(always)]
-    pub fn at(&self, x: usize, y: usize) -> Pixel {
+    pub fn at(&self, x: usize, y: usize) -> P {
         //assert!(x < self.width);
         //assert!(y < self.height);
         self.data[x + y * self.width]
     }
 
     #[inline(always)]
-    pub fn at_mut(&mut self, x: usize, y: usize) -> &mut Pixel {
+    pub fn at_mut(&mut self, x: usize, y: usize) -> &mut P {
         //assert!(x < self.width);
         //assert!(y < self.height);
         &mut self.data[x + y * self.width]
     }
 
     #[inline(always)]
-    pub fn pixels(&self) -> &Vec<Pixel> {
+    pub fn pixels(&self) -> &Vec<P> {
         &self.data
     }
 
     #[inline(always)]
-    pub fn pixels_mut(&mut self) -> &mut Vec<Pixel> {
+    pub fn pixels_mut(&mut self) -> &mut Vec<P> {
         &mut self.data
     }
 
