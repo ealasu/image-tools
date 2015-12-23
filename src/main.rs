@@ -11,6 +11,7 @@ mod image;
 mod star_finder;
 mod refine_center;
 mod star_aligner;
+mod star_stacker;
 mod types;
 mod math;
 mod triangle;
@@ -20,6 +21,7 @@ use std::path::Path;
 use simple_parallel::Pool;
 use point::*;
 use types::*;
+use image::Image;
 
 // steps:
 // - find stars
@@ -62,8 +64,9 @@ fn main() {
     for img in res.iter() {
         println!("{:?}", img);
     }
-    let _res = stack_images(res);
+    let res = star_stacker::stack(&res);
     // TODO: save res
+    println!("res: {:?}", res);
 }
 
 fn find_stars(images: Vec<String>) -> ImagesWithStars {
@@ -94,7 +97,3 @@ fn align_images(images: ImagesWithStars) -> ImagesWithAlignment {
     res.insert(first_image.clone(), Vector {x: 0.0, y: 0.0});
     res
 }
-
-fn stack_images(_images: ImagesWithAlignment) {
-}
-

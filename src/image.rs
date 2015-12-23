@@ -2,6 +2,7 @@ use std::str;
 use std::mem;
 use std::fmt;
 use std::process::Command;
+use std::iter::repeat;
 use regex::Regex;
 
 
@@ -37,10 +38,29 @@ impl Image {
         let captures = re.captures(stderr).unwrap();
         let width = captures[1].parse().unwrap();
         let height = captures[2].parse().unwrap();
-        Self::new(width, height, vec_of_u8_to_f32(out.stdout))
+        Self::from_data(width, height, vec_of_u8_to_f32(out.stdout))
     }
 
-    pub fn new(width: usize, height: usize, data: Vec<Pixel>) -> Image {
+    pub fn identify(path: &str) -> (usize, usize) {
+        let out = Command::new("identify")
+            .arg(path)
+            .output()
+            .unwrap();
+        let stderr = str::from_utf8(&out.stderr).unwrap();
+        let re = Regex::new(r" (\d+)x(\d+) ").unwrap();
+        let captures = re.captures(stderr).unwrap();
+        let width = captures[1].parse().unwrap();
+        let height = captures[2].parse().unwrap();
+        (width, height)
+    }
+
+    pub fn new(width: usize, height: usize) -> Image {
+        let mut data = Vec::with_capacity(width * height);
+        data.extend(repeat(0.0).take(width * height));
+        Self::from_data(width, height, data)
+    }
+
+    pub fn from_data(width: usize, height: usize, data: Vec<Pixel>) -> Image {
         Image {
             width: width,
             height: height,
@@ -51,6 +71,11 @@ impl Image {
     #[inline(always)]
     pub fn at(&self, x: usize, y: usize) -> Pixel {
         self.data[x + y * self.width]
+    }
+
+    #[inline(always)]
+    pub fn at_mut(&mut self, x: usize, y: usize) -> &mut Pixel {
+        &mut self.data[x + y * self.width]
     }
 
     #[inline(always)]
