@@ -1,14 +1,12 @@
 use std::str;
-use std::mem;
 use std::fmt;
 use std::process::Command;
 use std::iter::repeat;
 use std::process::Stdio;
 use std::io::prelude::*;
 use std::fs::File;
-use std::f32;
-use std::u16;
 use regex::Regex;
+use convert::Wrap;
 
 
 pub type Pixel = f32;
@@ -43,12 +41,13 @@ impl Image {
         let captures = re.captures(stderr).unwrap();
         let width = captures[1].parse().unwrap();
         let height = captures[2].parse().unwrap();
-        Self::from_data(width, height, vec_of_u8_to_f32(out.stdout))
+        let Wrap(data) = Wrap::from(out.stdout);
+        Self::from_data(width, height, data)
     }
 
     pub fn save(&self, path: &str) {
-        let shorts = vec_of_f32_to_u16(&self.data);
-        let data = vec_of_u16_to_u8(shorts);
+        let Wrap(shorts): Wrap<Vec<u16>> = Wrap::from(self.data.clone());
+        let Wrap(data) = Wrap::from(shorts);
 
         //let data = vec_of_f32_to_u8(self.data.clone());
         //let mut f = File::create(path).unwrap();
@@ -148,48 +147,3 @@ impl Image {
     //}
 }
 
-fn vec_of_u8_to_f32(mut data: Vec<u8>) -> Vec<f32> {
-    data.shrink_to_fit();
-    let p = data.as_mut_ptr();
-    let len = data.len() / 4;
-    unsafe {
-        mem::forget(data);
-        Vec::from_raw_parts(p as *mut f32, len, len)
-    }
-}
-
-fn vec_of_u16_to_u8(mut data: Vec<u16>) -> Vec<u8> {
-    data.shrink_to_fit();
-    let p = data.as_mut_ptr();
-    let len = data.len() * 2;
-    unsafe {
-        mem::forget(data);
-        Vec::from_raw_parts(p as *mut u8, len, len)
-    }
-}
-
-fn vec_of_f32_to_u16(data: &[f32]) -> Vec<u16> {
-    // rescale
-    let src_min = data.iter().fold(f32::MAX, |acc, &v| acc.min(v));
-    let src_max = data.iter().fold(f32::MIN, |acc, &v| acc.max(v));
-    let src_d = src_max - src_min;
-    let dst_min = u16::MIN as f32;
-    let dst_max = u16::MAX as f32;
-    let dst_d = dst_max - dst_min;
-
-    let mut out: Vec<u16> = Vec::with_capacity(data.len());
-    for v in data.iter() {
-        out.push((((*v - src_min) * dst_d) / src_d) as u16);
-    }
-    out
-}
-
-fn vec_of_f32_to_u8(mut data: Vec<f32>) -> Vec<u8> {
-    data.shrink_to_fit();
-    let p = data.as_mut_ptr();
-    let len = data.len() * 4;
-    unsafe {
-        mem::forget(data);
-        Vec::from_raw_parts(p as *mut u8, len, len)
-    }
-}

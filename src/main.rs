@@ -15,6 +15,7 @@ mod star_stacker;
 mod types;
 mod math;
 mod triangle;
+mod convert;
 
 use std::fs;
 use std::path::Path;

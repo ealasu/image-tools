@@ -55,8 +55,8 @@ impl ImageStack {
     }
 
     pub fn add(&mut self, image: &Image, transform: Vector) {
-        for y in (0..self.image.height) {
-            for x in (0..self.image.width) {
+        for y in 0..self.image.height {
+            for x in 0..self.image.width {
                 let src_pos = Point {x: x as f32, y: y as f32} - transform;
                 *self.image.at_mut(x, y) += resample(image, src_pos.x, src_pos.y);
             }
