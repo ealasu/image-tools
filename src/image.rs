@@ -46,9 +46,9 @@ impl Image {
             .arg(path)
             .output()
             .unwrap();
-        let stderr = str::from_utf8(&out.stderr).unwrap();
+        let stdout = str::from_utf8(&out.stdout).unwrap();
         let re = Regex::new(r" (\d+)x(\d+) ").unwrap();
-        let captures = re.captures(stderr).unwrap();
+        let captures = re.captures(stdout).unwrap();
         let width = captures[1].parse().unwrap();
         let height = captures[2].parse().unwrap();
         (width, height)

@@ -35,23 +35,24 @@ use image::Image;
 
 
 fn main() {
-    //let images = vec![
-        //"data/big-1-c.tiff".to_string(),
-        //"data/big-2-c.tiff".to_string()
-    //];
-    let images = fs::read_dir(Path::new("data/images")).unwrap().map(|f| {
-        f.unwrap()
-    }).filter(|f| {
-        f.metadata().unwrap().is_file()
-    }).map(|f| {
-        f.path().to_str().unwrap().to_string()
-    }).filter(|f| {
-        f.ends_with(".tif") || f.ends_with(".tiff")
-    }).collect::<Vec<_>>();
+    let images = vec![
+        "data/big-1-c.tiff".to_string(),
+        "data/big-2-c.tiff".to_string()
+    ];
+    //let images = fs::read_dir(Path::new("data/images")).unwrap().map(|f| {
+        //f.unwrap()
+    //}).filter(|f| {
+        //f.metadata().unwrap().is_file()
+    //}).map(|f| {
+        //f.path().to_str().unwrap().to_string()
+    //}).filter(|f| {
+        //f.ends_with(".tif") || f.ends_with(".tiff")
+    //}).collect::<Vec<_>>();
     //let images = vec![
         //"data/images/IMG_5450.tif".to_string(),
         //"data/images/IMG_5463.tif".to_string(),
     //];
+    println!("finding stars");
     let res = find_stars(images);
     for (ref f, ref v) in res.iter() {
         println!("found {} stars in {:?}", v.len(), f);
@@ -59,11 +60,15 @@ fn main() {
             println!("{},{}", star.x, star.y);
         }
     }
+
+    println!("aligning");
     let res = align_images(res);
     println!("aligned:");
     for img in res.iter() {
         println!("{:?}", img);
     }
+
+    println!("stacking");
     let res = star_stacker::stack(&res);
     // TODO: save res
     println!("res: {:?}", res);
