@@ -5,30 +5,6 @@ use std::u16;
 
 pub struct Wrap<T>(pub T);
 
-impl From<Vec<u16>> for Wrap<Vec<u8>> {
-    fn from(mut data: Vec<u16>) -> Self {
-        data.shrink_to_fit();
-        let p = data.as_mut_ptr();
-        let len = data.len() * 2;
-        unsafe {
-            mem::forget(data);
-            Wrap(Vec::from_raw_parts(p as *mut u8, len, len))
-        }
-    }
-}
-
-impl From<Vec<u8>> for Wrap<Vec<f32>> {
-    fn from(mut data: Vec<u8>) -> Self {
-        data.shrink_to_fit();
-        let p = data.as_mut_ptr();
-        let len = data.len() / 4;
-        unsafe {
-            mem::forget(data);
-            Wrap(Vec::from_raw_parts(p as *mut f32, len, len))
-        }
-    }
-}
-
 impl From<Vec<f32>> for Wrap<Vec<u16>> {
     fn from(data: Vec<f32>) -> Self {
         // rescale
@@ -47,11 +23,30 @@ impl From<Vec<f32>> for Wrap<Vec<u16>> {
     }
 }
 
-impl From<Vec<f32>> for Wrap<Vec<u8>> {
-    fn from(mut data: Vec<f32>) -> Self {
+macro_rules! impl_from_vec_u8 {
+    ($t:ty) => {
+        impl From<Vec<u8>> for Wrap<Vec<$t>> {
+            fn from(mut data: Vec<u8>) -> Self {
+                data.shrink_to_fit();
+                let p = data.as_mut_ptr();
+                let len = data.len() / mem::size_of::<$t>();
+                unsafe {
+                    mem::forget(data);
+                    Wrap(Vec::from_raw_parts(p as *mut $t, len, len))
+                }
+            }
+        }
+    };
+}
+
+impl_from_vec_u8!(f32); 
+impl_from_vec_u8!(u16); 
+
+impl<T> From<Vec<T>> for Wrap<Vec<u8>> {
+    fn from(mut data: Vec<T>) -> Self {
         data.shrink_to_fit();
         let p = data.as_mut_ptr();
-        let len = data.len() * 4;
+        let len = data.len() * mem::size_of::<T>();
         unsafe {
             mem::forget(data);
             Wrap(Vec::from_raw_parts(p as *mut u8, len, len))
