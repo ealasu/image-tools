@@ -1,5 +1,7 @@
 use std::str;
 use std::fmt;
+use std::f32;
+use std::u16;
 use std::mem;
 use std::process::Command;
 use std::iter::repeat;
@@ -65,35 +67,72 @@ impl Channel {
 }
 
 
+//fn magick_stream(path: &str, map: &str) -> (usize, usize, Vec<f32>) {
+    //let out = Command::new("stream")
+        //.arg("-map")
+        //.arg(map)
+        //.arg("-storage-type")
+        //.arg("float")
+        //.arg("-verbose")
+        //.arg(path)
+        //.arg("-")
+        //.output()
+        //.unwrap();
+    //let stderr = str::from_utf8(&out.stderr).unwrap();
+    //let re = Regex::new(r" (\d+)x(\d+) ").unwrap();
+    //let captures = re.captures(stderr).unwrap();
+    //let width = captures[1].parse().unwrap();
+    //let height = captures[2].parse().unwrap();
+    //let Wrap(data) = Wrap::from(out.stdout);
+    //(width, height, data)
+//}
+
 fn magick_stream(path: &str, map: &str) -> (usize, usize, Vec<f32>) {
-    let out = Command::new("stream")
-        .arg("-map")
-        .arg(map)
-        .arg("-storage-type")
-        .arg("float")
+    let out = Command::new("convert")
         .arg("-verbose")
         .arg(path)
-        .arg("-")
+        .arg("-depth").arg("32")
+        .arg("-define").arg("quantum:format=floating-point")
+        //.arg("-storage-type").arg("float")
+        .arg(format!("{}:-", map))
         .output()
         .unwrap();
     let stderr = str::from_utf8(&out.stderr).unwrap();
+    println!("stderr: {}", stderr);
     let re = Regex::new(r" (\d+)x(\d+) ").unwrap();
     let captures = re.captures(stderr).unwrap();
     let width = captures[1].parse().unwrap();
     let height = captures[2].parse().unwrap();
+    println!("u8 data len: {}", out.stdout.len());
     let Wrap(data) = Wrap::from(out.stdout);
     (width, height, data)
 }
 
-fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, path: &str) {
-    let Wrap(data): Wrap<Vec<u8>> = Wrap::from(data.to_vec());
-    let mut child = Command::new("convert")
+fn rescale(data: &[f32]) -> Vec<u16> {
+    let src_min = data.iter().fold(f32::MAX, |acc, &v| acc.min(v));
+    let src_max = data.iter().fold(f32::MIN, |acc, &v| acc.max(v));
+    let src_d = src_max - src_min;
+    let dst_min = u16::MIN as f32;
+    let dst_max = u16::MAX as f32;
+    let dst_d = dst_max - dst_min;
+
+    let mut out: Vec<u16> = Vec::with_capacity(data.len());
+    for v in data.iter() {
+        out.push((((*v - src_min) * dst_d) / src_d) as u16);
+    }
+    out
+}
+
+fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, magick_type: &str, path: &str) {
+    let data = rescale(data);
+    let Wrap(data): Wrap<Vec<u8>> = Wrap::from(data);
+    let child = Command::new("convert")
         .arg("-size").arg(format!("{}x{}", width, height))
-        .arg("-depth").arg("32")
-        .arg("-define").arg("quantum:format=floating-point")
-        .arg(format!("{}:-", format))
-        //.arg("FITS:-")
         .arg("-depth").arg("16")
+        //.arg("-define").arg("quantum:format=floating-point")
+        .arg(format!("{}:-", format))
+        //.arg("-depth").arg("16")
+        .arg("-type").arg(magick_type)
         .arg(path)
         .stdin(Stdio::piped())
         .spawn().unwrap();
@@ -101,7 +140,7 @@ fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, path:
 }
 
 
-#[repr(C, packed)]
+#[repr(C)]
 #[derive(Copy, Clone)]
 struct Rgb {
     r: f32,
@@ -122,14 +161,17 @@ pub struct Image {
 
 impl Image {
     pub fn open_gray(path: &str) -> Image {
-        let (width, height, data) = magick_stream(path, "i");
+        let (width, height, data) = magick_stream(path, "gray");
         let layer = Channel::from_data(width, height, data);
         Self::new(vec![layer])
     }
 
     pub fn open_rgb(path: &str) -> Image {
+        println!("sizeof rgb: {}", mem::size_of::<Rgb>());
         let (width, height, data) = magick_stream(path, "rgb");
+        println!("f32 data len: {}", data.len());
         let Wrap(data): Wrap<Vec<Rgb>> = Wrap::from(data);
+        assert_eq!(data.len(), width * height);
         let r = data.iter().map(|&p| p.r).collect();
         let g = data.iter().map(|&p| p.r).collect();
         let b = data.iter().map(|&p| p.r).collect();
@@ -143,7 +185,7 @@ impl Image {
     pub fn save_gray(&self, path: &str) {
         assert_eq!(self.channels.len(), 1);
         let layer = &self.channels[0];
-        magick_convert(layer.pixels(), layer.width, layer.height, "gray", path);
+        magick_convert(layer.pixels(), layer.width, layer.height, "gray", "grayscale", path);
 
         //let data = vec_of_f32_to_u8(self.data.clone());
         //let mut f = File::create(path).unwrap();
@@ -163,7 +205,7 @@ impl Image {
             }
         }).collect::<Vec<_>>();
         let Wrap(data) = Wrap::from(rgb);
-        magick_convert(&data, r.width, r.height, "rgb", path);
+        magick_convert(&data, r.width, r.height, "rgb", "truecolor", path);
     }
 
     pub fn new(channels: Vec<Channel>) -> Self {

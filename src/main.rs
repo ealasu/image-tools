@@ -23,7 +23,7 @@ use std::path::Path;
 use simple_parallel::Pool;
 use point::*;
 use types::*;
-use image::Image;
+use image::*;
 
 // steps:
 // - find stars
@@ -37,10 +37,10 @@ use image::Image;
 
 
 fn main() {
-    let images = vec![
-        "data/big-1-c.tiff".to_string(),
-        "data/big-2-c.tiff".to_string()
-    ];
+    //let images = vec![
+        //"data/big-1-c.tiff".to_string(),
+        //"data/big-2-c.tiff".to_string()
+    //];
 
     let images = fs::read_dir(Path::new("data/images")).unwrap().map(|f| {
         f.unwrap()
