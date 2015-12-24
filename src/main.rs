@@ -28,21 +28,12 @@ use point::*;
 use types::*;
 use image::*;
 
-// steps:
-// - find stars
-//   needs: list of images
-//   (optional: eliminate images with distorted stars)
-// - calculate alignment
-//   needs: stars
-// - stack
-//   needs: alignment
-//
 
 const USAGE: &'static str = "
 Stacker.
 
 Usage:
-    stacker <output> <input>...
+    stack <output> <input>...
 ";
 
 #[derive(Debug, RustcDecodable)]
@@ -56,26 +47,6 @@ fn main() {
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
 
-    //let images = vec![
-        //"data/big-1-c.tiff".to_string(),
-        //"data/big-2-c.tiff".to_string()
-    //];
-
-    //let images = fs::read_dir(Path::new("data/images")).unwrap().map(|f| {
-        //f.unwrap()
-    //}).filter(|f| {
-        //f.metadata().unwrap().is_file()
-    //}).map(|f| {
-        //f.path().to_str().unwrap().to_string()
-    //}).filter(|f| {
-        //f.ends_with(".tif") || f.ends_with(".tiff")
-    //}).collect::<Vec<_>>();
-
-    //let images = vec![
-        //"data/images/IMG_5450.tif".to_string(),
-        //"data/images/IMG_5463.tif".to_string(),
-    //];
-
     println!("finding stars");
     let res = find_stars(args.arg_input);
     for (ref f, ref v) in res.iter() {
@@ -84,6 +55,7 @@ fn main() {
             println!("{},{}", star.x, star.y);
         }
     }
+    // TODO: eliminate images with distorted stars
 
     println!("aligning");
     let res = align_images(res);
