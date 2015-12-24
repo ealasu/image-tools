@@ -1,10 +1,10 @@
 use std::cmp::*;
 use std::collections::BTreeMap;
-use image::Image;
+use image::*;
 use point::*;
 
 
-pub fn resample(image: &Image, x: f32, y: f32) -> f32 {
+pub fn resample(image: &Channel, x: f32, y: f32) -> f32 {
     let mut src_val = 0f32;
     let dx = x.ceil() - x;
     let dy = y.ceil() - y;
@@ -47,9 +47,10 @@ pub struct ImageStack {
 }
 
 impl ImageStack {
-    pub fn new(width: usize, height: usize) -> ImageStack {
+    pub fn new(width: usize, height: usize, channel_count: usize) -> ImageStack {
+        let channels = (0..channel_count).map(|_| Channel::new(width, height)).collect();
         ImageStack {
-            image: Image::new(width, height),
+            image: Image::new(channels),
             count: 0,
         }
     }

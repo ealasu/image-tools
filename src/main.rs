@@ -6,6 +6,8 @@ extern crate crossbeam;
 extern crate simple_parallel;
 extern crate itertools;
 
+#[macro_use]
+mod convert;
 mod point;
 mod image;
 mod star_finder;
@@ -15,7 +17,6 @@ mod star_stacker;
 mod types;
 mod math;
 mod triangle;
-mod convert;
 
 use std::fs;
 use std::path::Path;

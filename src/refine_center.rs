@@ -1,9 +1,9 @@
 use std::f32;
-use image::Image;
+use image::*;
 use point::Point;
 
 
-pub fn refine_star_center(image: &Image, start: Point<usize>, aperture: usize) -> Point<f32> {
+pub fn refine_star_center(image: &Channel, start: Point<usize>, aperture: usize) -> Point<f32> {
     assert!(aperture <= start.x);
     assert!(aperture <= image.width - start.x);
     assert!(aperture <= start.y);
