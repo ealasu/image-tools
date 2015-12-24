@@ -74,10 +74,7 @@ fn main() {
     }
 
     println!("stacking");
-    let res = star_stacker::stack(&res);
-    println!("res: {:?}", res);
-    //let res = image::Image::open("data/big-1-c.tiff");
-    res.save_rgb("data/out.tiff");
+    star_stacker::stack(&res);
 }
 
 fn find_stars(images: Vec<String>) -> ImagesWithStars {
