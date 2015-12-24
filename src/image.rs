@@ -102,6 +102,7 @@ fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, path:
 
 
 #[repr(C, packed)]
+#[derive(Copy, Clone)]
 struct Rgb {
     r: f32,
     g: f32,
@@ -115,6 +116,8 @@ impl_from_to!(f32, Rgb);
 #[derive(Debug)]
 pub struct Image {
     pub channels: Vec<Channel>,
+    pub width: usize,
+    pub height: usize,
 }
 
 impl Image {
@@ -139,7 +142,7 @@ impl Image {
 
     pub fn save_gray(&self, path: &str) {
         assert_eq!(self.channels.len(), 1);
-        let layer = self.channels[0];
+        let layer = &self.channels[0];
         magick_convert(layer.pixels(), layer.width, layer.height, "gray", path);
 
         //let data = vec_of_f32_to_u8(self.data.clone());
@@ -149,9 +152,9 @@ impl Image {
 
     pub fn save_rgb(&self, path: &str) {
         assert_eq!(self.channels.len(), 3);
-        let r = self.channels[0];
-        let g = self.channels[1];
-        let b = self.channels[2];
+        let r = &self.channels[0];
+        let g = &self.channels[1];
+        let b = &self.channels[2];
         let rgb = (0..r.width * r.height).map(|i| {
             Rgb {
                 r: r.pixels()[i],
@@ -164,7 +167,16 @@ impl Image {
     }
 
     pub fn new(channels: Vec<Channel>) -> Self {
+        assert!(channels.len() > 0);
+        let w = channels[0].width;
+        let h = channels[0].height;
+        for c in channels.iter() {
+            assert_eq!(c.width, w);
+            assert_eq!(c.height, h);
+        }
         Image {
+            width: w,
+            height: h,
             channels: channels,
         }
     }

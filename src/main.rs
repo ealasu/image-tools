@@ -77,7 +77,7 @@ fn main() {
     let res = star_stacker::stack(&res);
     println!("res: {:?}", res);
     //let res = image::Image::open("data/big-1-c.tiff");
-    res.save("data/out.tiff");
+    res.save_rgb("data/out.tiff");
 }
 
 fn find_stars(images: Vec<String>) -> ImagesWithStars {
@@ -85,10 +85,11 @@ fn find_stars(images: Vec<String>) -> ImagesWithStars {
     let mut pool = Pool::new(4);
     crossbeam::scope(|scope| {
         pool.map(scope, &images, |filename| {
-            let image = image::Image::open(filename);
-            let stars = star_finder::StarFinder::new(&image);
+            let image = image::Image::open_gray(filename);
+            let channel = &image.channels[0];
+            let stars = star_finder::StarFinder::new(channel);
             let refined_stars = stars.map(|approx_center| {
-                refine_center::refine_star_center(&image, approx_center, aperture)
+                refine_center::refine_star_center(channel, approx_center, aperture)
             }).collect::<Vec<_>>();
             (filename.clone(), refined_stars)
         }).collect()

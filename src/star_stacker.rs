@@ -56,10 +56,12 @@ impl ImageStack {
     }
 
     pub fn add(&mut self, image: &Image, transform: Vector) {
-        for y in 0..self.image.height {
-            for x in 0..self.image.width {
-                let src_pos = Point {x: x as f32, y: y as f32} - transform;
-                *self.image.at_mut(x, y) += resample(image, src_pos.x, src_pos.y);
+        for (dst, src) in self.image.channels.iter_mut().zip(image.channels.iter()) {
+            for y in 0..dst.height {
+                for x in 0..dst.width {
+                    let src_pos = Point {x: x as f32, y: y as f32} - transform;
+                    *dst.at_mut(x, y) += resample(src, src_pos.x, src_pos.y);
+                }
             }
         }
         self.count += 1;
@@ -67,8 +69,10 @@ impl ImageStack {
 
     pub fn to_image(mut self) -> Image {
         let d = self.count as f32;
-        for pixel in self.image.pixels_mut() {
-            *pixel /= d;
+        for c in self.image.channels.iter_mut() {
+            for pixel in c.pixels_mut() {
+                *pixel /= d;
+            }
         }
         self.image
     }
@@ -92,9 +96,9 @@ pub fn stack(images: &BTreeMap<String, Vector>) -> Image {
     let stack_tx = Vector {x: -(left as f32), y: -(top as f32)};
     assert!(width > 0);
     assert!(height > 0);
-    let mut stack = ImageStack::new(width, height);
+    let mut stack = ImageStack::new(width, height, 3);
     for (filename, &tx) in images.iter() {
-        let image = Image::open(filename);
+        let image = Image::open_rgb(filename);
         stack.add(&image, tx + stack_tx);
     }
     stack.to_image()
