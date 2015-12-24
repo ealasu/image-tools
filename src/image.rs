@@ -2,12 +2,10 @@ use std::str;
 use std::fmt;
 use std::f32;
 use std::u16;
-use std::mem;
 use std::process::Command;
 use std::iter::repeat;
 use std::process::Stdio;
 use std::io::prelude::*;
-use std::fs::File;
 use regex::Regex;
 use convert::Wrap;
 
@@ -67,33 +65,12 @@ impl Channel {
 }
 
 
-//fn magick_stream(path: &str, map: &str) -> (usize, usize, Vec<f32>) {
-    //let out = Command::new("stream")
-        //.arg("-map")
-        //.arg(map)
-        //.arg("-storage-type")
-        //.arg("float")
-        //.arg("-verbose")
-        //.arg(path)
-        //.arg("-")
-        //.output()
-        //.unwrap();
-    //let stderr = str::from_utf8(&out.stderr).unwrap();
-    //let re = Regex::new(r" (\d+)x(\d+) ").unwrap();
-    //let captures = re.captures(stderr).unwrap();
-    //let width = captures[1].parse().unwrap();
-    //let height = captures[2].parse().unwrap();
-    //let Wrap(data) = Wrap::from(out.stdout);
-    //(width, height, data)
-//}
-
 fn magick_stream(path: &str, map: &str) -> (usize, usize, Vec<f32>) {
     let out = Command::new("convert")
         .arg("-verbose")
         .arg(path)
         .arg("-depth").arg("32")
         .arg("-define").arg("quantum:format=floating-point")
-        //.arg("-storage-type").arg("float")
         .arg(format!("{}:-", map))
         .output()
         .unwrap();
@@ -167,9 +144,7 @@ impl Image {
     }
 
     pub fn open_rgb(path: &str) -> Image {
-        println!("sizeof rgb: {}", mem::size_of::<Rgb>());
         let (width, height, data) = magick_stream(path, "rgb");
-        println!("f32 data len: {}", data.len());
         let Wrap(data): Wrap<Vec<Rgb>> = Wrap::from(data);
         assert_eq!(data.len(), width * height);
         let r = data.iter().map(|&p| p.r).collect();
@@ -186,10 +161,6 @@ impl Image {
         assert_eq!(self.channels.len(), 1);
         let layer = &self.channels[0];
         magick_convert(layer.pixels(), layer.width, layer.height, "gray", "grayscale", path);
-
-        //let data = vec_of_f32_to_u8(self.data.clone());
-        //let mut f = File::create(path).unwrap();
-        //f.write_all(&data).unwrap();
     }
 
     pub fn save_rgb(&self, path: &str) {
@@ -235,32 +206,4 @@ impl Image {
         let height = captures[2].parse().unwrap();
         (width, height)
     }
-
-
-    //pub fn iter_pixels(&mut self) -> () {
-        //let mut i = (0..);
-        //(0..self.height).map(|y| {
-            //(0..self.width).map(|x| {
-                //(x, y, self.data[i.next().unwrap()]);
-            //})
-        //})
-    //}
-
-    //pub fn row(&self, y: usize, left: usize, right: usize) -> &[Pixel] {
-        //let start = y * self.width;
-        //&self.data[start + left .. start + right]
-    //}
-
-    //pub fn crop(&self, left: usize, top: usize, right: usize, bottom: usize) -> Image {
-        //assert!(right > left);
-        //assert!(bottom > top);
-        //let width = right - left;
-        //let height = bottom - top;
-        //let mut data = Vec::with_capacity(width * height);
-        //for y in top..bottom {
-            //data.extend_from_slice(self.row(y, left, right));
-        //}
-        //Self::new(width, height, data)
-    //}
 }
-

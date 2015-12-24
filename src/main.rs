@@ -20,13 +20,10 @@ mod types;
 mod math;
 mod triangle;
 
-use std::fs;
-use std::path::Path;
 use simple_parallel::Pool;
 use docopt::Docopt;
 use point::*;
 use types::*;
-use image::*;
 
 
 const USAGE: &'static str = "
