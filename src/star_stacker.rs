@@ -78,7 +78,7 @@ impl ImageStack {
     }
 }
 
-pub fn stack(images: &BTreeMap<String, Vector>) {
+pub fn stack(images: &BTreeMap<String, Vector>, out_path: &str) {
     // calculate dimensions
     let d = images.iter().map(|(filename, &tx)| {
         let (width, height) = Image::identify(&filename);
@@ -109,7 +109,7 @@ pub fn stack(images: &BTreeMap<String, Vector>) {
     // save
     println!("res: {:?}", image);
     //let res = image::Image::open("data/big-1-c.tiff");
-    image.save_gray("data/out.tiff");
+    image.save_gray(out_path);
 }
 
 #[cfg(test)]

@@ -102,8 +102,11 @@ pub fn find_matching_triangles(ref_stars: &[Star], other_stars: &[Star]) -> Vec<
     }).collect()
 }
 
-pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Vector {
+pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Option<Vector> {
     let matches = find_matching_triangles(ref_stars, other_stars);
+    if matches.is_empty() {
+        return None;
+    }
     println!("matching triangles: {}", matches.len());
     //for &(t, m) in matches.iter() {
         //println!("match: {}", distance(t.a, m.a));
@@ -117,7 +120,7 @@ pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Vector {
         //vec![(r.a - m.a), (r.b - m.b), (r.c - m.c)]
     }).collect::<Vec<Vector>>();
     let avg = transforms.iter().fold(Vector {x: 0.0, y: 0.0}, |acc, &i| acc + i) / transforms.len() as f32;
-    avg
+    Some(avg)
 }
 
 #[cfg(test)]

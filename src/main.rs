@@ -5,6 +5,8 @@ extern crate regex;
 extern crate crossbeam;
 extern crate simple_parallel;
 extern crate itertools;
+extern crate docopt;
+extern crate rustc_serialize;
 
 #[macro_use]
 mod convert;
@@ -21,6 +23,7 @@ mod triangle;
 use std::fs;
 use std::path::Path;
 use simple_parallel::Pool;
+use docopt::Docopt;
 use point::*;
 use types::*;
 use image::*;
@@ -35,22 +38,38 @@ use image::*;
 //   needs: alignment
 //
 
+const USAGE: &'static str = "
+Stacker.
+
+Usage:
+    stacker <output> <input>...
+";
+
+#[derive(Debug, RustcDecodable)]
+struct Args {
+    arg_output: String,
+    arg_input: Vec<String>,
+}
 
 fn main() {
+    let args: Args = Docopt::new(USAGE)
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
+
     //let images = vec![
         //"data/big-1-c.tiff".to_string(),
         //"data/big-2-c.tiff".to_string()
     //];
 
-    let images = fs::read_dir(Path::new("data/images")).unwrap().map(|f| {
-        f.unwrap()
-    }).filter(|f| {
-        f.metadata().unwrap().is_file()
-    }).map(|f| {
-        f.path().to_str().unwrap().to_string()
-    }).filter(|f| {
-        f.ends_with(".tif") || f.ends_with(".tiff")
-    }).collect::<Vec<_>>();
+    //let images = fs::read_dir(Path::new("data/images")).unwrap().map(|f| {
+        //f.unwrap()
+    //}).filter(|f| {
+        //f.metadata().unwrap().is_file()
+    //}).map(|f| {
+        //f.path().to_str().unwrap().to_string()
+    //}).filter(|f| {
+        //f.ends_with(".tif") || f.ends_with(".tiff")
+    //}).collect::<Vec<_>>();
 
     //let images = vec![
         //"data/images/IMG_5450.tif".to_string(),
@@ -58,7 +77,7 @@ fn main() {
     //];
 
     println!("finding stars");
-    let res = find_stars(images);
+    let res = find_stars(args.arg_input);
     for (ref f, ref v) in res.iter() {
         println!("found {} stars in {:?}", v.len(), f);
         for star in v.iter() {
@@ -74,7 +93,7 @@ fn main() {
     }
 
     println!("stacking");
-    star_stacker::stack(&res);
+    star_stacker::stack(&res, &args.arg_output);
 }
 
 fn find_stars(images: Vec<String>) -> ImagesWithStars {
@@ -100,8 +119,11 @@ fn align_images(images: ImagesWithStars) -> ImagesWithAlignment {
     let mut res = crossbeam::scope(|scope| {
         pool.map(scope, images_iter, |(filename, other_stars)| {
             println!("{}", filename);
-            (filename.clone(), star_aligner::compute_transform(ref_stars, other_stars))
-        }).collect::<ImagesWithAlignment>()
+            let a = star_aligner::compute_transform(ref_stars, other_stars);
+            a.map(|a| {
+                (filename.clone(), a)
+            })
+        }).filter_map(|i| i).collect::<ImagesWithAlignment>()
     });
     res.insert(first_image.clone(), Vector {x: 0.0, y: 0.0});
     res
