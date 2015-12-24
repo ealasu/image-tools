@@ -107,7 +107,7 @@ pub fn stack(images: &BTreeMap<String, Vector>, out_path: &str) {
     let image = stack.to_image();
 
     // save
-    println!("res: {:?}", image);
+    //println!("res: {:?}", image);
     //let res = image::Image::open("data/big-1-c.tiff");
     image.save_gray(out_path);
 }

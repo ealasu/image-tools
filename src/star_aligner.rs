@@ -6,6 +6,8 @@ use math::*;
 
 
 const EPSILON: f32 = 0.7;
+const MIN_MATCHES: usize = 2;
+
 
 #[derive(Debug)]
 enum Sides {
@@ -104,10 +106,10 @@ pub fn find_matching_triangles(ref_stars: &[Star], other_stars: &[Star]) -> Vec<
 
 pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Option<Vector> {
     let matches = find_matching_triangles(ref_stars, other_stars);
-    if matches.is_empty() {
+    if matches.len() < MIN_MATCHES {
         return None;
     }
-    println!("matching triangles: {}", matches.len());
+    //println!("matching triangles: {}", matches.len());
     //for &(t, m) in matches.iter() {
         //println!("match: {}", distance(t.a, m.a));
         //println!("t: {:?}", t);
