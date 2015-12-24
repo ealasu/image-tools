@@ -78,7 +78,7 @@ impl ImageStack {
     }
 }
 
-pub fn stack(images: &BTreeMap<String, Vector>) -> Image {
+pub fn stack(images: &BTreeMap<String, Vector>) {
     // calculate dimensions
     let d = images.iter().map(|(filename, &tx)| {
         let (width, height) = Image::identify(&filename);
@@ -99,9 +99,9 @@ pub fn stack(images: &BTreeMap<String, Vector>) -> Image {
     assert!(height > 0);
 
     // stack
-    let mut stack = ImageStack::new(width, height, 3);
+    let mut stack = ImageStack::new(width, height, 1);
     for (filename, &tx) in images.iter() {
-        let image = Image::open_rgb(filename);
+        let image = Image::open_gray(filename);
         stack.add(&image, tx + stack_tx);
     }
     let image = stack.to_image();
@@ -109,7 +109,7 @@ pub fn stack(images: &BTreeMap<String, Vector>) -> Image {
     // save
     println!("res: {:?}", image);
     //let res = image::Image::open("data/big-1-c.tiff");
-    image.save_rgb("data/out.tiff");
+    image.save_gray("data/out.tiff");
 }
 
 #[cfg(test)]
