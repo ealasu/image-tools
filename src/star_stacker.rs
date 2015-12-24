@@ -117,11 +117,11 @@ mod tests {
     use test::Bencher;
     use super::*;
     use point::*;
-    use image::Image;
+    use image::*;
 
     #[test]
     fn test_1() {
-        let image = Image::from_data(3, 3, vec![
+        let image = Channel::from_data(3, 3, vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_2() {
-        let image = Image::from_data(3, 3, vec![
+        let image = Channel::from_data(3, 3, vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_edge() {
-        let image = Image::from_data(3, 3, vec![
+        let image = Channel::from_data(3, 3, vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
@@ -154,7 +154,7 @@ mod tests {
 
     #[bench]
     fn bench_resample(b: &mut Bencher) {
-        let image = Image::from_data(3, 3, vec![
+        let image = Channel::from_data(3, 3, vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
@@ -166,14 +166,14 @@ mod tests {
 
     #[test]
     fn test_stack_1() {
-        let image1 = Image::from_data(3, 3, vec![
+        let image1 = Channel::from_data(3, 3, vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
         ]);
-        let mut stacker = ImageStack::new(3, 3);
-        stacker.add(&image1, Vector {x: 0.0, y: 0.0});
-        assert_eq!(*stacker.to_image().pixels(), vec![
+        let mut stacker = ImageStack::new(3, 3, 1);
+        stacker.add(&Image::new(vec![image1]), Vector {x: 0.0, y: 0.0});
+        assert_eq!(*stacker.to_image().channels[0].pixels(), vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
@@ -182,15 +182,15 @@ mod tests {
 
     #[test]
     fn test_stack_2() {
-        let image1 = Image::from_data(3, 3, vec![
+        let image1 = Channel::from_data(3, 3, vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
         ]);
-        let mut stacker = ImageStack::new(3, 3);
-        stacker.add(&image1, Vector {x: 0.0, y: 0.0});
-        stacker.add(&image1, Vector {x: 0.0, y: 0.0});
-        assert_eq!(*stacker.to_image().pixels(), vec![
+        let mut stacker = ImageStack::new(3, 3, 1);
+        stacker.add(&Image::new(vec![image1]), Vector {x: 0.0, y: 0.0});
+        stacker.add(&Image::new(vec![image1]), Vector {x: 0.0, y: 0.0});
+        assert_eq!(*stacker.to_image().channels[0].pixels(), vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
@@ -199,15 +199,15 @@ mod tests {
 
     #[test]
     fn test_stack_3() {
-        let image1 = Image::from_data(3, 3, vec![
+        let image1 = Channel::from_data(3, 3, vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
         ]);
-        let mut stacker = ImageStack::new(3, 3);
-        stacker.add(&image1, Vector {x: 0.0, y: 0.0});
-        stacker.add(&image1, Vector {x: 0.5, y: 0.5});
-        assert_eq!(*stacker.to_image().pixels(), vec![
+        let mut stacker = ImageStack::new(3, 3, 1);
+        stacker.add(&Image::new(vec![image1]), Vector {x: 0.0, y: 0.0});
+        stacker.add(&Image::new(vec![image1]), Vector {x: 0.5, y: 0.5});
+        assert_eq!(*stacker.to_image().channels[0].pixels(), vec![
             0.3125, 0.375, 0.375,
             0.375, 0.8125, 0.5625,
             0.375, 0.5625, 0.5625,

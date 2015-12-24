@@ -114,8 +114,8 @@ mod tests {
 
     #[test]
     fn test_star() {
-        let image = Image::open_gray("data/star.tiff").layers[0];
-        let finder = StarFinder::new(&image);
+        let i = &Image::open_gray("data/star.tiff").channels[0];
+        let finder = StarFinder::new(i);
         let stars: Vec<_> = finder.collect();
 
         assert_eq!(stars, vec![Star {x: 10, y: 7}]);
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_tiny() {
-        let image = Image::open_gray("data/tiny.tiff").layers[0];
+        let image = Image::open_gray("data/tiny.tiff").channels[0];
         let finder = StarFinder::new(&image);
         let stars: Vec<_> = finder.collect();
 
@@ -133,7 +133,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_small() {
-        let image = Image::open_gray("data/small.tiff").layers[0];
+        let image = Image::open_gray("data/small.tiff").channels[0];
         let finder = StarFinder::new(&image);
         let stars: Vec<_> = finder.collect();
 
@@ -143,7 +143,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_big() {
-        let image = Image::open_gray("data/big-1.tiff").layers[0];
+        let image = Image::open_gray("data/big-1.tiff").channels[0];
         let finder = StarFinder::new(&image);
         let stars: Vec<_> = finder.collect();
 
@@ -152,7 +152,7 @@ mod tests {
 
     #[bench]
     fn bench_star(b: &mut Bencher) {
-        let image = Image::open_gray("data/star.tiff").layers[0];
+        let image = Image::open_gray("data/star.tiff").channels[0];
         b.iter(|| {
             let finder = StarFinder::new(&image);
             let _: Vec<_> = finder.collect();
@@ -161,7 +161,7 @@ mod tests {
 
     #[bench]
     fn bench_setup_start(b: &mut Bencher) {
-        let image = Image::open_gray("data/star.tiff").layers[0];
+        let image = Image::open_gray("data/star.tiff").channels[0];
         b.iter(|| {
             let _ = StarFinder::new(&image);
         });
@@ -169,7 +169,7 @@ mod tests {
     
     #[bench]
     fn bench_setup_tiny(b: &mut Bencher) {
-        let image = Image::open_gray("data/tiny.tiff").layers[0];
+        let image = Image::open_gray("data/tiny.tiff").channels[0];
         b.iter(|| {
             let _ = StarFinder::new(&image);
         });
@@ -177,7 +177,7 @@ mod tests {
 
     #[bench]
     fn bench_tiny(b: &mut Bencher) {
-        let image = Image::load("data/tiny.tiff");
+        let image = Image::open_gray("data/tiny.tiff").channels[0];
         b.iter(|| {
             let finder = StarFinder::new(&image);
             let _: Vec<_> = finder.collect();
