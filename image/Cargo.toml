@@ -1,5 +1,5 @@
 [package]
-name = "dcraw"
+name = "image"
 version = "0.0.0"
 
 [dependencies]

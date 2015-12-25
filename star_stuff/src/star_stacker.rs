@@ -4,7 +4,7 @@ use image::*;
 use point::*;
 
 
-pub fn resample(image: &Channel, x: f32, y: f32) -> f32 {
+pub fn resample(image: &Channel<f32>, x: f32, y: f32) -> f32 {
     let mut src_val = 0f32;
     let dx = x.ceil() - x;
     let dy = y.ceil() - y;
@@ -42,7 +42,7 @@ pub fn resample(image: &Channel, x: f32, y: f32) -> f32 {
 
 
 pub struct ImageStack {
-    image: Image,
+    image: Image<f32>,
     count: usize,
 }
 
@@ -55,7 +55,7 @@ impl ImageStack {
         }
     }
 
-    pub fn add(&mut self, image: &Image, transform: Vector) {
+    pub fn add(&mut self, image: &Image<f32>, transform: Vector) {
         for (dst, src) in self.image.channels.iter_mut().zip(image.channels.iter()) {
             for y in 0..dst.height {
                 for x in 0..dst.width {
@@ -67,7 +67,7 @@ impl ImageStack {
         self.count += 1;
     }
 
-    pub fn to_image(mut self) -> Image {
+    pub fn to_image(mut self) -> Image<f32> {
         let d = self.count as f32;
         for c in self.image.channels.iter_mut() {
             for pixel in c.pixels_mut() {
@@ -81,7 +81,7 @@ impl ImageStack {
 pub fn stack(images: &BTreeMap<String, Vector>, out_path: &str) {
     // calculate dimensions
     let d = images.iter().map(|(filename, &tx)| {
-        let (width, height) = Image::identify(&filename);
+        let (width, height) = identify(&filename);
         let top = tx.y as isize;
         let bottom = height as isize + tx.y as isize;
         let left = tx.x as isize;

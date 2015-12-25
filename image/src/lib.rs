@@ -7,3 +7,4 @@ extern crate regex;
 pub mod pgm;
 pub mod image;
 
+pub use image::*;

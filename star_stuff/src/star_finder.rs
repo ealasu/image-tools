@@ -12,7 +12,7 @@ use refine_center::*;
 pub type Star = Point<usize>;
 
 pub struct StarFinder<'a> {
-    image: &'a Channel,
+    image: &'a Channel<f32>,
     pos_iter: Range<usize>,
     peak_min: f32,
     peak_max: f32,
@@ -23,7 +23,7 @@ pub struct StarFinder<'a> {
 }
 
 impl<'a> StarFinder<'a> {
-    pub fn new(image: &'a Channel) -> StarFinder {
+    pub fn new(image: &'a Channel<f32>) -> StarFinder {
         let min_pixel = image.pixels().iter().fold(f32::MAX, |acc, &v| acc.min(v));
         let max_pixel = image.pixels().iter().fold(f32::MIN, |acc, &v| acc.max(v));
         //println!("max: {}", max);

@@ -5,11 +5,11 @@ extern crate regex;
 extern crate crossbeam;
 extern crate simple_parallel;
 extern crate itertools;
+extern crate convert;
+extern crate image;
 
 #[macro_use]
-pub mod convert;
 pub mod point;
-pub mod image;
 pub mod star_finder;
 pub mod refine_center;
 pub mod star_aligner;

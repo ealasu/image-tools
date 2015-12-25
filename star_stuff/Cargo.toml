@@ -9,3 +9,5 @@ crossbeam = "0.1.6"
 itertools = "*"
 docopt = "*"
 rustc-serialize = "*"
+image = { path = "../image" }
+convert = { path = "../convert" }
