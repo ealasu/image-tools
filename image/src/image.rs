@@ -8,6 +8,7 @@ use std::iter::repeat;
 use std::process::Stdio;
 use std::io::BufReader;
 use std::io::prelude::*;
+use std::iter::once;
 use regex::Regex;
 use convert::*;
 use pgm;
@@ -129,10 +130,10 @@ pub struct Rgb {
 
 
 pub trait Image<P> {
-    fn width() -> usize;
-    fn height() -> usize;
-    fn channels(&self) -> Box<Iterator<Item=&Channel<P>>>;
-    fn channels_mut(&mut self) -> Box<Iterator<Item=&mut Channel<P>>>;
+    fn width(&self) -> usize;
+    fn height(&self) -> usize;
+    fn channels<'a>(&'a self) -> Box<Iterator<Item=&'a Channel<P>> + 'a>;
+    fn channels_mut<'a>(&'a mut self) -> Box<Iterator<Item=&'a mut Channel<P>> + 'a>;
 }
 
 #[derive(Debug)]
@@ -141,26 +142,41 @@ pub struct GrayImage<P>(pub Channel<P>);
 impl GrayImage<f32> {
     pub fn open(path: &str) -> Self {
         let (width, height, data) = magick_stream(path, "gray");
-        let layer = Channel::from_data(width, height, data);
-        Self(layer)
+        GrayImage(Channel::from_data(width, height, data))
     }
 
     pub fn save(&self, path: &str) {
-        assert_eq!(self.channels.len(), 1);
-        magick_convert(self.pixels(), self.width(), self.height(), "gray", "grayscale", path);
+        magick_convert(self.0.pixels(), self.width(), self.height(), "gray", "grayscale", path);
+    }
+}
+
+impl GrayImage<u16> {
+    pub fn open_raw(path: &str) -> Self {
+        let out = Command::new("dcraw")
+            .arg("-c") // to stdout
+            .arg("-4")
+            .arg("-D")
+            .arg(path)
+            .output()
+            .unwrap();
+        let stderr = str::from_utf8(&out.stderr).unwrap();
+        println!("stderr: {}", stderr);
+        let mut r = BufReader::new(&out.stdout[..]);
+        let (w, h, data) = pgm::read(&mut r).unwrap();
+        GrayImage(Channel::from_data(w, h, data))
     }
 }
 
 impl<P> Image<P> for GrayImage<P> {
-    fn width() -> usize { self.width }
-    fn height() -> usize { self.height }
+    fn width(&self) -> usize { self.0.width }
+    fn height(&self) -> usize { self.0.height }
 
-    fn channels(&self) -> Box<Iterator<Item=&Channel<P>>> {
-        Box::new(vec![&self as &Channel<P>].into_iter())
+    fn channels<'a>(&'a self) -> Box<Iterator<Item=&'a Channel<P>> + 'a> {
+        Box::new(once(&self.0))
     }
 
-    fn channels_mut(&mut self) -> Box<Iterator<Item=&mut Channel<P>>> {
-        Box::new(vec![&mut self as &mut Channel<P>].into_iter())
+    fn channels_mut<'a>(&'a mut self) -> Box<Iterator<Item=&'a mut Channel<P>> + 'a> {
+        Box::new(once(&mut self.0))
     }
 }
 
@@ -179,7 +195,7 @@ impl RgbImage<f32> {
         let r = data.iter().map(|&p| p.r).collect();
         let g = data.iter().map(|&p| p.r).collect();
         let b = data.iter().map(|&p| p.r).collect();
-        Self {
+        RgbImage {
             r: Channel::from_data(width, height, r),
             g: Channel::from_data(width, height, g),
             b: Channel::from_data(width, height, b),
@@ -187,65 +203,35 @@ impl RgbImage<f32> {
     }
 
     pub fn save(&self, path: &str) {
-        assert_eq!(self.channels.len(), 3);
-        let r = &self.channels[0];
-        let g = &self.channels[1];
-        let b = &self.channels[2];
-        let rgb = (0..r.width * r.height).map(|i| {
+        let rgb = (0..self.width() * self.height()).map(|i| {
             Rgb {
-                r: r.pixels()[i],
-                g: g.pixels()[i],
-                b: b.pixels()[i],
+                r: self.r.pixels()[i],
+                g: self.g.pixels()[i],
+                b: self.b.pixels()[i],
             }
         }).collect::<Vec<_>>();
         let data = convert_vec(rgb);
-        magick_convert(&data, r.width, r.height, "rgb", "truecolor", path);
+        magick_convert(&data, self.width(), self.height(), "rgb", "truecolor", path);
     }
 }
 
 impl<P> Image<P> for RgbImage<P> {
-    fn width() -> usize { self.r.width }
-    fn height() -> usize { self.r.height }
+    fn width(&self) -> usize { self.r.width }
+    fn height(&self) -> usize { self.r.height }
 
-    fn channels(&self) -> Box<Iterator<Item=&Channel<P>>> {
-        Box::new(vec![
-            &self.r,
-            &self.g,
-            &self.b,
-        ].into_iter())
+    fn channels<'a>(&'a self) -> Box<Iterator<Item=&'a Channel<P>> + 'a> {
+        Box::new(once(&self.r)
+                 .chain(once(&self.g))
+                 .chain(once(&self.b)))
     }
 
-    fn channels_mut(&mut self) -> Box<Iterator<Item=&mut Channel<P>>> {
-        Box::new(vec![
-            &mut self.r,
-            &mut self.g,
-            &mut self.b,
-        ].into_iter())
+    fn channels_mut<'a>(&'a mut self) -> Box<Iterator<Item=&'a mut Channel<P>> + 'a> {
+        Box::new(once(&mut self.r)
+                 .chain(once(&mut self.g))
+                 .chain(once(&mut self.b)))
     }
 }
 
-impl Image<f32> {
-
-}
-
-impl Image<u16> {
-    pub fn open_raw(path: &str) -> Self {
-        let out = Command::new("dcraw")
-            .arg("-c") // to stdout
-            .arg("-4")
-            .arg("-D")
-            .arg(path)
-            .output()
-            .unwrap();
-        let stderr = str::from_utf8(&out.stderr).unwrap();
-        println!("stderr: {}", stderr);
-        let mut r = BufReader::new(&out.stdout[..]);
-        let (w, h, data) = pgm::read(&mut r).unwrap();
-        Self::new(vec![
-            Channel::from_data(w, h, data),
-        ])
-    }
-}
 
 pub fn identify(path: &str) -> (usize, usize) {
     let out = Command::new("identify")
