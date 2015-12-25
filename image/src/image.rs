@@ -67,35 +67,23 @@ impl<P: Clone + Copy + Default> Channel<P> {
     }
 }
 
-impl Channel<f32> {
-    fn rescale_to_u16(&self) -> Channel<u16> {
-        let data = self.pixels();
-        let src_min = data.iter().fold(f32::MAX, |acc, &v| acc.min(v));
-        let src_max = data.iter().fold(f32::MIN, |acc, &v| acc.max(v));
-        let src_d = src_max - src_min;
-        let dst_min = u16::MIN as f32;
-        let dst_max = u16::MAX as f32;
-        let dst_d = dst_max - dst_min;
+//impl Channel<f32> {
+    //fn rescale_to_u16(&self) -> Channel<u16> {
+        //let data = self.pixels();
+        //let src_min = data.iter().fold(f32::MAX, |acc, &v| acc.min(v));
+        //let src_max = data.iter().fold(f32::MIN, |acc, &v| acc.max(v));
+        //let src_d = src_max - src_min;
+        //let dst_min = u16::MIN as f32;
+        //let dst_max = u16::MAX as f32;
+        //let dst_d = dst_max - dst_min;
 
-        let mut out: Vec<u16> = Vec::with_capacity(data.len());
-        for v in data.iter() {
-            out.push((((*v - src_min) * dst_d) / src_d) as u16);
-        }
-        Channel::from_data(self.width, self.height, out)
-    }
-}
-
-impl Channel<u16> {
-    fn rescale_to_f32(&self) -> Channel<f32> {
-        // TODO: rescale to 0..1?
-        let data = self.pixels();
-        let mut out: Vec<f32> = Vec::with_capacity(data.len());
-        for v in data.iter() {
-            out.push(*v as f32);
-        }
-        Channel::from_data(self.width, self.height, out)
-    }
-}
+        //let mut out: Vec<u16> = Vec::with_capacity(data.len());
+        //for v in data.iter() {
+            //out.push((((*v - src_min) * dst_d) / src_d) as u16);
+        //}
+        //Channel::from_data(self.width, self.height, out)
+    //}
+//}
 
 
 fn rescale(data: &[f32]) -> Vec<u16> {
@@ -166,6 +154,15 @@ pub trait Image<P> {
     fn channels_mut<'a>(&'a mut self) -> Box<Iterator<Item=&'a mut Channel<P>> + 'a>;
 }
 
+//pub trait RescaleTo<From,To>: Image<From> {
+    //fn rescale_to<I: Image<To>>(&self) -> I;
+//}
+
+//impl RescaleTo<u16, f32> for Image<u16> {
+    //fn rescale_to<I: Image<u32>>(&self) -> I;
+//}
+
+
 #[derive(Debug)]
 pub struct GrayImage<P>(pub Channel<P>);
 
@@ -194,6 +191,16 @@ impl GrayImage<u16> {
         let mut r = BufReader::new(&out.stdout[..]);
         let (w, h, data) = pgm::read(&mut r).unwrap();
         GrayImage(Channel::from_data(w, h, data))
+    }
+
+    fn rescale_to_f32(&self) -> GrayImage<f32> {
+        // TODO: rescale to 0..1?
+        let data = self.0.pixels();
+        let mut out: Vec<f32> = Vec::with_capacity(data.len());
+        for v in data.iter() {
+            out.push(*v as f32);
+        }
+        GrayImage(Channel::from_data(self.width(), self.height(), out))
     }
 }
 
