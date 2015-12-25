@@ -1,5 +1,5 @@
 [root]
-name = "dcraw"
+name = "image"
 version = "0.0.0"
 dependencies = [
  "convert 0.0.0",

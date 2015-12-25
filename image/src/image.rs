@@ -1,5 +1,5 @@
 use std::str;
-use std::num::Zero;
+use std::default::Default;
 use std::fmt;
 use std::f32;
 use std::u16;
@@ -25,7 +25,7 @@ impl<P> fmt::Debug for Channel<P> {
     }
 }
 
-impl<P: Clone + Copy + Zero> Channel<P> {
+impl<P: Clone + Copy + Default> Channel<P> {
     pub fn from_data(width: usize, height: usize, data: Vec<P>) -> Self {
         Channel {
             width: width,
@@ -36,7 +36,7 @@ impl<P: Clone + Copy + Zero> Channel<P> {
 
     pub fn new(width: usize, height: usize) -> Self {
         let mut data: Vec<P> = Vec::with_capacity(width * height);
-        let zero: P = Zero::zero();
+        let zero: P = Default::default();
         data.extend(repeat(zero).take(width * height));
         Self::from_data(width, height, data)
     }

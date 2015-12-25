@@ -1,5 +1,3 @@
-#![feature(zero_one)]
-
 #[macro_use]
 extern crate convert;
 extern crate regex;
