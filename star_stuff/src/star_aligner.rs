@@ -1,4 +1,6 @@
 use itertools::Itertools;
+use crossbeam;
+use simple_parallel::Pool;
 use point::*;
 use types::*;
 use triangle::Triangle;
@@ -124,6 +126,24 @@ pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Option<Vecto
     let avg = transforms.iter().fold(Vector {x: 0.0, y: 0.0}, |acc, &i| acc + i) / transforms.len() as f32;
     Some(avg)
 }
+
+
+pub fn align_images(pool: &mut Pool, images: ImagesWithStars) -> ImagesWithAlignment {
+    let mut images_iter = (&images).into_iter();
+    let (first_image, ref_stars) = images_iter.next().unwrap();
+    let mut res = crossbeam::scope(|scope| {
+        pool.map(scope, images_iter, |(filename, other_stars)| {
+            println!("aligning {}", filename);
+            let a = compute_transform(ref_stars, other_stars);
+            a.map(|a| {
+                (filename.clone(), a)
+            })
+        }).filter_map(|i| i).collect::<ImagesWithAlignment>()
+    });
+    res.insert(first_image.clone(), Vector {x: 0.0, y: 0.0});
+    res
+}
+
 
 #[cfg(test)]
 mod tests {

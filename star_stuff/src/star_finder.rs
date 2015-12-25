@@ -1,8 +1,12 @@
 use std::cmp::max;
 use std::ops::Range;
 use std::f32;
+use simple_parallel::Pool;
+use crossbeam;
 use image::*;
+use types::ImagesWithStars;
 use point::Point;
+use refine_center::*;
 
 
 pub type Star = Point<usize>;
@@ -105,6 +109,23 @@ impl<'a> Iterator for StarFinder<'a> {
         None
     }
 }
+
+
+pub fn find_stars(pool: &mut Pool, images: Vec<String>) -> ImagesWithStars {
+    let aperture = 7;
+    crossbeam::scope(|scope| {
+        pool.map(scope, &images, |filename| {
+            let image = Image::open_gray(filename);
+            let channel = &image.channels[0];
+            let stars = StarFinder::new(channel);
+            let refined_stars = stars.map(|approx_center| {
+                refine_star_center(channel, approx_center, aperture)
+            }).collect::<Vec<_>>();
+            (filename.clone(), refined_stars)
+        }).collect()
+    })
+}
+
 
 #[cfg(test)]
 mod tests {
