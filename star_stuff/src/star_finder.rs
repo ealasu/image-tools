@@ -115,8 +115,8 @@ pub fn find_stars(pool: &mut Pool, images: Vec<String>) -> ImagesWithStars {
     let aperture = 7;
     crossbeam::scope(|scope| {
         pool.map(scope, &images, |filename| {
-            let image = Image::open_gray(filename);
-            let channel = &image.channels[0];
+            let image: GrayImage<f32> = GrayImage::open(filename);
+            let channel = &image.0;
             let stars = StarFinder::new(channel);
             let refined_stars = stars.map(|approx_center| {
                 refine_star_center(channel, approx_center, aperture)

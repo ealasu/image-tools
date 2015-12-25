@@ -148,6 +148,7 @@ pub struct Rgb {
 
 
 pub trait Image<P> {
+    fn new(width: usize, height: usize) -> Self;
     fn width(&self) -> usize;
     fn height(&self) -> usize;
     fn channels<'a>(&'a self) -> Box<Iterator<Item=&'a Channel<P>> + 'a>;
@@ -204,7 +205,12 @@ impl GrayImage<u16> {
     }
 }
 
-impl<P> Image<P> for GrayImage<P> {
+impl<P> Image<P> for GrayImage<P>
+where P: Copy + Clone + Default {
+    fn new(width: usize, height: usize) -> Self {
+        GrayImage(Channel::new(width, height))
+    }
+
     fn width(&self) -> usize { self.0.width }
     fn height(&self) -> usize { self.0.height }
 
@@ -252,7 +258,16 @@ impl RgbImage<f32> {
     }
 }
 
-impl<P> Image<P> for RgbImage<P> {
+impl<P> Image<P> for RgbImage<P>
+where P: Copy + Clone + Default {
+    fn new(width: usize, height: usize) -> Self {
+        RgbImage {
+            r: Channel::new(width, height),
+            g: Channel::new(width, height),
+            b: Channel::new(width, height),
+        }
+    }
+
     fn width(&self) -> usize { self.r.width }
     fn height(&self) -> usize { self.r.height }
 

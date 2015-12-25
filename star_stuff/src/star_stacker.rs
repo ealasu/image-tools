@@ -41,22 +41,21 @@ pub fn resample(image: &Channel<f32>, x: f32, y: f32) -> f32 {
 }
 
 
-pub struct ImageStack {
-    image: Image<f32>,
+pub struct ImageStack<I: Image<f32>> {
+    image: I,
     count: usize,
 }
 
-impl ImageStack {
-    pub fn new(width: usize, height: usize, channel_count: usize) -> ImageStack {
-        let channels = (0..channel_count).map(|_| Channel::new(width, height)).collect();
+impl<I: Image<f32>> ImageStack<I> {
+    pub fn new(width: usize, height: usize) -> Self {
         ImageStack {
-            image: Image::new(channels),
+            image: Image::new(width, height),
             count: 0,
         }
     }
 
-    pub fn add(&mut self, image: &Image<f32>, transform: Vector) {
-        for (dst, src) in self.image.channels.iter_mut().zip(image.channels.iter()) {
+    pub fn add(&mut self, image: &I, transform: Vector) {
+        for (dst, src) in self.image.channels_mut().zip(image.channels()) {
             for y in 0..dst.height {
                 for x in 0..dst.width {
                     let src_pos = Point {x: x as f32, y: y as f32} - transform;
@@ -67,9 +66,9 @@ impl ImageStack {
         self.count += 1;
     }
 
-    pub fn to_image(mut self) -> Image<f32> {
+    pub fn to_image(mut self) -> I {
         let d = self.count as f32;
-        for c in self.image.channels.iter_mut() {
+        for c in self.image.channels_mut() {
             for pixel in c.pixels_mut() {
                 *pixel /= d;
             }
@@ -99,9 +98,9 @@ pub fn stack(images: &BTreeMap<String, Vector>, out_path: &str) {
     assert!(height > 0);
 
     // stack
-    let mut stack = ImageStack::new(width, height, 1);
+    let mut stack = ImageStack::new(width, height);
     for (filename, &tx) in images.iter() {
-        let image = Image::open_gray(filename);
+        let image = GrayImage::open(filename);
         stack.add(&image, tx + stack_tx);
     }
     let image = stack.to_image();
@@ -109,7 +108,7 @@ pub fn stack(images: &BTreeMap<String, Vector>, out_path: &str) {
     // save
     //println!("res: {:?}", image);
     //let res = image::Image::open("data/big-1-c.tiff");
-    image.save_gray(out_path);
+    image.save(out_path);
 }
 
 #[cfg(test)]
