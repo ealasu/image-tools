@@ -1,31 +1,32 @@
 use std::str;
+use std::num::Zero;
 use std::fmt;
 use std::f32;
 use std::u16;
 use std::process::Command;
 use std::iter::repeat;
 use std::process::Stdio;
+use std::io::BufReader;
 use std::io::prelude::*;
 use regex::Regex;
-use convert::Wrap;
+use convert::*;
+use pgm;
 
 
-pub type Pixel = f32;
-
-pub struct Channel {
+pub struct Channel<P> {
     pub width: usize,
     pub height: usize,
-    data: Vec<Pixel>,
+    data: Vec<P>,
 }
 
-impl fmt::Debug for Channel {
+impl<P> fmt::Debug for Channel<P> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[image {}x{}]", self.width, self.height)
     }
 }
 
-impl Channel {
-    pub fn from_data(width: usize, height: usize, data: Vec<Pixel>) -> Self {
+impl<P: Clone + Copy + Zero> Channel<P> {
+    pub fn from_data(width: usize, height: usize, data: Vec<P>) -> Self {
         Channel {
             width: width,
             height: height,
@@ -34,32 +35,33 @@ impl Channel {
     }
 
     pub fn new(width: usize, height: usize) -> Self {
-        let mut data = Vec::with_capacity(width * height);
-        data.extend(repeat(0.0).take(width * height));
+        let mut data: Vec<P> = Vec::with_capacity(width * height);
+        let zero: P = Zero::zero();
+        data.extend(repeat(zero).take(width * height));
         Self::from_data(width, height, data)
     }
 
     #[inline(always)]
-    pub fn at(&self, x: usize, y: usize) -> Pixel {
+    pub fn at(&self, x: usize, y: usize) -> P {
         //assert!(x < self.width);
         //assert!(y < self.height);
         self.data[x + y * self.width]
     }
 
     #[inline(always)]
-    pub fn at_mut(&mut self, x: usize, y: usize) -> &mut Pixel {
+    pub fn at_mut(&mut self, x: usize, y: usize) -> &mut P {
         //assert!(x < self.width);
         //assert!(y < self.height);
         &mut self.data[x + y * self.width]
     }
 
     #[inline(always)]
-    pub fn pixels(&self) -> &Vec<Pixel> {
+    pub fn pixels(&self) -> &Vec<P> {
         &self.data
     }
 
     #[inline(always)]
-    pub fn pixels_mut(&mut self) -> &mut Vec<Pixel> {
+    pub fn pixels_mut(&mut self) -> &mut Vec<P> {
         &mut self.data
     }
 }
@@ -81,7 +83,7 @@ fn magick_stream(path: &str, map: &str) -> (usize, usize, Vec<f32>) {
     let width = captures[1].parse().unwrap();
     let height = captures[2].parse().unwrap();
     println!("u8 data len: {}", out.stdout.len());
-    let Wrap(data) = Wrap::from(out.stdout);
+    let data = convert_vec(out.stdout);
     (width, height, data)
 }
 
@@ -102,7 +104,7 @@ fn rescale(data: &[f32]) -> Vec<u16> {
 
 fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, magick_type: &str, path: &str) {
     let data = rescale(data);
-    let Wrap(data): Wrap<Vec<u8>> = Wrap::from(data);
+    let data: Vec<u8> = convert_vec(data);
     let child = Command::new("convert")
         .arg("-size").arg(format!("{}x{}", width, height))
         .arg("-depth").arg("16")
@@ -119,33 +121,47 @@ fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, magic
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-struct Rgb {
+pub struct Rgb {
     r: f32,
     g: f32,
     b: f32,
 }
 
-impl_from_to!(Rgb, f32);
-impl_from_to!(f32, Rgb);
-
 
 #[derive(Debug)]
-pub struct Image {
-    pub channels: Vec<Channel>,
+pub struct Image<P> {
+    pub channels: Vec<Channel<P>>,
     pub width: usize,
     pub height: usize,
 }
 
-impl Image {
-    pub fn open_gray(path: &str) -> Image {
+impl<P> Image<P> {
+    pub fn new(channels: Vec<Channel<P>>) -> Self {
+        assert!(channels.len() > 0);
+        let w = channels[0].width;
+        let h = channels[0].height;
+        for c in channels.iter() {
+            assert_eq!(c.width, w);
+            assert_eq!(c.height, h);
+        }
+        Image {
+            width: w,
+            height: h,
+            channels: channels,
+        }
+    }
+}
+
+impl Image<f32> {
+    pub fn open_gray(path: &str) -> Self {
         let (width, height, data) = magick_stream(path, "gray");
         let layer = Channel::from_data(width, height, data);
         Self::new(vec![layer])
     }
 
-    pub fn open_rgb(path: &str) -> Image {
+    pub fn open_rgb(path: &str) -> Self {
         let (width, height, data) = magick_stream(path, "rgb");
-        let Wrap(data): Wrap<Vec<Rgb>> = Wrap::from(data);
+        let data: Vec<Rgb> = convert_vec(data);
         assert_eq!(data.len(), width * height);
         let r = data.iter().map(|&p| p.r).collect();
         let g = data.iter().map(|&p| p.r).collect();
@@ -175,35 +191,39 @@ impl Image {
                 b: b.pixels()[i],
             }
         }).collect::<Vec<_>>();
-        let Wrap(data) = Wrap::from(rgb);
+        let data = convert_vec(rgb);
         magick_convert(&data, r.width, r.height, "rgb", "truecolor", path);
     }
+}
 
-    pub fn new(channels: Vec<Channel>) -> Self {
-        assert!(channels.len() > 0);
-        let w = channels[0].width;
-        let h = channels[0].height;
-        for c in channels.iter() {
-            assert_eq!(c.width, w);
-            assert_eq!(c.height, h);
-        }
-        Image {
-            width: w,
-            height: h,
-            channels: channels,
-        }
-    }
-
-    pub fn identify(path: &str) -> (usize, usize) {
-        let out = Command::new("identify")
+impl Image<u16> {
+    pub fn open_raw(path: &str) -> Self {
+        let out = Command::new("dcraw")
+            .arg("-c") // to stdout
+            .arg("-4")
+            .arg("-D")
             .arg(path)
             .output()
             .unwrap();
-        let stdout = str::from_utf8(&out.stdout).unwrap();
-        let re = Regex::new(r" (\d+)x(\d+) ").unwrap();
-        let captures = re.captures(stdout).unwrap();
-        let width = captures[1].parse().unwrap();
-        let height = captures[2].parse().unwrap();
-        (width, height)
+        let stderr = str::from_utf8(&out.stderr).unwrap();
+        println!("stderr: {}", stderr);
+        let mut r = BufReader::new(&out.stdout[..]);
+        let (w, h, data) = pgm::read(&mut r).unwrap();
+        Self::new(vec![
+            Channel::from_data(w, h, data),
+        ])
     }
+}
+
+pub fn identify(path: &str) -> (usize, usize) {
+    let out = Command::new("identify")
+        .arg(path)
+        .output()
+        .unwrap();
+    let stdout = str::from_utf8(&out.stdout).unwrap();
+    let re = Regex::new(r" (\d+)x(\d+) ").unwrap();
+    let captures = re.captures(stdout).unwrap();
+    let width = captures[1].parse().unwrap();
+    let height = captures[2].parse().unwrap();
+    (width, height)
 }
