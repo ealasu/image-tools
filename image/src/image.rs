@@ -128,58 +128,65 @@ pub struct Rgb {
 }
 
 
+pub trait Image<P> {
+    fn width() -> usize;
+    fn height() -> usize;
+    fn channels(&self) -> Box<Iterator<Item=&Channel<P>>>;
+    fn channels_mut(&mut self) -> Box<Iterator<Item=&mut Channel<P>>>;
+}
+
 #[derive(Debug)]
-pub struct Image<P> {
-    pub channels: Vec<Channel<P>>,
-    pub width: usize,
-    pub height: usize,
-}
+pub struct GrayImage<P>(pub Channel<P>);
 
-impl<P> Image<P> {
-    pub fn new(channels: Vec<Channel<P>>) -> Self {
-        assert!(channels.len() > 0);
-        let w = channels[0].width;
-        let h = channels[0].height;
-        for c in channels.iter() {
-            assert_eq!(c.width, w);
-            assert_eq!(c.height, h);
-        }
-        Image {
-            width: w,
-            height: h,
-            channels: channels,
-        }
-    }
-}
-
-impl Image<f32> {
-    pub fn open_gray(path: &str) -> Self {
+impl GrayImage<f32> {
+    pub fn open(path: &str) -> Self {
         let (width, height, data) = magick_stream(path, "gray");
         let layer = Channel::from_data(width, height, data);
-        Self::new(vec![layer])
+        Self(layer)
     }
 
-    pub fn open_rgb(path: &str) -> Self {
+    pub fn save(&self, path: &str) {
+        assert_eq!(self.channels.len(), 1);
+        magick_convert(self.pixels(), self.width(), self.height(), "gray", "grayscale", path);
+    }
+}
+
+impl<P> Image<P> for GrayImage<P> {
+    fn width() -> usize { self.width }
+    fn height() -> usize { self.height }
+
+    fn channels(&self) -> Box<Iterator<Item=&Channel<P>>> {
+        Box::new(vec![&self as &Channel<P>].into_iter())
+    }
+
+    fn channels_mut(&mut self) -> Box<Iterator<Item=&mut Channel<P>>> {
+        Box::new(vec![&mut self as &mut Channel<P>].into_iter())
+    }
+}
+
+#[derive(Debug)]
+pub struct RgbImage<P> {
+    pub r: Channel<P>,
+    pub g: Channel<P>,
+    pub b: Channel<P>,
+}
+
+impl RgbImage<f32> {
+    pub fn open(path: &str) -> Self {
         let (width, height, data) = magick_stream(path, "rgb");
         let data: Vec<Rgb> = convert_vec(data);
         assert_eq!(data.len(), width * height);
         let r = data.iter().map(|&p| p.r).collect();
         let g = data.iter().map(|&p| p.r).collect();
         let b = data.iter().map(|&p| p.r).collect();
-        Self::new(vec![
-            Channel::from_data(width, height, r),
-            Channel::from_data(width, height, g),
-            Channel::from_data(width, height, b),
-        ])
+        Self {
+            r: Channel::from_data(width, height, r),
+            g: Channel::from_data(width, height, g),
+            b: Channel::from_data(width, height, b),
+        }
     }
 
-    pub fn save_gray(&self, path: &str) {
-        assert_eq!(self.channels.len(), 1);
-        let layer = &self.channels[0];
-        magick_convert(layer.pixels(), layer.width, layer.height, "gray", "grayscale", path);
-    }
-
-    pub fn save_rgb(&self, path: &str) {
+    pub fn save(&self, path: &str) {
         assert_eq!(self.channels.len(), 3);
         let r = &self.channels[0];
         let g = &self.channels[1];
@@ -194,6 +201,31 @@ impl Image<f32> {
         let data = convert_vec(rgb);
         magick_convert(&data, r.width, r.height, "rgb", "truecolor", path);
     }
+}
+
+impl<P> Image<P> for RgbImage<P> {
+    fn width() -> usize { self.r.width }
+    fn height() -> usize { self.r.height }
+
+    fn channels(&self) -> Box<Iterator<Item=&Channel<P>>> {
+        Box::new(vec![
+            &self.r,
+            &self.g,
+            &self.b,
+        ].into_iter())
+    }
+
+    fn channels_mut(&mut self) -> Box<Iterator<Item=&mut Channel<P>>> {
+        Box::new(vec![
+            &mut self.r,
+            &mut self.g,
+            &mut self.b,
+        ].into_iter())
+    }
+}
+
+impl Image<f32> {
+
 }
 
 impl Image<u16> {
