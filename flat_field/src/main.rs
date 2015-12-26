@@ -24,6 +24,19 @@ struct Args {
     arg_input: Vec<String>,
 }
 
+fn bayer_average(channel: &Channel<f32>, offset_x: usize, offset_y: usize) -> f32 {
+    let bayer_w = channel.width / 2;
+    let bayer_h = channel.height / 2;
+    
+    let mut sum = 0.0;
+    for y in 0..bayer_h {
+        for x in 0..bayer_w {
+            sum += channel.at(x * 2 + offset_x, y * 2 + offset_y);
+        }
+    }
+    sum / ((bayer_w * bayer_h) as f32)
+}
+
 fn main() {
     /*
       Steps:
@@ -40,6 +53,7 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     let mut pool = Pool::new(5);
+
     let stack = crossbeam::scope(|scope| {
         pool.map(scope, &args.arg_input, |filename| {
             let image: GrayImage<u16> = GrayImage::open_raw(filename);
@@ -54,6 +68,27 @@ fn main() {
             Some(stack)
         }).unwrap()
     });
-    let img = stack.into_image();
+    let mut img = stack.into_image();
+    let chan = &mut img.0;
+
+    let avg_r = bayer_average(chan, 0, 0);
+    let avg_g = (bayer_average(chan, 1, 0) + bayer_average(chan, 0, 1)) / 2.0;
+    let avg_b = bayer_average(chan, 1, 1);
+
+    for y in 0..chan.height {
+        for x in 0..chan.width {
+            let pixel = chan.at_mut(x, y);
+            let bayer_x = x % 2;
+            let bayer_y = y % 2;
+            let avg = if bayer_x == 0 && bayer_y == 0 {
+                avg_r
+            } else if bayer_x == 1 && bayer_y == 1 {
+                avg_b
+            } else {
+                avg_g
+            };
+            *pixel = avg / *pixel;
+        }
+    }
 
 }
