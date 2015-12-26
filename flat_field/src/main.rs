@@ -62,7 +62,7 @@ fn main() {
     println!("max: {}", img.0.max());
     println!("avg: {}", img.0.average());
 
-    img.save_raw(&args.arg_output);
+    img.save_pgm(&args.arg_output);
 }
 
 fn bayer_average(channel: &Channel<f32>, offset_x: usize, offset_y: usize) -> f32 {

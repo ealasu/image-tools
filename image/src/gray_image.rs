@@ -2,6 +2,7 @@ use std::iter::once;
 use image::*;
 use channel::*;
 use magick::*;
+use pgm;
 use dcraw;
 
 
@@ -14,12 +15,21 @@ impl GrayImage<f32> {
         GrayImage(Channel::from_data(width, height, data))
     }
 
+    pub fn open_pgm(path: &str) -> Self {
+        let (w, h, data) = pgm::read_from_file(path);
+        let data = if let pgm::Format::F32(d) = data { d } else {
+            panic!("bad format")
+        };
+        GrayImage(Channel::from_data(w, h, data))
+    }
+
     pub fn save(&self, path: &str) {
         magick_convert(self.0.pixels(), self.width(), self.height(), "gray", "grayscale", path);
     }
 
-    pub fn save_raw(&self, path: &str) {
-        magick_save_raw(self.0.pixels(), self.width(), self.height(), path);
+    pub fn save_pgm(&self, path: &str) {
+        let data = pgm::Format::F32(self.0.pixels().clone());
+        pgm::write_to_file(path, self.width(), self.height(), data);
     }
 }
 

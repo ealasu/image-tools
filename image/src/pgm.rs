@@ -1,5 +1,7 @@
 use std::io::prelude::*;
+use std::io::BufReader;
 use std::io::Result as IoResult;
+use std::fs::File;
 use convert::*;
 
 
@@ -40,6 +42,12 @@ pub fn read<R: BufRead>(r: &mut R) -> IoResult<(usize, usize, Format)> {
     Ok((w, h, res))
 }
 
+pub fn read_from_file(path: &str) -> (usize, usize, Format) {
+    let f = File::open(path).unwrap();
+    let mut r = BufReader::new(f);
+    read(&mut r).unwrap()
+}
+
 pub fn write<W: Write>(w: &mut W, width: usize, height: usize, data: Format) -> IoResult<()> {
     let (max_val, data): (_, Vec<u8>) = match data {
         Format::U16(data) => (U16_MAX, convert_vec(data)),
@@ -47,4 +55,9 @@ pub fn write<W: Write>(w: &mut W, width: usize, height: usize, data: Format) -> 
     };
     try!(w.write(format!("P5\n{} {}\n{}\n", width, height, max_val).as_bytes()));
     w.write_all(&data)
+}
+
+pub fn write_to_file(path: &str, w: usize, h: usize, data: Format) {
+    let mut f = File::create(path).unwrap();
+    write(&mut f, w, h, data).unwrap();
 }
