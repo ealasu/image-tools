@@ -66,7 +66,7 @@ impl<I: Image<f32>> ImageStack<I> {
         self.count += 1;
     }
 
-    pub fn to_image(mut self) -> I {
+    pub fn into_image(mut self) -> I {
         let d = self.count as f32;
         for c in self.image.channels_mut() {
             for pixel in c.pixels_mut() {
@@ -103,7 +103,7 @@ pub fn stack(images: &BTreeMap<String, Vector>, out_path: &str) {
         let image = GrayImage::open(filename);
         stack.add(&image, tx + stack_tx);
     }
-    let image = stack.to_image();
+    let image = stack.into_image();
 
     // save
     //println!("res: {:?}", image);

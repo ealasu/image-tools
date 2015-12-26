@@ -25,7 +25,7 @@ impl GrayImage<u16> {
         GrayImage(Channel::from_data(w, h, data))
     }
 
-    fn rescale_to_f32(&self) -> GrayImage<f32> {
+    pub fn rescale_to_f32(&self) -> GrayImage<f32> {
         // TODO: rescale to 0..1?
         let data = self.0.pixels();
         let mut out: Vec<f32> = Vec::with_capacity(data.len());

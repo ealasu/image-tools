@@ -45,14 +45,14 @@ fn main() {
             let image: GrayImage<u16> = GrayImage::open_raw(filename);
             image.rescale_to_f32()
         }).fold(None, |stack, img| {
-            let stack = if let Some(s) = stack {
+            let mut stack = if let Some(s) = stack {
                 s
             } else {
                 ImageStack::new(img.width(), img.height())
             };
-            stack.add(img, Default::default());
+            stack.add(&img, Default::default());
             Some(stack)
-        })
+        }).unwrap()
     });
     let img = stack.into_image();
 
