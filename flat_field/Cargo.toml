@@ -5,6 +5,7 @@ version = "0.0.0"
 [dependencies]
 docopt = "*"
 rustc-serialize = "*"
+crossbeam = "*"
 simple_parallel = "0.3.0"
 image = { path = "../image" }
 star_stuff = { path = "../star_stuff" }

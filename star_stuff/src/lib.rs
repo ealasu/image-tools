@@ -20,4 +20,4 @@ pub mod triangle;
 
 pub use star_finder::find_stars;
 pub use star_aligner::align_images;
-pub use star_stacker::stack;
+pub use star_stacker::{stack, ImageStack};

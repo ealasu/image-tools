@@ -6,8 +6,8 @@ use math::*;
 pub type Unit = f32;
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Point<T: Debug + PartialEq> {
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
+pub struct Point<T: Debug + PartialEq + Default> {
     pub x: T,
     pub y: T,
 }
@@ -44,7 +44,7 @@ impl Sub<Vector> for Point<Unit> {
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
 pub struct Vector {
     pub x: Unit,
     pub y: Unit,
