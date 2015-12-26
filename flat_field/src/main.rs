@@ -91,4 +91,5 @@ fn main() {
         }
     }
 
+    img.save(args.arg_output);
 }
