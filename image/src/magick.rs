@@ -59,3 +59,16 @@ pub fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, m
     child.stdin.unwrap().write_all(&data).unwrap();
 }
 
+pub fn magick_save_raw(data: &[f32], width: usize, height: usize, path: &str) {
+    let data: Vec<u8> = convert_vec(data.to_vec());
+    let child = Command::new("convert")
+        .arg("-size").arg(format!("{}x{}", width, height))
+        .arg("-depth").arg("32")
+        .arg("-define").arg("quantum:format=floating-point")
+        .arg("gray:-")
+        .arg("-type").arg("grayscale")
+        .arg(path)
+        .stdin(Stdio::piped())
+        .spawn().unwrap();
+    child.stdin.unwrap().write_all(&data).unwrap();
+}

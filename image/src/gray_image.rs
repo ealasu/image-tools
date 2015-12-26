@@ -17,6 +17,10 @@ impl GrayImage<f32> {
     pub fn save(&self, path: &str) {
         magick_convert(self.0.pixels(), self.width(), self.height(), "gray", "grayscale", path);
     }
+
+    pub fn save_raw(&self, path: &str) {
+        magick_save_raw(self.0.pixels(), self.width(), self.height(), path);
+    }
 }
 
 impl GrayImage<u16> {

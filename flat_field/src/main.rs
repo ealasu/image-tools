@@ -24,19 +24,6 @@ struct Args {
     arg_input: Vec<String>,
 }
 
-fn bayer_average(channel: &Channel<f32>, offset_x: usize, offset_y: usize) -> f32 {
-    let bayer_w = channel.width / 2;
-    let bayer_h = channel.height / 2;
-    
-    let mut sum = 0.0;
-    for y in 0..bayer_h {
-        for x in 0..bayer_w {
-            sum += channel.at(x * 2 + offset_x, y * 2 + offset_y);
-        }
-    }
-    sum / ((bayer_w * bayer_h) as f32)
-}
-
 fn main() {
     /*
       Steps:
@@ -69,8 +56,25 @@ fn main() {
         }).unwrap()
     });
     let mut img = stack.into_image();
-    let chan = &mut img.0;
+    find_delta(&mut img.0);
 
+    img.save_raw(&args.arg_output);
+}
+
+fn bayer_average(channel: &Channel<f32>, offset_x: usize, offset_y: usize) -> f32 {
+    let bayer_w = channel.width / 2;
+    let bayer_h = channel.height / 2;
+    
+    let mut sum = 0.0;
+    for y in 0..bayer_h {
+        for x in 0..bayer_w {
+            sum += channel.at(x * 2 + offset_x, y * 2 + offset_y);
+        }
+    }
+    sum / ((bayer_w * bayer_h) as f32)
+}
+
+pub fn find_delta(chan: &mut Channel<f32>) {
     let avg_r = bayer_average(chan, 0, 0);
     let avg_g = (bayer_average(chan, 1, 0) + bayer_average(chan, 0, 1)) / 2.0;
     let avg_b = bayer_average(chan, 1, 1);
@@ -90,6 +94,61 @@ fn main() {
             *pixel = avg / *pixel;
         }
     }
+}
 
-    img.save(args.arg_output);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::*;
+
+    #[test]
+    fn test_1() {
+        let mut chan: Channel<f32> = Channel::from_data(8, 4, vec![
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+        ]);
+        find_delta(&mut chan);
+        assert_eq!(*chan.pixels(), vec![
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+        ]);
+    }
+
+    #[test]
+    fn test_2() {
+        let mut chan: Channel<f32> = Channel::from_data(8, 4, vec![
+            3.0, 1.0, 3.0, 1.0, 3.0, 1.0, 3.0, 1.0, 
+            1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 
+            3.0, 1.0, 3.0, 1.0, 3.0, 1.0, 3.0, 1.0, 
+            1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 
+        ]);
+        find_delta(&mut chan);
+        assert_eq!(*chan.pixels(), vec![
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+        ]);
+    }
+
+    #[test]
+    fn test_3() {
+        let mut chan: Channel<f32> = Channel::from_data(8, 4, vec![
+            3.0, 1.0, 3.0, 1.0, 3.0, 1.0, 3.0, 1.0, 
+            1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 
+            3.0, 1.0, 1.0, 1.0, 3.0, 1.0, 3.0, 1.0, 
+            1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 1.0, 2.0, 
+        ]);
+        find_delta(&mut chan);
+        assert_eq!(*chan.pixels(), vec![
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
+        ]);
+    }
 }
