@@ -58,6 +58,10 @@ fn main() {
     let mut img = stack.into_image();
     find_delta(&mut img.0);
 
+    println!("min: {}", img.0.min());
+    println!("max: {}", img.0.max());
+    println!("avg: {}", img.0.average());
+
     img.save_raw(&args.arg_output);
 }
 
@@ -78,6 +82,12 @@ pub fn find_delta(chan: &mut Channel<f32>) {
     let avg_r = bayer_average(chan, 0, 0);
     let avg_g = (bayer_average(chan, 1, 0) + bayer_average(chan, 0, 1)) / 2.0;
     let avg_b = bayer_average(chan, 1, 1);
+    println!("avg_r: {}", avg_r);
+    println!("avg_g: {}", avg_g);
+    println!("avg_b: {}", avg_b);
+    println!("min: {}", chan.min());
+    println!("max: {}", chan.max());
+    println!("avg: {}", chan.average());
 
     for y in 0..chan.height {
         for x in 0..chan.width {

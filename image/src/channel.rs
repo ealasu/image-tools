@@ -1,4 +1,5 @@
 use std::default::Default;
+use std::f32;
 use std::fmt;
 use std::iter::repeat;
 use std::io::prelude::*;
@@ -54,5 +55,19 @@ impl<P: Clone + Copy + Default> Channel<P> {
     #[inline(always)]
     pub fn pixels_mut(&mut self) -> &mut Vec<P> {
         &mut self.data
+    }
+}
+
+impl Channel<f32> {
+    pub fn average(&self) -> f32 {
+        self.pixels().iter().fold(0.0, |acc, v| acc + v) / self.pixels().len() as f32
+    }
+
+    pub fn min(&self) -> f32 {
+        self.pixels().iter().fold(f32::MAX, |acc, &v| acc.min(v))
+    }
+
+    pub fn max(&self) -> f32 {
+        self.pixels().iter().fold(f32::MIN, |acc, &v| acc.max(v))
     }
 }

@@ -4,6 +4,7 @@ use std::str;
 use std::process::Command;
 use std::process::Stdio;
 use std::io::prelude::*;
+use std::fs::File;
 use regex::Regex;
 use convert::*;
 
@@ -61,12 +62,16 @@ pub fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, m
 
 pub fn magick_save_raw(data: &[f32], width: usize, height: usize, path: &str) {
     let data: Vec<u8> = convert_vec(data.to_vec());
+    let mut f = File::create(format!("{}.dat", path)).unwrap();
+    f.write_all(&data).unwrap();
     let child = Command::new("convert")
         .arg("-size").arg(format!("{}x{}", width, height))
         .arg("-depth").arg("32")
         .arg("-define").arg("quantum:format=floating-point")
         .arg("gray:-")
         .arg("-type").arg("grayscale")
+        .arg("-depth").arg("32")
+        .arg("-define").arg("quantum:format=floating-point")
         .arg(path)
         .stdin(Stdio::piped())
         .spawn().unwrap();

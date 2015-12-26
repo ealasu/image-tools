@@ -1,4 +1,3 @@
-use std::u16;
 use std::io::prelude::*;
 use std::io::Result as IoResult;
 use convert::*;
@@ -11,21 +10,41 @@ fn read_until<R: BufRead>(r: &mut R, until: char) -> IoResult<String> {
     Ok(s)
 }
 
-pub fn read<R: BufRead>(r: &mut R) -> IoResult<(usize, usize, Vec<u16>)> {
+pub enum Format {
+    U16(Vec<u16>),
+    F32(Vec<f32>),
+}
+
+const U16_MAX: &'static str = "65536";
+const U32_MAX: &'static str = "4294967296";
+
+pub fn read<R: BufRead>(r: &mut R) -> IoResult<(usize, usize, Format)> {
     let magic = try!(read_until(r, '\n'));
     assert_eq!(magic, "P5\n");
 
     let w = try!(read_until(r, ' '));
     let h = try!(read_until(r, '\n'));
     let max_val = try!(read_until(r, '\n'));
-    assert_eq!(max_val, format!("{}\n", u16::MAX));
 
     let w = w.trim().parse::<usize>().unwrap();
     let h = h.trim().parse::<usize>().unwrap();
 
     let mut data = Vec::new();
     try!(r.read_to_end(&mut data));
-    let data = convert_vec(data);
 
-    Ok((w, h, data))
+    let res = match max_val.trim() {
+        U16_MAX => Format::U16(convert_vec(data)),
+        U32_MAX => Format::F32(convert_vec(data)),
+        _ => panic!("unsupported format: {}", max_val)
+    };
+    Ok((w, h, res))
+}
+
+pub fn write<W: Write>(w: &mut W, width: usize, height: usize, data: Format) -> IoResult<()> {
+    let (max_val, data): (_, Vec<u8>) = match data {
+        Format::U16(data) => (U16_MAX, convert_vec(data)),
+        Format::F32(data) => (U32_MAX, convert_vec(data)),
+    };
+    try!(w.write(format!("P5\n{} {}\n{}\n", width, height, max_val).as_bytes()));
+    w.write_all(&data)
 }

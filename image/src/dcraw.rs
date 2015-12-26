@@ -16,5 +16,8 @@ pub fn open_raw(path: &str) -> (usize, usize, Vec<u16>) {
     println!("stderr: {}", stderr);
     let mut r = BufReader::new(&out.stdout[..]);
     let (w, h, data) = pgm::read(&mut r).unwrap();
+    let data = if let pgm::Format::U16(d) = data { d } else {
+        panic!("unsupported format")
+    };
     (w, h, data)
 }
