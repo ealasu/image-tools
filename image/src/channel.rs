@@ -5,6 +5,7 @@ use std::iter::repeat;
 use std::io::prelude::*;
 
 
+#[derive(Clone)]
 pub struct Channel<P> {
     pub width: usize,
     pub height: usize,

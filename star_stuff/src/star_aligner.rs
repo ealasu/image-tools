@@ -1,10 +1,9 @@
 use itertools::Itertools;
-use crossbeam;
-use simple_parallel::Pool;
 use point::*;
 use types::*;
 use triangle::Triangle;
 use math::*;
+use rayon::prelude::*;
 
 
 const EPSILON: f32 = 0.7;
@@ -44,7 +43,9 @@ fn find_triangle(t: Triangle, stars: &[Star]) -> Option<Triangle> {
     let (a, b, c) = (t.a, t.b, t.c);
     //println!("abc: {:?} {:?} {:?} ", a, b, c);
 
-    let mut matches = stars.iter().combinations().filter_map(|(&ap, &bp)| {
+    let mut matches = stars.iter().combinations(2).filter_map(|v| {
+        let ap = *v[0];
+        let bp = *v[1];
         let d = distance(ap, bp);
         if are_close(d, t.a_to_b, EPSILON) {
             Some((ap, bp, Sides::AB))
@@ -128,19 +129,24 @@ pub fn compute_transform(ref_stars: &Stars, other_stars: &Stars) -> Option<Vecto
 }
 
 
-pub fn align_images(pool: &mut Pool, images: ImagesWithStars) -> ImagesWithAlignment {
-    let mut images_iter = (&images).into_iter();
-    let (first_image, ref_stars) = images_iter.next().unwrap();
-    let mut res = crossbeam::scope(|scope| {
-        pool.map(scope, images_iter, |(filename, other_stars)| {
+pub fn align_images(images: ImagesWithStars) -> ImagesWithAlignment {
+    let (ref first_image, ref ref_stars) = images[0];
+    let mut v = vec![];
+    images[1..]
+        .par_iter()
+        .map(|&(ref filename, ref other_stars)| {
             println!("aligning {}", filename);
-            let a = compute_transform(ref_stars, other_stars);
+            let a = compute_transform(ref_stars, &other_stars);
             a.map(|a| {
                 (filename.clone(), a)
             })
-        }).filter_map(|i| i).collect::<ImagesWithAlignment>()
-    });
-    res.insert(first_image.clone(), Vector {x: 0.0, y: 0.0});
+        })
+        //.filter(|x| x.is_some())
+        //.map(|x| *x.unwrap())
+        //.filter_map(|i| i)
+        .collect_into(&mut v);
+    let mut res = v.into_iter().filter_map(|x| x).collect::<ImagesWithAlignment>();
+    res.push((first_image.clone(), Vector {x: 0.0, y: 0.0}));
     res
 }
 

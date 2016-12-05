@@ -2,8 +2,7 @@
 
 extern crate test;
 extern crate regex;
-extern crate crossbeam;
-extern crate simple_parallel;
+extern crate rayon;
 extern crate itertools;
 extern crate convert;
 extern crate image;

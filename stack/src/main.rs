@@ -1,9 +1,7 @@
 extern crate docopt;
-extern crate simple_parallel;
 extern crate rustc_serialize;
 extern crate star_stuff;
 
-use simple_parallel::Pool;
 use docopt::Docopt;
 use star_stuff::*;
 
@@ -26,11 +24,9 @@ fn main() {
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
 
-    let mut pool = Pool::new(4);
-
     println!("finding stars");
-    let res = find_stars(&mut pool, args.arg_input);
-    for (ref f, ref v) in res.iter() {
+    let res = find_stars(args.arg_input);
+    for &(ref f, ref v) in res.iter() {
         println!("found {} stars in {:?}", v.len(), f);
         for star in v.iter() {
             println!("{},{}", star.x, star.y);
@@ -39,7 +35,7 @@ fn main() {
     // TODO: eliminate images with distorted stars
 
     println!("aligning");
-    let res = align_images(&mut pool, res);
+    let res = align_images(res);
     println!("aligned:");
     for img in res.iter() {
         println!("{:?}", img);

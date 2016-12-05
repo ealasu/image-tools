@@ -1,8 +1,7 @@
 use std::cmp::max;
 use std::ops::Range;
 use std::f32;
-use simple_parallel::Pool;
-use crossbeam;
+use rayon::prelude::*;
 use image::*;
 use types::ImagesWithStars;
 use point::Point;
@@ -111,19 +110,19 @@ impl<'a> Iterator for StarFinder<'a> {
 }
 
 
-pub fn find_stars(pool: &mut Pool, images: Vec<String>) -> ImagesWithStars {
+pub fn find_stars(images: Vec<String>) -> ImagesWithStars {
     let aperture = 7;
-    crossbeam::scope(|scope| {
-        pool.map(scope, &images, |filename| {
-            let image: GrayImage<f32> = GrayImage::open(filename);
-            let channel = &image.0;
-            let stars = StarFinder::new(channel);
-            let refined_stars = stars.map(|approx_center| {
-                refine_star_center(channel, approx_center, aperture)
-            }).collect::<Vec<_>>();
-            (filename.clone(), refined_stars)
-        }).collect()
-    })
+    let mut v = vec![];
+    images.par_iter().map(|filename| {
+        let image: GrayImage<f32> = GrayImage::open(filename);
+        let channel = &image.0;
+        let stars = StarFinder::new(channel);
+        let refined_stars = stars.map(|approx_center| {
+            refine_star_center(channel, approx_center, aperture)
+        }).collect::<Vec<_>>();
+        (filename.clone(), refined_stars)
+    }).collect_into(&mut v);
+    v
 }
 
 
@@ -135,8 +134,8 @@ mod tests {
 
     #[test]
     fn test_star() {
-        let i = &Image::open_gray("data/star.tiff").channels[0];
-        let finder = StarFinder::new(i);
+        let i = GrayImage::open("data/star.tiff").into_channel();
+        let finder = StarFinder::new(&i);
         let stars: Vec<_> = finder.collect();
 
         assert_eq!(stars, vec![Star {x: 10, y: 7}]);
@@ -144,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_tiny() {
-        let image = Image::open_gray("data/tiny.tiff").channels[0];
+        let image = GrayImage::open("data/tiny.tiff").into_channel();
         let finder = StarFinder::new(&image);
         let stars: Vec<_> = finder.collect();
 
@@ -154,7 +153,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_small() {
-        let image = Image::open_gray("data/small.tiff").channels[0];
+        let image = GrayImage::open("data/small.tiff").into_channel();
         let finder = StarFinder::new(&image);
         let stars: Vec<_> = finder.collect();
 
@@ -164,7 +163,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_big() {
-        let image = Image::open_gray("data/big-1.tiff").channels[0];
+        let image = GrayImage::open("data/big-1.tiff").into_channel();
         let finder = StarFinder::new(&image);
         let stars: Vec<_> = finder.collect();
 
@@ -173,7 +172,7 @@ mod tests {
 
     #[bench]
     fn bench_star(b: &mut Bencher) {
-        let image = Image::open_gray("data/star.tiff").channels[0];
+        let image = GrayImage::open("data/star.tiff").into_channel();
         b.iter(|| {
             let finder = StarFinder::new(&image);
             let _: Vec<_> = finder.collect();
@@ -182,7 +181,7 @@ mod tests {
 
     #[bench]
     fn bench_setup_start(b: &mut Bencher) {
-        let image = Image::open_gray("data/star.tiff").channels[0];
+        let image = GrayImage::open("data/star.tiff").into_channel();
         b.iter(|| {
             let _ = StarFinder::new(&image);
         });
@@ -190,7 +189,7 @@ mod tests {
     
     #[bench]
     fn bench_setup_tiny(b: &mut Bencher) {
-        let image = Image::open_gray("data/tiny.tiff").channels[0];
+        let image = GrayImage::open("data/tiny.tiff").into_channel();
         b.iter(|| {
             let _ = StarFinder::new(&image);
         });
@@ -198,7 +197,7 @@ mod tests {
 
     #[bench]
     fn bench_tiny(b: &mut Bencher) {
-        let image = Image::open_gray("data/tiny.tiff").channels[0];
+        let image = GrayImage::open("data/tiny.tiff").into_channel();
         b.iter(|| {
             let finder = StarFinder::new(&image);
             let _: Vec<_> = finder.collect();

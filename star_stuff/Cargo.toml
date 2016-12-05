@@ -4,8 +4,7 @@ version = "0.0.0"
 
 [dependencies]
 regex = "*"
-simple_parallel = "0.3.0"
-crossbeam = "0.1.6"
+rayon = "*"
 itertools = "*"
 docopt = "*"
 rustc-serialize = "*"

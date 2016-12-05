@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn test_star_1() {
-        let image = Image::open_gray("data/star.tiff").channels[0];
+        let image = GrayImage::open("data/star.tiff").into_channel();
         let start = Point {x: 10, y: 7};
         let center = refine_star_center(&image, start, 7);
 
@@ -94,7 +94,7 @@ mod tests {
 
     #[test]
     fn test_star_2() {
-        let image = Image::open_gray("data/star.tiff").channels[0];
+        let image = GrayImage::open("data/star.tiff").into_channel();
         let start = Point {x: 10, y: 7};
         let center = refine_star_center(&image, start, 4);
 
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_star_off_center() {
-        let image = Image::open_gray("data/star.tiff").channels[0];
+        let image = GrayImage::open("data/star.tiff").into_channel();
         let start = Point {x: 9, y: 6};
         let center = refine_star_center(&image, start, 5);
 
@@ -112,7 +112,7 @@ mod tests {
 
     #[bench]
     fn bench_star(b: &mut Bencher) {
-        let image = Image::open_gray("data/star.tiff").channels[0];
+        let image = GrayImage::open("data/star.tiff").into_channel();
         b.iter(|| {
             let start = Point {x: 10, y: 7};
             refine_star_center(&image, start, 7)

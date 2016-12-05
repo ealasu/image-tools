@@ -15,6 +15,10 @@ impl GrayImage<f32> {
         GrayImage(Channel::from_data(width, height, data))
     }
 
+    pub fn into_channel(self) -> Channel<f32> {
+        self.0
+    }
+
     pub fn open_pgm(path: &str) -> Self {
         let (w, h, data) = pgm::read_from_file(path);
         let data = if let pgm::Format::F32(d) = data { d } else {

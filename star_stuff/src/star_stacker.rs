@@ -77,9 +77,9 @@ impl<I: Image<f32>> ImageStack<I> {
     }
 }
 
-pub fn stack(images: &BTreeMap<String, Vector>, out_path: &str) {
+pub fn stack(images: &[(String, Vector)], out_path: &str) {
     // calculate dimensions
-    let d = images.iter().map(|(filename, &tx)| {
+    let d = images.iter().map(|&(ref filename, ref tx)| {
         let (width, height) = identify(&filename);
         let top = tx.y as isize;
         let bottom = height as isize + tx.y as isize;
@@ -99,9 +99,9 @@ pub fn stack(images: &BTreeMap<String, Vector>, out_path: &str) {
 
     // stack
     let mut stack = ImageStack::new(width, height);
-    for (filename, &tx) in images.iter() {
-        let image = GrayImage::open(filename);
-        stack.add(&image, tx + stack_tx);
+    for &(ref filename, ref tx) in images.iter() {
+        let image = GrayImage::open(&filename);
+        stack.add(&image, *tx + stack_tx);
     }
     let image = stack.into_image();
 
@@ -170,9 +170,9 @@ mod tests {
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
         ]);
-        let mut stacker = ImageStack::new(3, 3, 1);
-        stacker.add(&Image::new(vec![image1]), Vector {x: 0.0, y: 0.0});
-        assert_eq!(*stacker.to_image().channels[0].pixels(), vec![
+        let mut stacker = ImageStack::new(3, 3);
+        stacker.add(&GrayImage(image1), Vector {x: 0.0, y: 0.0});
+        assert_eq!(*stacker.into_image().into_channel().pixels(), vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
@@ -186,10 +186,10 @@ mod tests {
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
         ]);
-        let mut stacker = ImageStack::new(3, 3, 1);
-        stacker.add(&Image::new(vec![image1]), Vector {x: 0.0, y: 0.0});
-        stacker.add(&Image::new(vec![image1]), Vector {x: 0.0, y: 0.0});
-        assert_eq!(*stacker.to_image().channels[0].pixels(), vec![
+        let mut stacker = ImageStack::new(3, 3);
+        stacker.add(&GrayImage(image1.clone()), Vector {x: 0.0, y: 0.0});
+        stacker.add(&GrayImage(image1), Vector {x: 0.0, y: 0.0});
+        assert_eq!(*stacker.into_image().into_channel().pixels(), vec![
             0.5, 0.5, 0.5,
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
@@ -203,10 +203,10 @@ mod tests {
             0.5, 1.0, 0.5,
             0.5, 0.5, 0.5,
         ]);
-        let mut stacker = ImageStack::new(3, 3, 1);
-        stacker.add(&Image::new(vec![image1]), Vector {x: 0.0, y: 0.0});
-        stacker.add(&Image::new(vec![image1]), Vector {x: 0.5, y: 0.5});
-        assert_eq!(*stacker.to_image().channels[0].pixels(), vec![
+        let mut stacker = ImageStack::new(3, 3);
+        stacker.add(&GrayImage(image1.clone()), Vector {x: 0.0, y: 0.0});
+        stacker.add(&GrayImage(image1), Vector {x: 0.5, y: 0.5});
+        assert_eq!(*stacker.into_image().into_channel().pixels(), vec![
             0.3125, 0.375, 0.375,
             0.375, 0.8125, 0.5625,
             0.375, 0.5625, 0.5625,
