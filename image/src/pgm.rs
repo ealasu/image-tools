@@ -17,8 +17,8 @@ pub enum Format {
     F32(Vec<f32>),
 }
 
-const U16_MAX: &'static str = "65536";
-const U32_MAX: &'static str = "4294967296";
+const U16_MAX: &'static str = "65535";
+const U32_MAX: &'static str = "4294967295";
 
 pub fn read<R: BufRead>(r: &mut R) -> IoResult<(usize, usize, Format)> {
     let magic = try!(read_until(r, '\n'));
