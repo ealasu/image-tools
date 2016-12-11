@@ -1,0 +1,7 @@
+[package]
+name = "autoguider"
+version = "0.1.0"
+authors = ["eman <eman>"]
+
+[dependencies]
+crossbeam = "*"
