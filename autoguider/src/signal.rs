@@ -20,6 +20,13 @@ impl<T> Signal<T> {
         self.cvar.notify_one();
     }
 
+    pub fn get(&self) -> Option<T> {
+        let mut guard = self.lock.lock().unwrap();
+        let mut res = None;
+        mem::swap(&mut res, &mut guard);
+        res
+    }
+
     pub fn get_wait(&self) -> T {
         let mut guard = self.lock.lock().unwrap();
         loop {
@@ -33,9 +40,7 @@ impl<T> Signal<T> {
     }
 
     pub fn get_notify(&self) -> Option<T> {
-        let mut guard = self.lock.lock().unwrap();
-        let mut res = None;
-        mem::swap(&mut res, &mut guard);
+        let res = self.get();
         self.cvar.notify_one();
         res
     }

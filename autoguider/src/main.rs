@@ -1,4 +1,5 @@
 #![feature(loop_break_value)]
+#![feature(receiver_try_iter)]
 
 extern crate crossbeam;
 
