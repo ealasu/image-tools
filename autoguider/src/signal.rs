@@ -51,3 +51,23 @@ impl<T> Signal<T> {
         }
     }
 }
+
+pub trait IterableSignal<T> {
+    fn iter<'a>(&'a self) -> SignalIter<'a, T>;
+}
+
+impl<T> IterableSignal<T> for Signal<Option<T>> {
+    fn iter<'a>(&'a self) -> SignalIter<'a, T> {
+        SignalIter(self)
+    }
+}
+
+pub struct SignalIter<'a, T: 'a>(&'a Signal<Option<T>>);
+
+impl<'a, T> Iterator for SignalIter<'a, T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.get_wait()
+    }
+}
