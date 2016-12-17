@@ -7,3 +7,4 @@ authors = ["eman <eman>"]
 log = "*"
 env_logger = "*"
 crossbeam = "*"
+tempfile = "*"

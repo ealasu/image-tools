@@ -16,7 +16,7 @@ use signal::{Signal, IterableSignal};
 //}
 
 
-fn run_autoguider<Image, Pos, ShootFn, CorrectFn, CalcFn>(
+pub fn run_autoguider<Image, Pos, ShootFn, CorrectFn, CalcFn>(
     mut shoot: ShootFn,
     mut calculate_correction: CalcFn,
     mut correct: CorrectFn)
