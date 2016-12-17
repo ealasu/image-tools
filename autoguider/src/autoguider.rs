@@ -27,7 +27,7 @@ where Image: Send + Debug, Pos: Send,
 
     crossbeam::scope(|scope| {
         scope.spawn(|| {
-            trace!("start of thread");
+            trace!("[thread] start");
             'outer: loop {
                 if let Some(None) = image_signal.get() {
                     break 'outer;
@@ -37,17 +37,19 @@ where Image: Send + Debug, Pos: Send,
                 } else {
                     break 'outer;
                 };
-                trace!("thread got image {:?}", image);
+                trace!("[thread] got image {:?}", image);
                 let correction = calculate_correction(image);
-                trace!("thread locking camera");
+                trace!("[thread] locking camera");
                 let _lock = camera_mutex.lock().unwrap();
+                trace!("[thread] locked camera, correcting");
                 correct(correction);
-                trace!("thread moving on");
+                trace!("[thread] moving on");
             }
-            trace!("end of thread");
+            trace!("[thread] end");
         });
         loop {
             let image = if let Some(image) = {
+                trace!("[main loop] locking camera");
                 let _lock = camera_mutex.lock().unwrap();
                 shoot()
             } {
@@ -55,14 +57,13 @@ where Image: Send + Debug, Pos: Send,
             } else {
                 break
             };
-            trace!("got image: {:?}", image);
+            trace!("[main loop] got image: {:?}", image);
             image_signal.set_notify(Some(image));
         }
-        trace!("sending None to end thread");
+        trace!("[main loop] sending None to end thread");
         image_signal.set_notify(None);
-        trace!("end of scope");
+        trace!("[main loop] end of scope");
     });
-    trace!("after scope");
 }
 
 #[cfg(test)]
@@ -82,16 +83,16 @@ mod tests {
                 run_autoguider(
                     || {
                         let i = image_iter.next();
-                        trace!("shooting {:?}", i);
+                        info!("shooting {:?}", i);
                         thread::sleep(Duration::from_secs(1));
                         i
                     },
                     |image| {
-                        trace!("calculating correction for {:?}", image);
+                        info!("calculating correction for {:?}", image);
                         image
                     },
                     |pos| {
-                        trace!("correcting {:?}", pos);
+                        info!("correcting {:?}", pos);
                     },
                 );
             });

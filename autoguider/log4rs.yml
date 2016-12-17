@@ -7,12 +7,14 @@ appenders:
     filter:
       kind: threshold
       level: warn
+    encoder:
+      pattern: "{d} - {h({l} [{M}] {m}{n})}"
 
   file:
     kind: rolling_file
     path: "log/autoguider.log"
     encoder:
-      pattern: "{d} - {m}{n}"
+      pattern: "{d} - {l} [{M}] {m}{n}"
     policy:
       kind: compound
       trigger:
@@ -31,7 +33,7 @@ appenders:
 #      pattern: "{d} - {m}{n}"
 
 root:
-  level: info
+  level: trace
   appenders:
     - stdout
     - file

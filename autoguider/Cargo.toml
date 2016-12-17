@@ -8,3 +8,6 @@ log = "*"
 crossbeam = "*"
 tempfile = "*"
 log4rs = { version = "*", features = ["rolling_file_appender", "compound_policy", "size_trigger", "fixed_window_roller"] }
+
+[profile.dev]
+panic = "abort"

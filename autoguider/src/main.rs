@@ -12,6 +12,8 @@ mod aligner;
 mod mount;
 mod pos;
 
+use std::thread;
+use std::time::Duration;
 use camera::Camera;
 use aligner::Aligner;
 use mount::Mount;
@@ -26,16 +28,22 @@ fn main() {
 
     autoguider::run_autoguider(
         || {
-            // shoot an image
-            Some(camera.shoot())
+            info!("shooting image");
+            //thread::sleep(Duration::from_secs(10));
+            let image = camera.shoot();
+            info!("finished shooting image");
+            Some(image)
         },
         |image| {
-            // calculate offset
-            aligner.align(image)
+            info!("calculating offset");
+            let offset = aligner.align(image);
+            info!("offset: {:?}", offset);
+            offset
         },
         |pos| {
-            // slew mount to correct
+            info!("slewing mount to correct offset");
             mount.slew(pos);
+            thread::sleep(Duration::from_secs(1));
         }
     );
 }

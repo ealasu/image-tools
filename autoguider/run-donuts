@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+import sys
+from donuts import Donuts
+
+reference_image_name = sys.argv[1]
+science_image_names = sys.argv[2:]
+
+# Construct a donuts object
+d = Donuts(
+  refimage=reference_image_name,
+  image_ext=0,
+  overscan_width=20,
+  prescan_width=20,
+  border=64,
+  normalise=True,
+  #exposure='EXPOSURE',
+  subtract_bkg=True,
+  ntiles=32)
+
+# for each image, compute the x/y translation required
+# to align the images onto the reference image
+last_x = 0.0
+last_y = 0.0
+
+for image in science_image_names:
+    shift_result = d.measure_shift(image)
+    x = shift_result.x.value
+    y = shift_result.y.value
+    # Also check out shift_result.sky_background
+    # print(image + ': ' + str(x - last_x) + ',' + str(y - last_y))
+    print(str(x - last_x) + ',' + str(y - last_y))
+    last_x = x
+    last_y = y
