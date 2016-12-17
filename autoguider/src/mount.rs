@@ -1,4 +1,4 @@
-use pos::Pos;
+use pos::Vector;
 
 pub struct Mount {
 }
@@ -8,7 +8,7 @@ impl Mount {
         Mount {}
     }
 
-    pub fn slew(&mut self, amount: Pos) {
+    pub fn slew(&mut self, amount: Vector) {
         info!("slewing to {:?}", amount);
     }
 }

@@ -5,6 +5,6 @@ authors = ["eman <eman>"]
 
 [dependencies]
 log = "*"
-env_logger = "*"
 crossbeam = "*"
 tempfile = "*"
+log4rs = { version = "*", features = ["rolling_file_appender", "compound_policy", "size_trigger", "fixed_window_roller"] }

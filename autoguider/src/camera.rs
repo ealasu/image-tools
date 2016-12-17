@@ -13,6 +13,7 @@ impl Camera {
         let f = NamedTempFile::new().unwrap();
         let status = Command::new("gphoto2")
             //.arg("--filename").arg(f.path())
+            .arg("--auto-detect")
             .arg("--set-config").arg("shutterspeed=20")
             .arg("--set-config").arg("iso=3200")
             .arg("--set-config").arg("imageformat=raw+jpeg")
