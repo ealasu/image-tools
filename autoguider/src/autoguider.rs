@@ -1,10 +1,7 @@
-use std::thread;
 use std::sync::Mutex;
-use std::sync::mpsc::channel;
-use std::time::Duration;
 use std::fmt::Debug;
 use crossbeam;
-use signal::{Signal, IterableSignal};
+use signal::Signal;
 
 //fn shoot(&self) -> Image;
 //fn correct(&self, Pos);
@@ -43,7 +40,7 @@ where Image: Send + Debug, Pos: Send,
                 trace!("thread got image {:?}", image);
                 let correction = calculate_correction(image);
                 trace!("thread locking camera");
-                let lock = camera_mutex.lock().unwrap();
+                let _lock = camera_mutex.lock().unwrap();
                 correct(correction);
                 trace!("thread moving on");
             }
@@ -51,7 +48,7 @@ where Image: Send + Debug, Pos: Send,
         });
         loop {
             let image = if let Some(image) = {
-                let lock = camera_mutex.lock().unwrap();
+                let _lock = camera_mutex.lock().unwrap();
                 shoot()
             } {
                 image

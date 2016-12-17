@@ -1,5 +1,4 @@
 #![feature(loop_break_value)]
-#![feature(receiver_try_iter)]
 
 #[macro_use] extern crate log;
 extern crate env_logger;
@@ -21,7 +20,7 @@ use mount::Mount;
 fn main() {
     env_logger::init().unwrap();
 
-    let mut camera = Camera::new();
+    let camera = Camera::new();
     let mut aligner = Aligner::new();
     let mut mount = Mount::new();
 

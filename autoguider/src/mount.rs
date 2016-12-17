@@ -9,5 +9,6 @@ impl Mount {
     }
 
     pub fn slew(&mut self, amount: Pos) {
+        info!("slewing to {:?}", amount);
     }
 }

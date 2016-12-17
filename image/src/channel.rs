@@ -7,8 +7,8 @@ use std::io::prelude::*;
 
 #[derive(Clone)]
 pub struct Channel<P> {
-    pub width: usize,
-    pub height: usize,
+    width: usize,
+    height: usize,
     data: Vec<P>,
 }
 
@@ -35,14 +35,14 @@ impl<P: Clone + Copy + Default> Channel<P> {
     }
 
     #[inline(always)]
-    pub fn at(&self, x: usize, y: usize) -> P {
+    pub fn pixel_at(&self, x: usize, y: usize) -> P {
         //assert!(x < self.width);
         //assert!(y < self.height);
         self.data[x + y * self.width]
     }
 
     #[inline(always)]
-    pub fn at_mut(&mut self, x: usize, y: usize) -> &mut P {
+    pub fn pixel_at_mut(&mut self, x: usize, y: usize) -> &mut P {
         //assert!(x < self.width);
         //assert!(y < self.height);
         &mut self.data[x + y * self.width]
