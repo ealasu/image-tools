@@ -1,5 +1,7 @@
 use tempfile::NamedTempFile;
 use std::process::Command;
+use std::fs;
+use std::path::Path;
 
 pub struct Camera {
 }
@@ -10,7 +12,9 @@ impl Camera {
     }
 
     pub fn shoot(&self) -> NamedTempFile {
-        let jpeg_file = NamedTempFile::new().unwrap();
+        let tmpdir = Path::new("/mnt/ramdisk");
+
+        let jpeg_file = NamedTempFile::new_in(tmpdir).unwrap();
         debug!("saving jpeg to {:?}", jpeg_file.path());
         let status = Command::new("gphoto2")
             .arg("--filename").arg(jpeg_file.path())
@@ -29,9 +33,10 @@ impl Camera {
             .status()
             .expect("failed to execute gphoto2");
         assert!(status.success());
+        debug!("jpeg file len: {}", fs::metadata(jpeg_file.path()).unwrap().len());
 
         // convert IMG_3332.JPG -gravity center -extent 900x900 -crop 900x900^ -auto-level out.jpeg
-        let fits_file = NamedTempFile::new().unwrap();
+        let fits_file = NamedTempFile::new_in(tmpdir).unwrap();
         debug!("saving fits to {:?}", fits_file.path());
         let status = Command::new("convert")
             .arg(format!("jpeg:{}", jpeg_file.path().to_str().unwrap()))
@@ -46,6 +51,7 @@ impl Camera {
             .status()
             .expect("failed to execute convert");
         assert!(status.success());
+        debug!("fits file len: {}", fs::metadata(fits_file.path()).unwrap().len());
 
         fits_file
     }

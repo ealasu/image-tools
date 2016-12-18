@@ -18,6 +18,7 @@ use camera::Camera;
 use aligner::Aligner;
 use mount::Mount;
 
+const MAX: f32 = 100.0;
 
 fn main() {
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();
@@ -37,13 +38,16 @@ fn main() {
         |image| {
             info!("calculating offset");
             let offset = aligner.align(image);
-            info!("offset: {:?}", offset);
+            info!("calculated offset: {:?}", offset);
             offset
         },
-        |pos| {
-            info!("slewing mount to correct offset");
-            mount.slew(pos);
-            thread::sleep(Duration::from_secs(1));
+        |amount| {
+            if amount.x.abs() > MAX || amount.y.abs() > MAX {
+                warn!("not slewing because too big: {:?}", amount);
+                return;
+            }
+            info!("slewing mount to offset: {:?}", amount);
+            mount.slew(amount);
         }
     );
 }
