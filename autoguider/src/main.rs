@@ -27,13 +27,21 @@ fn main() {
     let camera = Camera::new();
     let mut aligner = Aligner::new();
     let mut mount = Mount::new();
+    let num_images = 300;
+    let mut range = 0..num_images;
 
     autoguider::run_autoguider(
         || {
-            info!("shooting image");
+            let i = if let Some(i) = range.next() {
+                i
+            } else {
+                info!("done shooting");
+                return None;
+            };
+            info!("shooting image {}", i);
             //thread::sleep(Duration::from_secs(10));
             let image = camera.shoot();
-            info!("finished shooting image");
+            info!("finished shooting image {}", i);
             Some(image)
         },
         |image| {
