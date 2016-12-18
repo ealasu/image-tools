@@ -9,9 +9,9 @@ pub struct Mount {
 
 fn arcsec_to_step(v: f32) -> i32 {
     let v = v as f64;
-    let steps_per_sec = 69044.0 / 1000000.0;
+    let secs_per_step = 69044.0 / 1000000.0;
     let arcsec_per_sec = (360.0*60.0*60.0) / (23.9344699*60.0*60.0);
-    let res: f64 = v / arcsec_per_sec * steps_per_sec;
+    let res: f64 = v / arcsec_per_sec / secs_per_step;
     res as i32
 }
 
@@ -28,11 +28,14 @@ impl Mount {
         let focal_length_mm = 200.0;
         let pixel_size_arcsec = pixel_size_um / focal_length_mm * 206.3;
 
-        let x = arcsec_to_step(amount_pixels.x * pixel_size_arcsec);
-        let y = arcsec_to_step(amount_pixels.y * pixel_size_arcsec);
+        let dec = arcsec_to_step(amount_pixels.x * pixel_size_arcsec);
+        let ra = arcsec_to_step(amount_pixels.y * pixel_size_arcsec);
 
-        info!("slewing by {},{} steps", x, y);
-        self.client.slew_by(x, y);
+        info!("slew_by ra: {}, dec: {}", ra, dec);
+        self.client.slew_by(ra, dec).unwrap();
         thread::sleep(Duration::from_secs(2));
+        let msg = self.client.read_msg();
+        info!("msg from scope: {:?}", msg);
     }
+
 }

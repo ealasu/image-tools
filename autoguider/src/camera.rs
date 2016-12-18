@@ -25,15 +25,24 @@ impl Camera {
             .arg("--keep-raw")
             // Choice: 8 RAW + Large Fine JPEG
             .arg("--set-config").arg("imageformat=8")
+
             // Choice: 37 1/160
-            .arg("--set-config").arg("shutterspeed=37")
+            //.arg("--set-config").arg("shutterspeed=37")
             // Choice: 1 100
-            .arg("--set-config").arg("iso=1")
+            //.arg("--set-config").arg("iso=1")
+
+            // 20
+            .arg("--set-config").arg("shutterspeed=3")
+            // 5000
+            .arg("--set-config").arg("iso=18")
+
+
             .arg("--capture-image-and-download")
             .status()
             .expect("failed to execute gphoto2");
         assert!(status.success());
         debug!("jpeg file len: {}", fs::metadata(jpeg_file.path()).unwrap().len());
+        fs::copy(jpeg_file.path(), tmpdir.join(Path::new("latest.jpeg"))).unwrap();
 
         // convert IMG_3332.JPG -gravity center -extent 900x900 -crop 900x900^ -auto-level out.jpeg
         let fits_file = NamedTempFile::new_in(tmpdir).unwrap();

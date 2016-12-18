@@ -13,8 +13,8 @@ mod aligner;
 mod mount;
 mod pos;
 
-use std::thread;
-use std::time::Duration;
+//use std::thread;
+//use std::time::Duration;
 use camera::Camera;
 use aligner::Aligner;
 use mount::Mount;

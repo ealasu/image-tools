@@ -39,22 +39,22 @@ impl<T> Signal<T> {
         }
     }
 
-    pub fn get_notify(&self) -> Option<T> {
-        let res = self.get();
-        self.cvar.notify_one();
-        res
-    }
+    //pub fn get_notify(&self) -> Option<T> {
+        //let res = self.get();
+        //self.cvar.notify_one();
+        //res
+    //}
 
-    pub fn set_wait(&self, v: T) {
-        let mut guard = self.lock.lock().unwrap();
-        *guard = Some(v);
-        loop {
-            guard = self.cvar.wait(guard).unwrap();
-            if guard.is_none() {
-                break;
-            }
-        }
-    }
+    //pub fn set_wait(&self, v: T) {
+        //let mut guard = self.lock.lock().unwrap();
+        //*guard = Some(v);
+        //loop {
+            //guard = self.cvar.wait(guard).unwrap();
+            //if guard.is_none() {
+                //break;
+            //}
+        //}
+    //}
 }
 
 pub trait IterableSignal<T> {
