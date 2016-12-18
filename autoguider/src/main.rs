@@ -4,6 +4,7 @@
 extern crate crossbeam;
 extern crate tempfile;
 extern crate log4rs;
+extern crate scope_client;
 
 mod signal;
 mod autoguider;
