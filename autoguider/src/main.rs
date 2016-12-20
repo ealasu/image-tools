@@ -19,7 +19,7 @@ use mount::Mount;
 use pos::*;
 use pid_control::{Controller, PIDController};
 
-const MAX: f32 = 100.0;
+const MAX: f64 = 150.0;
 
 fn main() {
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();
@@ -47,16 +47,17 @@ fn main() {
             info!("calculating offset");
             let offset = aligner.align(image);
             info!("calculated offset: {:?}", offset);
-            RaDec {
-                ra: ra_controller.update(offset.y, 1.0), // TODO: calc time delta
-                dec: dec_controller.update(offset.x, 1.0),
+            if offset.x.abs() > MAX || offset.y.abs() > MAX {
+                warn!("not slewing because too big: {:?}", offset);
+                None
+            } else {
+                Some(RaDec {
+                    ra: ra_controller.update(offset.y, 1.0), // TODO: calc time delta
+                    dec: dec_controller.update(offset.x, 1.0),
+                })
             }
         },
         |speed| {
-            //if amount.x.abs() > MAX || amount.y.abs() > MAX {
-                //warn!("not slewing because too big: {:?}", amount);
-                //return;
-            //}
             info!("setting slew speed: ra: {}, dec: {}", speed.ra, speed.dec);
             mount.slew(pixel_to_step(speed.ra), pixel_to_step(speed.dec));
         }

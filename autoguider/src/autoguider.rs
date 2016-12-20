@@ -28,7 +28,7 @@ where Image: Send + Debug,
       ImageIds: Iterator<Item=ImageId> + Send,
       ShootFn: Fn(ImageId) -> Image,
       ShootFn: Send + Sync,
-      CalcFn: FnMut(Image) -> Pos,
+      CalcFn: FnMut(Image) -> Option<Pos>,
       CalcFn: Sync + Send,
       CorrectFn: FnMut(Pos),
       CorrectFn: Send
@@ -54,19 +54,21 @@ where Image: Send + Debug,
                     trace!("[thread] got image {:?}", image);
 
                     let calc_start = Instant::now();
-                    let c = calculate_correction(image);
-                    let calc_duration = calc_start.elapsed();
-                    info!("calculation time: {:?}", calc_duration);
+                    if let Some(c) = calculate_correction(image) {
+                        let calc_duration = calc_start.elapsed();
+                        info!("calculation time: {:?}", calc_duration);
 
-                    let correction_time = Instant::now();
-                    {
-                        *correction.lock().unwrap() = c;
+                        let correction_time = Instant::now();
+                        {
+                            *correction.lock().unwrap() = c;
+                        }
+
+                        last_slew_end = if let Some(e) = slew_rx.iter().find(|e| e.start > correction_time) {
+                            e.end
+                        } else {
+                            break;
+                        };
                     }
-                    last_slew_end = if let Some(e) = slew_rx.iter().find(|e| e.start > correction_time) {
-                        e.end
-                    } else {
-                        break;
-                    };
                 }
                 trace!("[thread] end");
             });
@@ -125,7 +127,7 @@ mod tests {
             |image| {
                 info!("calculating correction for {:?}", image);
                 thread::sleep(Duration::from_millis(10));
-                image
+                Some(image)
             },
             |pos| {
                 info!("correcting {:?}", pos);
