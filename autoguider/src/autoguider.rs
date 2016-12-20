@@ -52,7 +52,12 @@ where Image: Send + Debug,
                         break;
                     };
                     trace!("[thread] got image {:?}", image);
+
+                    let calc_start = Instant::now();
                     let c = calculate_correction(image);
+                    let calc_duration = calc_start.elapsed();
+                    info!("calculation time: {:?}", calc_duration);
+
                     let correction_time = Instant::now();
                     {
                         *correction.lock().unwrap() = c;
