@@ -27,9 +27,9 @@ impl Aligner {
             info!("donuts out: {}", s);
             let mut s = s.split(",");
             let x = s.next().unwrap();
-            let x = x.trim().parse::<f32>().unwrap();
+            let x = x.trim().parse::<f64>().unwrap();
             let y = s.next().unwrap();
-            let y = y.trim().parse::<f32>().unwrap();
+            let y = y.trim().parse::<f64>().unwrap();
             Vector { x: x, y: y }
         } else {
             self.reference_image = Some(image);
