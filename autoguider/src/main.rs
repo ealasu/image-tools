@@ -30,8 +30,8 @@ fn main() {
     let num_images = 150;
     let mut range = 0..num_images;
     let shot_duration = Duration::from_secs(3 + 15);
-    let ra_controller = PIDController::new(1.0, 0.0, 0.0);
-    let dec_controller = PIDController::new(1.0, 0.0, 0.0);
+    let mut ra_controller = PIDController::new(0.9, 0.1, 0.0);
+    let mut dec_controller = PIDController::new(0.5, 0.1, 0.0);
 
     autoguider::run_autoguider(
         0..num_images,
@@ -47,11 +47,9 @@ fn main() {
             info!("calculating offset");
             let offset = aligner.align(image);
             info!("calculated offset: {:?}", offset);
-            let ra_speed = ra_controller.update(offset.y, 1.0); // TODO: calc time delta
-            let dec_speed = dec_controller.update(offset.x, 1.0);
             RaDec {
-                ra: ra_speed,
-                dec: dec_speed
+                ra: ra_controller.update(offset.y, 1.0), // TODO: calc time delta
+                dec: dec_controller.update(offset.x, 1.0),
             }
         },
         |speed| {
@@ -60,7 +58,7 @@ fn main() {
                 //return;
             //}
             info!("setting slew speed: ra: {}, dec: {}", speed.ra, speed.dec);
-            mount.slew(speed);
+            mount.slew(pixel_to_step(speed.ra), pixel_to_step(speed.dec));
         }
     );
 }
