@@ -5,6 +5,7 @@ extern crate crossbeam;
 extern crate tempfile;
 extern crate log4rs;
 extern crate scope_client;
+#[cfg(test)] extern crate env_logger;
 
 mod signal;
 mod autoguider;
@@ -27,7 +28,7 @@ fn main() {
     let camera = Camera::new();
     let mut aligner = Aligner::new();
     let mut mount = Mount::new();
-    let num_images = 300;
+    let num_images = 150;
     let mut range = 0..num_images;
 
     autoguider::run_autoguider(

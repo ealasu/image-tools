@@ -70,33 +70,63 @@ where Image: Send + Debug, Pos: Send,
 mod tests {
     use env_logger;
     use crossbeam;
+    use std::thread;
+    use std::time::Duration;
     use super::*;
 
     #[test]
     fn test() {
         env_logger::init().unwrap();
-        let images = ["1", "2", "3", "4", "5"];
+        let images = ["1", "2", "3", "4"];
+        let events = crossbeam::sync::MsQueue::new();
 
-        crossbeam::scope(|scope| {
-            scope.spawn(|| {
-                let mut image_iter = images.iter();
-                run_autoguider(
-                    || {
-                        let i = image_iter.next();
-                        info!("shooting {:?}", i);
-                        thread::sleep(Duration::from_secs(1));
-                        i
-                    },
-                    |image| {
-                        info!("calculating correction for {:?}", image);
-                        image
-                    },
-                    |pos| {
-                        info!("correcting {:?}", pos);
-                    },
-                );
-            });
-        });
+        let mut image_iter = images.iter();
+        run_autoguider(
+            || {
+                let i = image_iter.next();
+                events.push(format!("shoot {}", i.unwrap_or(&"None")));
+                thread::sleep(Duration::from_secs(1));
+                events.push(format!("end shoot {}", i.unwrap_or(&"None")));
+                i
+            },
+            |image| {
+                //info!("calculating correction for {:?}", image);
+                events.push(format!("calc {}", image));
+                image
+            },
+            |pos| {
+                //info!("correcting {:?}", pos);
+                events.push(format!("slew {}", pos));
+            },
+        );
 
+        let mut ev = vec![];
+        loop {
+            if let Some(v) = events.try_pop() {
+                ev.push(v);
+            } else {
+                break;
+            }
+        }
+
+        let expected = [
+            "shoot 1",
+            "end shoot 1",
+            "shoot 2",
+            "calc 1",
+            "end shoot 2",
+            "slew 1",
+
+            "shoot 3",
+            "end shoot 3",
+            "shoot 4",
+            "calc 3",
+            "end shoot 4",
+            "slew 3",
+
+            "shoot None",
+            "end shoot None",
+        ];
+        assert_eq!(ev[..], expected[..]);
     }
 }
