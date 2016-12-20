@@ -1,68 +1,94 @@
-use std::sync::Mutex;
+use std::sync::{Arc,Mutex};
+use std::sync::mpsc::channel;
 use std::fmt::Debug;
+use std::time::{Instant, Duration};
+use std::thread;
 use crossbeam;
-use signal::Signal;
 
-//fn shoot(&self) -> Image;
-//fn correct(&self, Pos);
-//fn calculate_correction(&self, image: Image) -> Pos;
+struct Timestamped<T> {
+    pub time: Instant,
+    pub value: T
+}
 
-//pub trait Camera {
-    //fn shoot() -> Image;
-    //fn correct(Pos);
-//}
+struct Event {
+    pub start: Instant,
+    pub end: Instant,
+}
 
-
-pub fn run_autoguider<Image, Pos, ShootFn, CorrectFn, CalcFn>(
+pub fn run_autoguider<ImageId, ImageIds, Image, Pos, ShootFn, CorrectFn, CalcFn>(
+    mut image_ids: ImageIds,
+    shot_duration: Duration,
+    initial_correction: Pos,
     mut shoot: ShootFn,
     mut calculate_correction: CalcFn,
     mut correct: CorrectFn)
-where Image: Send + Debug, Pos: Send,
-      ShootFn: FnMut() -> Option<Image>,
-      CalcFn: FnMut(Image) -> Pos, CalcFn: Sync + Send,
-      CorrectFn: FnMut(Pos), CorrectFn: Send
+where Image: Send + Debug,
+      Pos: Send + Copy,
+      ImageId: Send,
+      ImageIds: Iterator<Item=ImageId> + Send,
+      ShootFn: Fn(ImageId) -> Image,
+      ShootFn: Send + Sync,
+      CalcFn: FnMut(Image) -> Pos,
+      CalcFn: Sync + Send,
+      CorrectFn: FnMut(Pos),
+      CorrectFn: Send
 {
-    let camera_mutex = Mutex::new(());
-    let image_signal = Signal::new();
+    let (images_tx, images_rx) = channel::<Timestamped<Image>>();
+    let (slew_tx, slew_rx) = channel::<Event>();
+    let correction = Arc::new(Mutex::new(initial_correction));
 
     crossbeam::scope(|scope| {
-        scope.spawn(|| {
-            trace!("[thread] start");
-            'outer: loop {
-                if let Some(None) = image_signal.get() {
-                    break 'outer;
+        let mut last_slew_end = Instant::now() - Duration::from_secs(1);
+        {
+            let correction = correction.clone();
+            scope.spawn(move || {
+                trace!("[thread] start");
+                loop {
+                    let image = if let Some(i) = images_rx.iter().find(|e| {
+                        e.time > last_slew_end
+                    }).map(|e| e.value) {
+                        i
+                    } else {
+                        break;
+                    };
+                    trace!("[thread] got image {:?}", image);
+                    let c = calculate_correction(image);
+                    let correction_time = Instant::now();
+                    {
+                        *correction.lock().unwrap() = c;
+                    }
+                    last_slew_end = if let Some(e) = slew_rx.iter().find(|e| e.start > correction_time) {
+                        e.end
+                    } else {
+                        break;
+                    };
                 }
-                let image = if let Some(image) = image_signal.get_wait() {
-                    image
-                } else {
-                    break 'outer;
-                };
-                trace!("[thread] got image {:?}", image);
-                let correction = calculate_correction(image);
-                trace!("[thread] locking camera");
-                let _lock = camera_mutex.lock().unwrap();
-                trace!("[thread] locked camera, correcting");
-                correct(correction);
-                trace!("[thread] moving on");
-            }
-            trace!("[thread] end");
-        });
-        loop {
-            let image = if let Some(image) = {
-                trace!("[main loop] locking camera");
-                let _lock = camera_mutex.lock().unwrap();
-                shoot()
-            } {
-                image
-            } else {
-                break
-            };
-            trace!("[main loop] got image: {:?}", image);
-            image_signal.set_notify(Some(image));
+                trace!("[thread] end");
+            });
         }
-        trace!("[main loop] sending None to end thread");
-        image_signal.set_notify(None);
-        trace!("[main loop] end of scope");
+        for image_id in image_ids {
+            let shot_start = Instant::now();
+            let shot = scope.spawn(|| {
+                shoot(image_id)
+            });
+            thread::sleep(shot_duration);
+
+            let slew_start = Instant::now();
+            let c = *(correction.lock().unwrap());
+            correct(c);
+            slew_tx.send(Event {
+                start: slew_start,
+                end: Instant::now()
+            });
+
+            let image = shot.join();
+            images_tx.send(Timestamped {
+                time: shot_start,
+                value: image
+            }).unwrap();
+        }
+        drop(images_tx);
+        drop(slew_tx);
     });
 }
 
@@ -77,26 +103,29 @@ mod tests {
     #[test]
     fn test() {
         env_logger::init().unwrap();
-        let images = ["1", "2", "3", "4"];
+        let images = ["1", "2", "3", "4", "5", "6"];
         let events = crossbeam::sync::MsQueue::new();
 
         let mut image_iter = images.iter();
         run_autoguider(
-            || {
-                let i = image_iter.next();
-                events.push(format!("shoot {}", i.unwrap_or(&"None")));
-                thread::sleep(Duration::from_secs(1));
-                events.push(format!("end shoot {}", i.unwrap_or(&"None")));
-                i
+            images.iter(),
+            Duration::from_millis(30),
+            "nothing",
+            |id| {
+                events.push(format!("shoot {}", id));
+                thread::sleep(Duration::from_millis(50));
+                events.push(format!("end shoot {}", id));
+                id
             },
             |image| {
-                //info!("calculating correction for {:?}", image);
-                events.push(format!("calc {}", image));
+                info!("calculating correction for {:?}", image);
+                thread::sleep(Duration::from_millis(10));
                 image
             },
             |pos| {
-                //info!("correcting {:?}", pos);
+                info!("correcting {:?}", pos);
                 events.push(format!("slew {}", pos));
+                thread::sleep(Duration::from_millis(20));
             },
         );
 
@@ -109,23 +138,43 @@ mod tests {
             }
         }
 
+        //let expected = [
+            //"shoot 1",
+            //"end shoot 1",
+            //"shoot 2",
+            //"calc 1",
+            //"end shoot 2",
+            //"slew 1",
+
+            //"shoot 3",
+            //"end shoot 3",
+            //"shoot 4",
+            //"calc 3",
+            //"end shoot 4",
+            //"slew 3",
+
+            //"shoot None",
+            //"end shoot None",
+        //];
         let expected = [
             "shoot 1",
+                "slew nothing",
             "end shoot 1",
             "shoot 2",
-            "calc 1",
+                "slew 1",
             "end shoot 2",
-            "slew 1",
-
             "shoot 3",
+                "slew 1",
             "end shoot 3",
             "shoot 4",
-            "calc 3",
+                "slew 3",
             "end shoot 4",
-            "slew 3",
-
-            "shoot None",
-            "end shoot None",
+            "shoot 5",
+                "slew 3",
+            "end shoot 5",
+            "shoot 6",
+                "slew 5",
+            "end shoot 6",
         ];
         assert_eq!(ev[..], expected[..]);
     }

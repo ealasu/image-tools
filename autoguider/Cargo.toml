@@ -12,6 +12,3 @@ scope_client = { path = "../../scope-mount/client" }
 
 [dev-dependencies]
 env_logger = "*"
-
-[profile.dev]
-panic = "abort"
