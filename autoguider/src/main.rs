@@ -29,9 +29,9 @@ fn main() {
     let mut mount = Mount::new();
     let num_images = 150;
     let mut range = 0..num_images;
-    let shot_duration = Duration::from_secs(3 + 15);
-    let mut ra_controller = PIDController::new(0.9, 0.1, 0.0);
-    let mut dec_controller = PIDController::new(0.5, 0.1, 0.0);
+    let shot_duration = Duration::from_secs(5 + 15);
+    let mut ra_controller = PIDController::new(0.5, 0.06, 0.0);
+    let mut dec_controller = PIDController::new(0.3, 0.06, 0.0);
 
     autoguider::run_autoguider(
         0..num_images,
@@ -52,8 +52,8 @@ fn main() {
                 None
             } else {
                 Some(RaDec {
-                    ra: ra_controller.update(offset.y, 1.0), // TODO: calc time delta
-                    dec: dec_controller.update(offset.x, 1.0),
+                    ra: -ra_controller.update(offset.y, 1.0), // TODO: calc time delta
+                    dec: -dec_controller.update(offset.x, 1.0),
                 })
             }
         },
@@ -63,25 +63,6 @@ fn main() {
         }
     );
 }
-
-//struct Pid {
-    //kp: f64,
-    //ki: f64,
-    //sum: f64,
-//}
-
-//impl Pid {
-    //pub fn new(kp: f64, ki: f64) -> Self {
-        //Pid {
-            //kp: kp,
-            //ki: ki,
-        //}
-    //}
-
-    //pub fn update(&mut self, error: f64, elapsed: f64) -> f64 {
-
-    //}
-//}
 
 fn pixel_to_step(v: f64) -> i32 {
     let pixel_size_um = 6.54; // for Canon 6D
