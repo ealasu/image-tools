@@ -3,7 +3,7 @@ extern crate crossbeam;
 extern crate tempfile;
 extern crate pid_control;
 extern crate log4rs;
-extern crate scope_client;
+extern crate mount_service_api;
 #[cfg(test)] extern crate env_logger;
 
 mod autoguider;
@@ -30,8 +30,8 @@ fn main() {
     let num_images = 150;
     let mut range = 0..num_images;
     let shot_duration = Duration::from_secs(5 + 15);
-    let mut ra_controller = PIDController::new(0.5, 0.06, 0.0);
-    let mut dec_controller = PIDController::new(0.3, 0.06, 0.0);
+    let mut ra_controller = PIDController::new(0.3, 0.04, 0.0);
+    let mut dec_controller = PIDController::new(0.1, 0.03, 0.0);
 
     autoguider::run_autoguider(
         0..num_images,

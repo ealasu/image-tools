@@ -8,6 +8,16 @@ pub struct Camera {
 
 impl Camera {
     pub fn new() -> Self {
+        let status = Command::new("umount")
+            .arg("/mnt/ramdisk")
+            .status()
+            .expect("failed to execute umount");
+        assert!(status.success());
+        let status = Command::new("mount")
+            .arg("-a")
+            .status()
+            .expect("failed to execute mount");
+        assert!(status.success());
         Camera {}
     }
 

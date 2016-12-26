@@ -1,7 +1,7 @@
 use pos::*;
 use std::thread;
 use std::time::Duration;
-use scope_client::Client;
+use mount_service_api::{Client, Msg};
 
 pub struct Mount {
     client: Client,
@@ -22,8 +22,9 @@ pub struct Mount {
 
 impl Mount {
     pub fn new() -> Self {
+        let client = Client::new("localhost:1234").unwrap();
         Mount {
-            client: Client::new(),
+            client: client,
         }
     }
     
@@ -34,10 +35,9 @@ impl Mount {
         //let ra = arcsec_to_step(amount_pixels.y * pixel_size_arcsec / 1.6);
 
         info!("slew_by ra: {}, dec: {}", ra, dec);
-        self.client.slew_by(ra, dec).unwrap();
+
+        self.client.send(Msg::SlewBy { ra: ra, dec: dec }).unwrap();
         thread::sleep(Duration::from_secs(2));
-        let msg = self.client.read_msg();
-        info!("msg from scope: {:?}", msg);
     }
 
 }

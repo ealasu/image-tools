@@ -9,7 +9,7 @@ crossbeam = "*"
 tempfile = "*"
 log4rs = { version = "*", features = ["rolling_file_appender", "compound_policy", "size_trigger", "fixed_window_roller"] }
 pid_control = "*"
-scope_client = { path = "../../scope-mount/client" }
+mount_service_api = { path = "../../scope-mount/mount_service_api" }
 
 [dev-dependencies]
 env_logger = "*"
