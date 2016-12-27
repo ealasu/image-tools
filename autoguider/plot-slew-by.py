@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import re
 from ggplot import *
 from pandas import DataFrame
@@ -22,6 +23,8 @@ def parse(path):
         for line in f:
             m = re.search(r' slew_by ra: (.+), dec: (.+)', line)
             if m:
+                ra = 0.0
+                dec = 0.0
                 ra += float(m.group(1))
                 dec += float(m.group(2))
                 # res.append(ra)
@@ -29,19 +32,18 @@ def parse(path):
                 x += 1
     return res
 
-def plot(data, name):
+def plot(data, axis, filename):
     # data = assemble(data)
-    p = ggplot(aes(x='x', y='ra'), data=DataFrame(data)) \
+    p = ggplot(aes(x='x', y=axis), data=DataFrame(data)) \
         + geom_line()
         # + scale_y_continuous(limits=(0, 30))
         # + stat_smooth(colour='blue', span=0.2)
-    filename = f'{name}.svg'
-    print(filename)
     p.save(filename)
 
 def main():
-    file = './log/autoguider.log'
+    file = sys.argv[1]
     data = parse(file)
-    plot(data, file)
+    plot(data, 'ra', f'{file}.slew.ra.svg')
+    plot(data, 'dec', f'{file}.slew.dec.svg')
 
 main()

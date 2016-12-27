@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 
 pub struct Camera {
+    pub keep_raw: bool,
 }
 
 impl Camera {
@@ -18,7 +19,10 @@ impl Camera {
             .status()
             .expect("failed to execute mount");
         assert!(status.success());
-        Camera {}
+
+        Camera {
+            keep_raw: true,
+        }
     }
 
     pub fn shoot(&self) -> NamedTempFile {
@@ -26,16 +30,23 @@ impl Camera {
 
         let jpeg_file = NamedTempFile::new_in(tmpdir).unwrap();
         debug!("saving jpeg to {:?}", jpeg_file.path());
-        let status = Command::new("gphoto2")
+        let mut command = Command::new("gphoto2");
+        command
             .arg("--filename").arg(jpeg_file.path())
-            .arg("--force-overwrite")
-            //.arg("--auto-detect")
+            .arg("--force-overwrite");
+        if self.keep_raw {
             // Choice: 1 Memory card
-            .arg("--set-config").arg("capturetarget=1")
-            .arg("--keep-raw")
-            // Choice: 8 RAW + Large Fine JPEG
-            .arg("--set-config").arg("imageformat=8")
-
+            command
+                .arg("--set-config").arg("capturetarget=1")
+                .arg("--keep-raw")
+                // Choice: 8 RAW + Large Fine JPEG
+                .arg("--set-config").arg("imageformat=8");
+        } else {
+            command
+                // Choice: 0 Large Fine JPEG
+                .arg("--set-config").arg("imageformat=0");
+        }
+        command
             // Choice: 37 1/160
             //.arg("--set-config").arg("shutterspeed=37")
             // Choice: 1 100
@@ -45,9 +56,9 @@ impl Camera {
             .arg("--set-config").arg("shutterspeed=3")
             // 5000
             .arg("--set-config").arg("iso=18")
+            .arg("--capture-image-and-download");
 
-
-            .arg("--capture-image-and-download")
+        let status = command
             .status()
             .expect("failed to execute gphoto2");
         assert!(status.success());
