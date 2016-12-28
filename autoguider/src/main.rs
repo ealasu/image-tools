@@ -31,7 +31,7 @@ fn main() {
     let mut range = 0..num_images;
     let shot_duration = Duration::from_secs(5 + 15);
     let mut ra_controller = PIDController::new(0.3, 0.04, 0.0);
-    let mut dec_controller = PIDController::new(0.10, 0.02, 0.0);
+    let mut dec_controller = PIDController::new(0.10, 0.015, 0.0);
 
     autoguider::run_autoguider(
         0..num_images,
