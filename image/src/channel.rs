@@ -34,29 +34,6 @@ impl<P: Clone + Copy + Default> Channel<P> {
         Self::from_data(width, height, data)
     }
 
-    #[inline(always)]
-    pub fn pixel_at(&self, x: usize, y: usize) -> P {
-        //assert!(x < self.width);
-        //assert!(y < self.height);
-        self.data[x + y * self.width]
-    }
-
-    #[inline(always)]
-    pub fn pixel_at_mut(&mut self, x: usize, y: usize) -> &mut P {
-        //assert!(x < self.width);
-        //assert!(y < self.height);
-        &mut self.data[x + y * self.width]
-    }
-
-    #[inline(always)]
-    pub fn pixels(&self) -> &Vec<P> {
-        &self.data
-    }
-
-    #[inline(always)]
-    pub fn pixels_mut(&mut self) -> &mut Vec<P> {
-        &mut self.data
-    }
 }
 
 impl Channel<f32> {

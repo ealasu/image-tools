@@ -5,6 +5,7 @@ version = "0.1.0"
 [dependencies]
 statistical = "*"
 quickersort = "*"
+image = { path = "../image" }
 
 [dev-dependencies]
 rand = "*"
