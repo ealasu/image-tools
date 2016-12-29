@@ -1,11 +1,19 @@
 pub mod bindings;
 
+use std::fmt;
+
 const COLOR_COMPONENTS: usize = 3;
 
 pub struct Image {
     pub width: u32,
     pub height: u32,
     pub data: Vec<u8>,
+}
+
+impl fmt::Debug for Image {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[image {}x{}]", self.width, self.height)
+    }
 }
 
 pub fn decompress(compressed_image: &[u8]) -> Image {
@@ -68,7 +76,9 @@ mod tests {
         let mut jpeg = Vec::new();
         File::open("test/in.jpg").unwrap().read_to_end(&mut jpeg).unwrap();
         let image = decompress(&jpeg);
-        println!("width: {}, height: {}", image.width, image.height);
+        println!("{:?}", image);
+        assert_eq!(image.width, 75);
+        assert_eq!(image.height, 50);
 
         let mut expected_raw = Vec::new();
         File::open("test/out.dat").unwrap().read_to_end(&mut expected_raw).unwrap();

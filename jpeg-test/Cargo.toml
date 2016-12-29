@@ -1,0 +1,6 @@
+[package]
+name = "jpeg-test"
+version = "0.1.0"
+
+[dependencies]
+turbojpeg = { path = "../turbojpeg" }
