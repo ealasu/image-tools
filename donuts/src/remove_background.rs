@@ -1,5 +1,5 @@
 use image::Image;
-use statistical::median;
+use quickersort::sort_floats;
 
 pub fn remove_background(image: &mut Image, tiles: usize) {
     let tile_w = image.width / tiles;
@@ -12,12 +12,13 @@ pub fn remove_background(image: &mut Image, tiles: usize) {
             let y1 = tile_y * tile_h;
             let x2 = x1 + tile_w;
             let y2 = y1 + tile_h;
-            tile.extend(
-                (y1..y2).flat_map(|y| {
-                    let start = y * image.width;
-                    image.pixels[start + x1 .. start + x2].iter()
-                }));
-            let med = median(&tile[..]);
+
+            for y in y1..y2 {
+                let start = y * image.width;
+                tile.extend_from_slice(&image.pixels[start + x1 .. start + x2]);
+            }
+            sort_floats(&mut tile[..]);
+            let med = tile[tile.len() / 2];
             for y in y1..y2 {
                 for x in x1..x2 {
                     image.pixels[y * image.width + x] -= med;
