@@ -1,0 +1,8 @@
+[package]
+name = "turbojpeg"
+version = "0.1.0"
+build = "build.rs"
+
+[lib]
+# doctests don't work because of some link error
+doctest = false
