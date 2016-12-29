@@ -1,0 +1,9 @@
+[package]
+name = "donuts"
+version = "0.1.0"
+
+[dependencies]
+statistical = "*"
+
+[dev-dependencies]
+rand = "*"
