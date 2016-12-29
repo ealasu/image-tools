@@ -52,4 +52,14 @@ mod tests {
             remove_background(&mut image, 16)
         });
     }
+
+    //#[bench]
+    //fn median(b: &mut Bencher) {
+        //use statistical::median;
+        //let v: Vec<f32> = rand::thread_rng().gen_iter().take(100*100).collect();
+        //b.iter(|| {
+            //let v = v.clone();
+            //median(&v[..])
+        //});
+    //}
 }
