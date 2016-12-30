@@ -1,7 +1,7 @@
-use image::GrayImage;
+use image::Image;
 use quickersort::sort_floats;
 
-pub fn remove_background(image: &mut GrayImage<f32>, tiles: usize) {
+pub fn remove_background(image: &mut Image<f32>, tiles: usize) {
     let max = *image.pixels.iter().max_by(|a,b| a.partial_cmp(b).unwrap()).unwrap();
     let tile_w = image.width / tiles;
     let tile_h = image.height / tiles;
@@ -40,11 +40,11 @@ mod tests {
     use super::*;
     use test::Bencher;
     use rand::{self, Rng};
-    use image::GrayImage;
+    use image::Image;
 
     #[test]
     fn test() {
-        let mut img = GrayImage::open("test/in.jpg");
+        let mut img = Image::<f32>::open("test/in.jpg");
         img.save("test/in-gray.jpg");
         remove_background(&mut img, 32);
         img.save("test/in-minus-background.jpg");
@@ -54,7 +54,7 @@ mod tests {
     fn bench(b: &mut Bencher) {
         let w = 2000;
         let h = 1000;
-        let image = GrayImage {
+        let image = Image {
             width: w,
             height: h,
             pixels: rand::thread_rng().gen_iter().take(w * h).collect()

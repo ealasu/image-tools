@@ -11,14 +11,14 @@ mod remove_background;
 mod projection;
 mod correlation;
 
-use image::GrayImage;
+use image::Image;
 
 pub struct Projection {
     x: Vec<f32>,
     y: Vec<f32>,
 }
 
-pub fn preprocess_image(mut image: GrayImage<f32>) -> Projection {
+pub fn preprocess_image(mut image: Image<f32>) -> Projection {
     remove_background::remove_background(&mut image, 32);
     Projection {
         x: projection::x_projection(&image),
@@ -38,12 +38,12 @@ mod tests {
     use super::*;
     use test::Bencher;
     use rand::{self, Rng};
-    use image::GrayImage;
+    use image::Image;
 
     #[test]
     fn test_end_to_end() {
-        let ref_image = GrayImage::open("test/ref.jpg");
-        let sample_image = GrayImage::open("test/sample.jpg");
+        let ref_image = Image::<f32>::open("test/ref.jpg");
+        let sample_image = Image::<f32>::open("test/sample.jpg");
         let ref_p = preprocess_image(ref_image);
         let sample_p = preprocess_image(sample_image);
         let offset = align(&ref_p, &sample_p);
@@ -54,13 +54,13 @@ mod tests {
     fn bench_preprocess(b: &mut Bencher) {
         let w = 900;
         let h = 900;
-        let image = GrayImage {
+        let image = Image {
             width: w,
             height: h,
             pixels: rand::thread_rng().gen_iter().take(w * h).collect()
         };
         b.iter(|| {
-            let mut image = image.clone();
+            let image = image.clone();
             preprocess_image(image)
         });
     }
@@ -69,12 +69,12 @@ mod tests {
     fn bench_align(b: &mut Bencher) {
         let w = 900;
         let h = 900;
-        let ref_image = GrayImage {
+        let ref_image = Image {
             width: w,
             height: h,
             pixels: rand::thread_rng().gen_iter().take(w * h).collect()
         };
-        let sample_image = GrayImage {
+        let sample_image = Image {
             width: w,
             height: h,
             pixels: rand::thread_rng().gen_iter().take(w * h).collect()
