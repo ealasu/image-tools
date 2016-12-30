@@ -1,5 +1,3 @@
-use std::iter::once;
-//use image::*;
 use magick::*;
 use pgm;
 use dcraw;
@@ -7,7 +5,6 @@ use std::default::Default;
 use std::f32;
 use std::fmt;
 use std::iter::repeat;
-use std::io::prelude::*;
 
 #[derive(Clone)]
 pub struct GrayImage<P> {
@@ -18,7 +15,7 @@ pub struct GrayImage<P> {
 
 impl<P> fmt::Debug for GrayImage<P> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[gray image {}x{}]", self.width, self.height)
+        write!(f, "[image {}x{}]", self.width, self.height)
     }
 }
 
@@ -36,16 +33,6 @@ impl<P> GrayImage<P> {
         //assert!(y < self.height);
         &mut self.pixels[x + y * self.width]
     }
-
-    //#[inline(always)]
-    //pub fn pixels(&self) -> &Vec<P> {
-        //&self.data
-    //}
-
-    //#[inline(always)]
-    //pub fn pixels_mut(&mut self) -> &mut Vec<P> {
-        //&mut self.pixels
-    //}
 }
 
 impl GrayImage<f32> {
@@ -104,24 +91,15 @@ impl GrayImage<u16> {
     }
 }
 
-//impl<P> Image<P> for GrayImage<P>
-//where P: Copy + Clone + Default {
-    //fn new(width: usize, height: usize) -> Self {
-        //let mut data: Vec<P> = Vec::with_capacity(width * height);
-        //let zero: P = Default::default();
-        //data.extend(repeat(zero).take(width * height));
-        //GrayImage {
-            //width: width,
-            //height: height,
-            //pixels: data,
-        //}
-    //}
-
-    ////fn channels<'a>(&'a self) -> Box<Iterator<Item=&'a Channel<P>> + 'a> {
-        ////Box::new(once(&self.0))
-    ////}
-
-    ////fn channels_mut<'a>(&'a mut self) -> Box<Iterator<Item=&'a mut Channel<P>> + 'a> {
-        ////Box::new(once(&mut self.0))
-    ////}
-//}
+impl<P: Copy + Clone + Default> GrayImage<P> {
+    fn new(width: usize, height: usize) -> Self {
+        let mut pixels = Vec::with_capacity(width * height);
+        let zero: P = Default::default();
+        pixels.extend(repeat(zero).take(width * height));
+        GrayImage {
+            width: width,
+            height: height,
+            pixels: pixels,
+        }
+    }
+}
