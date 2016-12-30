@@ -142,4 +142,15 @@ impl Image<Rgb<f32>> {
         let data = convert_vec(self.pixels.clone());
         magick_convert(&data, self.width, self.height, "rgb", "truecolor", path);
     }
+
+    pub fn to_gray(&self) -> Image<f32> {
+        let pixels = self.pixels.iter().map(|p| {
+            (p.r + p.g + p.b) / 3.0
+        }).collect();
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: pixels,
+        }
+    }
 }
