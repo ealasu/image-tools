@@ -105,7 +105,7 @@ impl Image<u16> {
 }
 
 impl<P: Copy + Clone + Default> Image<P> {
-    fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         let mut pixels = Vec::with_capacity(width * height);
         let zero: P = Default::default();
         pixels.extend(repeat(zero).take(width * height));
@@ -114,6 +114,28 @@ impl<P: Copy + Clone + Default> Image<P> {
             height: height,
             pixels: pixels,
         }
+    }
+}
+
+impl<P: Clone> Image<P> {
+    pub fn crop(&self, x: usize, y: usize, width: usize, height: usize) -> Image<P> {
+        assert!(x + width <= self.width);
+        assert!(y + height <= self.height);
+        let mut pixels = Vec::with_capacity(width * height);
+        for y in y..y + width {
+            let start = y * self.width + x;
+            let end = start + width;
+            pixels.extend_from_slice(&self.pixels[start..end]);
+        }
+        Image {
+            width: width,
+            height: height,
+            pixels: pixels,
+        }
+    }
+
+    pub fn center_crop(&self, width: usize, height: usize) -> Image<P> {
+        self.crop((self.width - width) / 2, (self.height - height) / 2, width, height)
     }
 }
 
