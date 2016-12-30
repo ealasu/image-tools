@@ -6,6 +6,11 @@ use std::f32;
 use std::fmt;
 use std::iter::repeat;
 use convert::convert_vec;
+use std::path::Path;
+use std::fs::File;
+use std::io::prelude::*;
+use std::u8;
+use turbojpeg;
 
 #[derive(Clone)]
 pub struct Image<P> {
@@ -158,6 +163,29 @@ impl Image<Rgb<f32>> {
             height: height,
             pixels: pixels,
         }
+    }
+
+    pub fn open_jpeg_data(data: &[u8]) -> Self {
+        let image = turbojpeg::decompress(data);
+        let max = u8::MAX as f32;
+        Image {
+            width: image.width as usize,
+            height: image.height as usize,
+            pixels: image.pixels.iter().map(|p| {
+                Rgb {
+                    r: p.r as f32 / max,
+                    g: p.g as f32 / max,
+                    b: p.b as f32 / max,
+                }
+            }).collect(),
+        }
+    }
+
+    pub fn open_jpeg_file<P: AsRef<Path>>(path: P) -> Self {
+        let mut f = File::open(path).unwrap();
+        let mut data = vec![];
+        f.read_to_end(&mut data).unwrap();
+        Self::open_jpeg_data(&data)
     }
 
     pub fn save(&self, path: &str) {

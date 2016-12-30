@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate convert;
 extern crate regex;
+extern crate turbojpeg;
 
 mod magick;
 mod image;

@@ -4,6 +4,7 @@ version = "0.0.0"
 dependencies = [
  "convert 0.0.0",
  "regex 0.1.44 (registry+https://github.com/rust-lang/crates.io-index)",
+ "turbojpeg 0.1.0",
 ]
 
 [[package]]
@@ -45,6 +46,10 @@ dependencies = [
 name = "regex-syntax"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "turbojpeg"
+version = "0.1.0"
 
 [metadata]
 "checksum aho-corasick 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8f36f237c490deb976b38aca6369182dceb5a7af249aabf41c0ba5a964bac5ed"
