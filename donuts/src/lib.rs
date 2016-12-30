@@ -10,3 +10,6 @@ extern crate image;
 
 //pub mod image;
 mod remove_background;
+mod projection;
+mod correlation;
+mod align;
