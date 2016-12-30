@@ -10,6 +10,6 @@ mod pgm;
 mod dcraw;
 mod identify;
 
-pub use image::Image;
+pub use image::{Image, Rgb};
 //pub use rgb_image::*;
 pub use identify::*;

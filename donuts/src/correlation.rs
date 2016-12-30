@@ -29,6 +29,8 @@ pub fn correlation(reference: &[f32], sample: &[f32], n: usize) -> Vec<f32> {
 
 pub fn correlation_peak(correlation: &[f32]) -> f32 {
     let peak_pos = pos_of_max(correlation);
+    assert!(peak_pos > 0);
+    assert!(peak_pos < correlation.len() - 1);
     let n_corr = (correlation.len() - 1) / 2;
     let peak_offset_estimate = peak_pos as isize - n_corr as isize;
     let vertex = parabola_vertex(
@@ -64,7 +66,6 @@ fn parabola_vertex(p1: Point, p2: Point, p3: Point) -> Point {
     let a     = (p3.x * (p2.y - p1.y) + p2.x * (p1.y - p3.y) + p1.x * (p3.y - p2.y)) / denom;
     let b     = (p3.x*p3.x * (p1.y - p2.y) + p2.x*p2.x * (p3.y - p1.y) + p1.x*p1.x * (p2.y - p3.y)) / denom;
     let c     = (p2.x * p3.x * (p2.x - p3.x) * p1.y + p3.x * p1.x * (p3.x - p1.x) * p2.y + p1.x * p2.x * (p1.x - p2.x) * p3.y) / denom;
-
     Point {
         x: -b / (2.0 * a),
         y: c - b * b / (4.0 * a),

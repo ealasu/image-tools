@@ -11,8 +11,8 @@ pub fn remove_background(image: &mut Image<f32>, tiles: usize) {
             tile.clear();
             let x1 = tile_x * tile_w;
             let y1 = tile_y * tile_h;
-            let x2 = x1 + tile_w;
-            let y2 = y1 + tile_h;
+            let x2 = if tile_x == tiles - 1 { image.width } else { x1 + tile_w };
+            let y2 = if tile_y == tiles - 1 { image.height } else { y1 + tile_h };
 
             for y in y1..y2 {
                 let start = y * image.width;
@@ -43,7 +43,7 @@ mod tests {
     use image::Image;
 
     #[test]
-    fn test() {
+    fn test_remove_background() {
         let mut img = Image::<f32>::open("test/in.jpg");
         img.save("test/in-gray.jpg");
         remove_background(&mut img, 32);
