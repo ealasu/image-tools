@@ -1,3 +1,5 @@
+#[macro_use] extern crate log;
+extern crate env_logger;
 extern crate donuts;
 extern crate image;
 
@@ -5,6 +7,8 @@ use std::env;
 use image::Image;
 
 fn main() {
+    env_logger::init().unwrap();
+
     let mut args = env::args();
     args.next();
     let ref_path = args.next().unwrap();

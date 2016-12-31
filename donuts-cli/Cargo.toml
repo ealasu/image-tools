@@ -3,5 +3,7 @@ name = "donuts-cli"
 version = "0.1.0"
 
 [dependencies]
+log = "*"
+env_logger = "*"
 donuts = { path = "../donuts" }
 image = { path = "../image" }
