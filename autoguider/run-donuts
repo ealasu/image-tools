@@ -1,10 +1,30 @@
 #!/usr/bin/env python3
 
+import io
 import sys
+from subprocess import run, PIPE
 from donuts import Donuts
 
 reference_image_name = sys.argv[1]
-science_image_names = sys.argv[2:]
+science_image_name = sys.argv[2]
+
+def to_fits(src):
+  d = run([
+  "convert",
+      f"jpeg:{src}",
+      "-gravity","center",
+      "-extent","2000x2000",
+      "-crop","2000x2000",
+      "-depth","16",
+      "-set","colorspace","Gray",
+      "-separate",
+      "-average",
+      f"fits:-",
+  ], check=True, stdout=PIPE).stdout
+  return io.BytesIO(d)
+
+reference_image_name = to_fits(reference_image_name)
+science_image_name = to_fits(science_image_name)
 
 # Construct a donuts object
 d = Donuts(
@@ -18,17 +38,7 @@ d = Donuts(
   subtract_bkg=True,
   ntiles=32)
 
-# for each image, compute the x/y translation required
-# to align the images onto the reference image
-last_x = 0.0
-last_y = 0.0
-
-for image in science_image_names:
-    shift_result = d.measure_shift(image)
-    x = shift_result.x.value
-    y = shift_result.y.value
-    # Also check out shift_result.sky_background
-    # print(image + ': ' + str(x - last_x) + ',' + str(y - last_y))
-    print(str(x - last_x) + ',' + str(y - last_y))
-    last_x = x
-    last_y = y
+shift_result = d.measure_shift(science_image_name)
+x = shift_result.x.value
+y = shift_result.y.value
+print(f'{x},{y}')

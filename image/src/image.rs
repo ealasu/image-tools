@@ -63,6 +63,10 @@ impl Image<f32> {
         }
     }
 
+    pub fn open_jpeg_file<P: AsRef<Path>>(path: P) -> Self {
+        Image::<Rgb<f32>>::open_jpeg_file(path).to_gray()
+    }
+
     pub fn save(&self, path: &str) {
         magick_convert(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
     }

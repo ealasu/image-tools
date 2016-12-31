@@ -1,0 +1,7 @@
+[package]
+name = "donuts-cli"
+version = "0.1.0"
+
+[dependencies]
+donuts = { path = "../donuts" }
+image = { path = "../image" }
