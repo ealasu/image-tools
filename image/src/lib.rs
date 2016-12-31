@@ -1,7 +1,10 @@
-#[macro_use]
-extern crate convert;
+#![feature(test)]
+
+#[macro_use] extern crate convert;
 extern crate regex;
 extern crate turbojpeg;
+#[cfg(test)] extern crate test;
+#[cfg(test)] extern crate rand;
 
 mod magick;
 mod image;

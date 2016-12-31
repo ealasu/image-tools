@@ -208,3 +208,32 @@ impl Image<Rgb<f32>> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::Bencher;
+    use rand::{self, Rng};
+    use std::iter;
+
+    #[bench]
+    fn bench_to_gray(b: &mut Bencher) {
+        let w = 5000;
+        let h = 4000;
+        let mut rng = rand::thread_rng();
+        let image: Image<Rgb<f32>> = Image {
+            width: w,
+            height: h,
+            pixels: iter::repeat(0).map(|_| {
+                Rgb {
+                    r: rng.gen(),
+                    g: rng.gen(),
+                    b: rng.gen(),
+                }
+            }).take(w * h).collect()
+        };
+        b.iter(|| {
+            image.to_gray()
+        });
+    }
+}
