@@ -216,24 +216,34 @@ mod tests {
     use rand::{self, Rng};
     use std::iter;
 
-    #[bench]
-    fn bench_to_gray(b: &mut Bencher) {
-        let w = 5000;
-        let h = 4000;
+    fn random_rgb_image(width: usize, height: usize) -> Image<Rgb<f32>> {
         let mut rng = rand::thread_rng();
-        let image: Image<Rgb<f32>> = Image {
-            width: w,
-            height: h,
+        Image {
+            width: width,
+            height: height,
             pixels: iter::repeat(0).map(|_| {
                 Rgb {
                     r: rng.gen(),
                     g: rng.gen(),
                     b: rng.gen(),
                 }
-            }).take(w * h).collect()
-        };
+            }).take(width * height).collect()
+        }
+    }
+
+    #[bench]
+    fn bench_to_gray(b: &mut Bencher) {
+        let image = random_rgb_image(5000, 4000);
         b.iter(|| {
             image.to_gray()
+        });
+    }
+
+    #[bench]
+    fn bench_crop(b: &mut Bencher) {
+        let image = random_rgb_image(5000, 4000);
+        b.iter(|| {
+            image.center_crop(900, 900)
         });
     }
 }

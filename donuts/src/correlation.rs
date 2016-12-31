@@ -50,10 +50,11 @@ pub fn correlation(reference: &[f32], sample: &[f32], n: usize) -> Vec<f32> {
 /// Calculates the peak of the correlation, to sub-pixel precision.
 pub fn correlation_peak(correlation: &[f32]) -> f32 {
     let peak_pos = pos_of_max(correlation);
-    assert!(peak_pos > 0);
-    assert!(peak_pos < correlation.len() - 1);
     let n_corr = (correlation.len() - 1) / 2;
     let peak_offset_estimate = peak_pos as isize - n_corr as isize;
+    if peak_pos == 0 || peak_pos == correlation.len() - 1 {
+        return peak_offset_estimate as f32;
+    }
     let vertex = parabola_vertex(
         Point {
             x: (peak_offset_estimate - 1) as f32,
