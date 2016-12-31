@@ -91,6 +91,9 @@ fn next_peak(data: &[f32], peak_pos: usize) -> f32 {
             break;
         }
         last_v = v;
+        if peak_left == 0 {
+            break;
+        }
         peak_left -= 1;
     }
 
@@ -102,6 +105,9 @@ fn next_peak(data: &[f32], peak_pos: usize) -> f32 {
             break;
         }
         last_v = v;
+        if peak_right >= data.len() - 1 {
+            break;
+        }
         peak_right += 1;
     }
 
