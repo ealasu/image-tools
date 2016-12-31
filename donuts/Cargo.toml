@@ -3,6 +3,7 @@ name = "donuts"
 version = "0.1.0"
 
 [dependencies]
+log = "*"
 quickersort = "*"
 image = { path = "../image" }
 

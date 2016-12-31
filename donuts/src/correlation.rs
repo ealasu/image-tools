@@ -5,11 +5,16 @@ struct Point {
     y: f32,
 }
 
+/// Calculates how far you'd need to shift `sample` for it to
+/// line up with `reference`, with a max offset of `n`.
 pub fn calc_offset(reference: &[f32], sample: &[f32], n: usize) -> f32 {
     let corr = correlation(reference, sample, n);
+    let dev = deviation(&corr);
+    info!("deviation: {}", dev);
     correlation_peak(&corr[..])
 }
 
+/// Calculates the correlation between `reference` and `sample`, with a window of `[-n, n]`.
 pub fn correlation(reference: &[f32], sample: &[f32], n: usize) -> Vec<f32> {
     assert_eq!(reference.len(), sample.len());
     let mut res = Vec::with_capacity(n * 2);
@@ -42,6 +47,7 @@ pub fn correlation(reference: &[f32], sample: &[f32], n: usize) -> Vec<f32> {
     res
 }
 
+/// Calculates the peak of the correlation, to sub-pixel precision.
 pub fn correlation_peak(correlation: &[f32]) -> f32 {
     let peak_pos = pos_of_max(correlation);
     assert!(peak_pos > 0);
@@ -62,6 +68,46 @@ pub fn correlation_peak(correlation: &[f32]) -> f32 {
             y: correlation[peak_pos + 1]
         });
     vertex.x
+}
+
+/// Calculates height of next tallest peak relative to tallest peak.
+/// Small values mean the tallest peak is very prominent, large values mean
+/// it's not so prominent.
+fn deviation(correlation: &[f32]) -> f32 {
+    let peak_pos = pos_of_max(correlation);
+    let peak = correlation[peak_pos];
+    let next_peak = next_peak(correlation, peak_pos);
+    let min = correlation.iter().min_by(|a,b| a.partial_cmp(b).unwrap()).unwrap();
+    (next_peak - min) / (peak - min)
+}
+
+/// Calculates absolute height of next tallest peak
+fn next_peak(data: &[f32], peak_pos: usize) -> f32 {
+    let mut last_v = data[peak_pos];
+    let mut peak_left = peak_pos;
+    loop {
+        let v = data[peak_left];
+        if v > last_v {
+            break;
+        }
+        last_v = v;
+        peak_left -= 1;
+    }
+
+    let mut last_v = data[peak_pos];
+    let mut peak_right = peak_pos;
+    loop {
+        let v = data[peak_right];
+        if v > last_v {
+            break;
+        }
+        last_v = v;
+        peak_right += 1;
+    }
+
+    *data[0..peak_left].iter()
+        .chain(data[peak_right..].iter())
+        .max_by(|a,b| a.partial_cmp(b).unwrap()).unwrap()
 }
 
 fn pos_of_max(slice: &[f32]) -> usize {

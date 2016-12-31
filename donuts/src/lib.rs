@@ -1,6 +1,8 @@
 #![feature(test)]
+#![feature(iter_min_by)]
 #![feature(iter_max_by)]
 
+#[macro_use] extern crate log;
 extern crate quickersort;
 extern crate image;
 #[cfg(test)] extern crate test;
