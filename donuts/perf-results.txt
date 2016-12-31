@@ -1,0 +1,9 @@
+BeagleBone n=100:
+test remove_background::tests::bench ... bench: 2,103,598,221 ns/iter (+/- 6,336,813)
+test tests::bench_align              ... bench:  10,336,955 ns/iter (+/- 226,719)
+test tests::bench_preprocess         ... bench: 763,995,247 ns/iter (+/- 2,859,735)
+
+BeagleBone n=300:
+test remove_background::tests::bench ... bench: 2,103,872,030 ns/iter (+/- 5,749,617)
+test tests::bench_align              ... bench:  27,241,883 ns/iter (+/- 159,519)
+test tests::bench_preprocess         ... bench: 763,268,366 ns/iter (+/- 2,989,130)

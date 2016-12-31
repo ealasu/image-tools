@@ -1,12 +1,11 @@
 #![feature(test)]
 #![feature(iter_max_by)]
 
-#[cfg(test)] extern crate test;
-#[cfg(test)] extern crate rand;
-extern crate statistical;
 extern crate quickersort;
 extern crate image;
-extern crate byteorder;
+#[cfg(test)] extern crate test;
+#[cfg(test)] extern crate rand;
+#[cfg(test)] extern crate byteorder;
 
 pub mod remove_background;
 pub mod projection;
@@ -75,7 +74,7 @@ mod tests {
         //save_array(&correlation::correlation(&ref_p.x, &sample_p.x, 200), "test/corr-x");
         //save_array(&correlation::correlation(&ref_p.y, &sample_p.y, 200), "test/corr-y");
         let offset = align(&ref_p, &sample_p);
-        assert_eq!(offset, (-15.804462, -18.172758));
+        assert_eq!(offset, (-15.721349, -18.200153));
     }
 
     #[bench]

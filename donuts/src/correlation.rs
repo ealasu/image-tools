@@ -13,17 +13,32 @@ pub fn calc_offset(reference: &[f32], sample: &[f32], n: usize) -> f32 {
 pub fn correlation(reference: &[f32], sample: &[f32], n: usize) -> Vec<f32> {
     assert_eq!(reference.len(), sample.len());
     let mut res = Vec::with_capacity(n * 2);
-    let n = n as isize;
-    for offset in -n..n+1 {
-        let len = reference.len() - offset.abs() as usize;
-        let s_start = if offset < 0 { -offset } else { 0 } as usize;
-        let r_start = if offset < 0 { 0 } else { offset } as usize;
-        let mut sum = 0.0;
-        for i in 0..len {
-            sum += reference[r_start + i] * sample[s_start + i];
+    let mut r_start = 0;
+    let mut s_start = n;
+    let len = reference.len() - n;
+    {
+        let mut push_sum = |r_start, s_start| {
+            let mut sum = 0.0;
+            for i in 0..len {
+                sum += reference[r_start + i] * sample[s_start + i];
+            }
+            res.push(sum);
+        };
+        loop {
+            push_sum(r_start, s_start);
+            r_start += 1;
+            if r_start > n {
+                break;
+            }
+
+            push_sum(r_start, s_start);
+            if s_start == 0 {
+                break;
+            }
+            s_start -= 1;
         }
-        res.push(sum);
     }
+    assert_eq!(res.len(), n*2+1);
     res
 }
 
@@ -81,10 +96,70 @@ mod tests {
 
     #[test]
     fn test_correlation() {
-        let reference = [0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0, 0.0];
-        let sample =    [1.0, 0.0, 1.0, 2.0, 4.0, 2.0, 1.0, 0.0];
-        let res = correlation(&reference[..], &sample[..], 3);
-        let expected = [11.0, 18.0, 22.0, 18.0, 12.0, 6.0, 4.0];
+        let r = [0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0, 0.0];
+        let s = [1.0, 0.0, 1.0, 2.0, 4.0, 2.0, 1.0, 0.0];
+        let res = correlation(&r[..], &s[..], 3);
+        //let expected = [11.0, 18.0, 22.0, 18.0, 12.0, 6.0, 4.0];
+        let expected = [
+            s[3]*r[0] + s[4]*r[1] + s[5]*r[2] + s[6]*r[3] + s[7]*r[4], // -3
+            s[3]*r[1] + s[4]*r[2] + s[5]*r[3] + s[6]*r[4] + s[7]*r[5], // -2
+            s[2]*r[1] + s[3]*r[2] + s[4]*r[3] + s[5]*r[4] + s[6]*r[5], // -1
+            s[2]*r[2] + s[3]*r[3] + s[4]*r[4] + s[5]*r[5] + s[6]*r[6], // 0
+            s[1]*r[2] + s[2]*r[3] + s[3]*r[4] + s[4]*r[5] + s[5]*r[6], // 1
+            s[1]*r[3] + s[2]*r[4] + s[3]*r[5] + s[4]*r[6] + s[5]*r[7], // 2
+            s[0]*r[3] + s[1]*r[4] + s[2]*r[5] + s[3]*r[6] + s[4]*r[7], // 3
+        ];
+        assert_eq!(res[..], expected[..]);
+    }
+
+    #[test]
+    fn test_correlation_2() {
+        let r = [0.0, 1.0, 2.0, 3.0, 2.0, 5.0, 0.0, 0.0];
+        let s = [1.0, 0.0, 1.0, 2.0, 4.0, 2.0, 1.0, 0.0];
+        let res = correlation(&r[..], &s[..], 3);
+        //let expected = [11.0, 18.0, 22.0, 18.0, 12.0, 6.0, 4.0];
+        let expected = [
+            s[3]*r[0] + s[4]*r[1] + s[5]*r[2] + s[6]*r[3] + s[7]*r[4], // -3
+            s[3]*r[1] + s[4]*r[2] + s[5]*r[3] + s[6]*r[4] + s[7]*r[5], // -2
+            s[2]*r[1] + s[3]*r[2] + s[4]*r[3] + s[5]*r[4] + s[6]*r[5], // -1
+            s[2]*r[2] + s[3]*r[3] + s[4]*r[4] + s[5]*r[5] + s[6]*r[6], // 0
+            s[1]*r[2] + s[2]*r[3] + s[3]*r[4] + s[4]*r[5] + s[5]*r[6], // 1
+            s[1]*r[3] + s[2]*r[4] + s[3]*r[5] + s[4]*r[6] + s[5]*r[7], // 2
+            s[0]*r[3] + s[1]*r[4] + s[2]*r[5] + s[3]*r[6] + s[4]*r[7], // 3
+        ];
+        assert_eq!(res[..], expected[..]);
+    }
+
+    #[test]
+    fn test_correlation_odd_data_len() {
+        let r = [0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0, 0.0, 1.0];
+        let s = [1.0, 0.0, 1.0, 2.0, 4.0, 2.0, 1.0, 0.0, -1.0];
+        let res = correlation(&r[..], &s[..], 3);
+        //let expected = [11.0, 18.0, 22.0, 18.0, 12.0, 6.0, 4.0];
+        let expected = [
+            s[3]*r[0] + s[4]*r[1] + s[5]*r[2] + s[6]*r[3] + s[7]*r[4] + s[8]*r[5], // -3
+            s[3]*r[1] + s[4]*r[2] + s[5]*r[3] + s[6]*r[4] + s[7]*r[5] + s[8]*r[6], // -2
+            s[2]*r[1] + s[3]*r[2] + s[4]*r[3] + s[5]*r[4] + s[6]*r[5] + s[7]*r[6], // -1
+            s[2]*r[2] + s[3]*r[3] + s[4]*r[4] + s[5]*r[5] + s[6]*r[6] + s[7]*r[7], // 0
+            s[1]*r[2] + s[2]*r[3] + s[3]*r[4] + s[4]*r[5] + s[5]*r[6] + s[6]*r[7], // 1
+            s[1]*r[3] + s[2]*r[4] + s[3]*r[5] + s[4]*r[6] + s[5]*r[7] + s[6]*r[8], // 2
+            s[0]*r[3] + s[1]*r[4] + s[2]*r[5] + s[3]*r[6] + s[4]*r[7] + s[5]*r[8], // 3
+        ];
+        assert_eq!(res[..], expected[..]);
+    }
+
+    #[test]
+    fn test_correlation_even_n() {
+        let r = [0.0, 1.0, 2.0, 3.0, 2.0, 1.0, 0.0, 0.0];
+        let s = [1.0, 0.0, 1.0, 2.0, 4.0, 2.0, 1.0, 0.0];
+        let res = correlation(&r[..], &s[..], 2);
+        let expected = [
+            s[2]*r[0] + s[3]*r[1] + s[4]*r[2] + s[5]*r[3] + s[6]*r[4], // -2
+            s[2]*r[1] + s[3]*r[2] + s[4]*r[3] + s[5]*r[4] + s[6]*r[5], // -1
+            s[1]*r[1] + s[2]*r[2] + s[3]*r[3] + s[4]*r[4] + s[5]*r[5], // 0
+            s[1]*r[2] + s[2]*r[3] + s[3]*r[4] + s[4]*r[5] + s[5]*r[6], // 1
+            s[0]*r[2] + s[1]*r[3] + s[2]*r[4] + s[3]*r[5] + s[4]*r[6], // 2
+        ];
         assert_eq!(res[..], expected[..]);
     }
 

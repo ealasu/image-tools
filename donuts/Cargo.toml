@@ -3,10 +3,9 @@ name = "donuts"
 version = "0.1.0"
 
 [dependencies]
-statistical = "*"
 quickersort = "*"
 image = { path = "../image" }
-byteorder = "*"
 
 [dev-dependencies]
 rand = "*"
+byteorder = "*"
