@@ -64,15 +64,15 @@ mod tests {
         println!("preprocessing");
         let ref_p = preprocess_image(ref_image);
         //ref_image.save("test/ref-gray-bg.jpg");
-        //save_array(&ref_p.x, "test/ref-p-x");
-        //save_array(&ref_p.y, "test/ref-p-y");
+        save_array(&ref_p.x, "test/ref-p-x");
+        save_array(&ref_p.y, "test/ref-p-y");
         let sample_p = preprocess_image(sample_image);
         //sample_image.save("test/sample-gray-bg.jpg");
-        //save_array(&ref_p.x, "test/sample-p-x");
-        //save_array(&ref_p.y, "test/sample-p-y");
+        save_array(&sample_p.x, "test/sample-p-x");
+        save_array(&sample_p.y, "test/sample-p-y");
         println!("aligning");
-        //save_array(&correlation::correlation(&ref_p.x, &sample_p.x, 200), "test/corr-x");
-        //save_array(&correlation::correlation(&ref_p.y, &sample_p.y, 200), "test/corr-y");
+        save_array(&correlation::correlation(&ref_p.x, &sample_p.x, 200), "test/corr-x");
+        save_array(&correlation::correlation(&ref_p.y, &sample_p.y, 200), "test/corr-y");
         let offset = align(&ref_p, &sample_p);
         assert_eq!(offset, (-15.721349, -18.200153));
     }
