@@ -6,6 +6,4 @@ version = "0.0.0"
 convert = { path = "../convert" }
 regex = "*"
 turbojpeg = { path = "../../turbojpeg-rs" }
-
-[dev-dependencies]
 rand = "*"

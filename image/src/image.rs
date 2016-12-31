@@ -11,6 +11,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::u8;
 use turbojpeg;
+use rand::{self, Rng, Rand};
 
 #[derive(Clone)]
 pub struct Image<P> {
@@ -148,6 +149,15 @@ impl<P: Clone> Image<P> {
     }
 }
 
+impl<P: Rand> Image<P> {
+    pub fn random(width: usize, height: usize) -> Self {
+        Image {
+            width: width,
+            height: height,
+            pixels: rand::thread_rng().gen_iter().take(width * height).collect()
+        }
+    }
+}
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -155,6 +165,16 @@ pub struct Rgb<T> {
     r: T,
     g: T,
     b: T,
+}
+
+impl<T: Rand> Rand for Rgb<T> {
+    fn rand<R: Rng>(rng: &mut R) -> Self {
+        Rgb {
+            r: rng.gen(),
+            g: rng.gen(),
+            b: rng.gen(),
+        }
+    }
 }
 
 impl Image<Rgb<f32>> {
@@ -213,27 +233,10 @@ impl Image<Rgb<f32>> {
 mod tests {
     use super::*;
     use test::Bencher;
-    use rand::{self, Rng};
-    use std::iter;
-
-    fn random_rgb_image(width: usize, height: usize) -> Image<Rgb<f32>> {
-        let mut rng = rand::thread_rng();
-        Image {
-            width: width,
-            height: height,
-            pixels: iter::repeat(0).map(|_| {
-                Rgb {
-                    r: rng.gen(),
-                    g: rng.gen(),
-                    b: rng.gen(),
-                }
-            }).take(width * height).collect()
-        }
-    }
 
     #[bench]
     fn bench_to_gray(b: &mut Bencher) {
-        let image = random_rgb_image(5000, 4000);
+        let image = Image::<Rgb<f32>>::random(5000, 4000);
         b.iter(|| {
             image.to_gray()
         });
@@ -241,7 +244,7 @@ mod tests {
 
     #[bench]
     fn bench_crop(b: &mut Bencher) {
-        let image = random_rgb_image(5000, 4000);
+        let image = Image::<Rgb<f32>>::random(5000, 4000);
         b.iter(|| {
             image.center_crop(900, 900)
         });

@@ -3,8 +3,8 @@
 #[macro_use] extern crate convert;
 extern crate regex;
 extern crate turbojpeg;
+extern crate rand;
 #[cfg(test)] extern crate test;
-#[cfg(test)] extern crate rand;
 
 mod magick;
 mod image;
