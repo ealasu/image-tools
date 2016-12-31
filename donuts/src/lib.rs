@@ -81,13 +81,8 @@ mod tests {
 
     #[bench]
     fn bench_preprocess(b: &mut Bencher) {
-        let w = 900;
-        let h = 900;
-        let image = Image {
-            width: w,
-            height: h,
-            pixels: rand::thread_rng().gen_iter().take(w * h).collect()
-        };
+        let (w, h) = (900, 900);
+        let image = Image::<f32>::random(w, h);
         b.iter(|| {
             let image = image.clone();
             preprocess_image(image)
@@ -96,18 +91,9 @@ mod tests {
 
     #[bench]
     fn bench_align(b: &mut Bencher) {
-        let w = 900;
-        let h = 900;
-        let ref_image = Image {
-            width: w,
-            height: h,
-            pixels: rand::thread_rng().gen_iter().take(w * h).collect()
-        };
-        let sample_image = Image {
-            width: w,
-            height: h,
-            pixels: rand::thread_rng().gen_iter().take(w * h).collect()
-        };
+        let (w, h) = (900, 900);
+        let ref_image = Image::<f32>::random(w, h);
+        let sample_image = Image::<f32>::random(w, h);
         let ref_p = preprocess_image(ref_image);
         let sample_p = preprocess_image(sample_image);
         b.iter(|| {
