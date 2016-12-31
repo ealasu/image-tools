@@ -52,7 +52,9 @@ name = "image"
 version = "0.0.0"
 dependencies = [
  "convert 0.0.0",
+ "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.80 (registry+https://github.com/rust-lang/crates.io-index)",
+ "turbojpeg 0.1.0",
 ]
 
 [[package]]
@@ -160,6 +162,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "thread-id 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "turbojpeg"
+version = "0.1.0"
 
 [[package]]
 name = "utf8-ranges"

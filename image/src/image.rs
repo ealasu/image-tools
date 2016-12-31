@@ -10,6 +10,7 @@ use std::path::Path;
 use std::fs::File;
 use std::io::prelude::*;
 use std::u8;
+use std::ops::{AddAssign, DivAssign, Mul};
 use turbojpeg;
 use rand::{self, Rng, Rand};
 
@@ -160,7 +161,7 @@ impl<P: Rand> Image<P> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Rgb<T> {
     r: T,
     g: T,
@@ -176,6 +177,55 @@ impl<T: Rand> Rand for Rgb<T> {
         }
     }
 }
+
+impl<T: Default> Default for Rgb<T> {
+    fn default() -> Self {
+        Rgb {
+            r: Default::default(),
+            g: Default::default(),
+            b: Default::default(),
+        }
+    }
+}
+
+impl<T: AddAssign> AddAssign for Rgb<T> {
+    fn add_assign(&mut self, rhs: Self) {
+        self.r += rhs.r;
+        self.g += rhs.g;
+        self.b += rhs.b;
+    }
+}
+
+impl<T: Copy + DivAssign> DivAssign<T> for Rgb<T> {
+    fn div_assign(&mut self, rhs: T) {
+        self.r /= rhs;
+        self.g /= rhs;
+        self.b /= rhs;
+    }
+}
+
+impl<T: Mul<Output=T>> Mul for Rgb<T> {
+    type Output = Self;
+    fn mul(self, rhs: Self) -> Self::Output {
+        Rgb {
+            r: self.r * rhs.r,
+            g: self.g * rhs.g,
+            b: self.b * rhs.b,
+        }
+    }
+}
+
+impl<T: Copy + Mul<T,Output=T>> Mul<T> for Rgb<T> {
+    type Output = Self;
+    fn mul(self, rhs: T) -> Self::Output {
+        Rgb {
+            r: self.r * rhs,
+            g: self.g * rhs,
+            b: self.b * rhs,
+        }
+    }
+}
+
 
 impl Image<Rgb<f32>> {
     pub fn open(path: &str) -> Self {

@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use point::*;
 
 pub type Star = Point<f32>;
