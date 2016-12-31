@@ -1,4 +1,3 @@
-use pos::*;
 use std::thread;
 use std::time::Duration;
 use mount_service_api::{Client, Msg};

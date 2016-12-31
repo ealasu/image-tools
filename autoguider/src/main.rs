@@ -4,6 +4,8 @@ extern crate tempfile;
 extern crate pid_control;
 extern crate log4rs;
 extern crate mount_service_api;
+extern crate image;
+extern crate donuts;
 #[cfg(test)] extern crate env_logger;
 
 mod autoguider;
@@ -28,7 +30,6 @@ fn main() {
     let mut aligner = Aligner::new();
     let mut mount = Mount::new();
     let num_images = 150;
-    let mut range = 0..num_images;
     let shot_duration = Duration::from_secs(5 + 15);
     let mut ra_controller = PIDController::new(0.3, 0.04, 0.0);
     let mut dec_controller = PIDController::new(0.10, 0.015, 0.0);

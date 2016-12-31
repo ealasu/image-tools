@@ -2,6 +2,7 @@ use tempfile::NamedTempFile;
 use std::process::Command;
 use std::fs;
 use std::path::Path;
+use image::{Image, Rgb};
 
 pub struct Camera {
     pub keep_raw: bool,
@@ -25,7 +26,7 @@ impl Camera {
         }
     }
 
-    pub fn shoot(&self) -> NamedTempFile {
+    pub fn shoot(&self) -> Image<f32> {
         let tmpdir = Path::new("/mnt/ramdisk");
 
         let jpeg_file = NamedTempFile::new_in(tmpdir).unwrap();
@@ -65,26 +66,7 @@ impl Camera {
         debug!("jpeg file len: {}", fs::metadata(jpeg_file.path()).unwrap().len());
         fs::copy(jpeg_file.path(), tmpdir.join(Path::new("latest.jpeg"))).unwrap();
 
-        // convert IMG_3332.JPG -gravity center -extent 900x900 -crop 900x900^ -auto-level out.jpeg
-        let fits_file = NamedTempFile::new_in(tmpdir).unwrap();
-        debug!("saving fits to {:?}", fits_file.path());
-        let status = Command::new("convert")
-            .arg(format!("jpeg:{}", jpeg_file.path().to_str().unwrap()))
-            .arg("-gravity").arg("center")
-            //.arg("-extent").arg("900x900")
-            //.arg("-crop").arg("900x900")
-            .arg("-extent").arg("2000x2000")
-            .arg("-crop").arg("2000x2000")
-            .arg("-depth").arg("16")
-            .arg("-set").arg("colorspace").arg("Gray")
-            .arg("-separate")
-            .arg("-average")
-            .arg(format!("fits:{}", fits_file.path().to_str().unwrap()))
-            .status()
-            .expect("failed to execute convert");
-        assert!(status.success());
-        debug!("fits file len: {}", fs::metadata(fits_file.path()).unwrap().len());
-
-        fits_file
+        let image = Image::<Rgb<f32>>::open_jpeg_file(jpeg_file.path());
+        image.center_crop(900, 900).to_gray()
     }
 }

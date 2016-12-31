@@ -16,10 +16,10 @@ struct Event {
 }
 
 pub fn run_autoguider<ImageId, ImageIds, Image, Pos, ShootFn, CorrectFn, CalcFn>(
-    mut image_ids: ImageIds,
+    image_ids: ImageIds,
     shot_duration: Duration,
     initial_correction: Pos,
-    mut shoot: ShootFn,
+    shoot: ShootFn,
     mut calculate_correction: CalcFn,
     mut correct: CorrectFn)
 where Image: Send + Debug,
@@ -86,7 +86,7 @@ where Image: Send + Debug,
             slew_tx.send(Event {
                 start: slew_start,
                 end: Instant::now()
-            });
+            }).unwrap();
 
             let image = shot.join();
             images_tx.send(Timestamped {
