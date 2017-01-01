@@ -6,6 +6,7 @@ extern crate log4rs;
 extern crate mount_service_api;
 extern crate image;
 extern crate donuts;
+extern crate gphoto;
 #[cfg(test)] extern crate env_logger;
 
 mod autoguider;
@@ -15,6 +16,7 @@ mod mount;
 mod pos;
 
 use std::time::Duration;
+use std::sync::Mutex;
 use camera::Camera;
 use aligner::Aligner;
 use mount::Mount;
@@ -26,7 +28,7 @@ const MAX: f64 = 150.0;
 fn main() {
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();
 
-    let camera = Camera::new();
+    let camera = Mutex::new(Camera::new());
     let mut aligner = Aligner::new();
     let mut mount = Mount::new();
     let num_images = 150;
@@ -40,6 +42,7 @@ fn main() {
         Default::default(),
         |id| {
             info!("shooting image {}", id);
+            let mut camera = camera.lock().unwrap();
             let image = camera.shoot();
             info!("finished shooting image {}", id);
             image

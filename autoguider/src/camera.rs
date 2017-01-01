@@ -3,10 +3,15 @@ use std::process::Command;
 use std::fs;
 use std::path::Path;
 use image::{Image, Rgb};
+use gphoto;
 
 pub struct Camera {
     pub keep_raw: bool,
+    context: gphoto::Context,
+    camera: gphoto::Camera,
 }
+
+unsafe impl Send for Camera {}
 
 impl Camera {
     pub fn new() -> Self {
@@ -21,12 +26,17 @@ impl Camera {
             .expect("failed to execute mount");
         assert!(status.success());
 
+        let mut context = gphoto::Context::new().unwrap();
+        let mut camera = gphoto::Camera::autodetect(&mut context).unwrap();
+
         Camera {
             keep_raw: true,
+            context: context,
+            camera: camera,
         }
     }
 
-    pub fn shoot(&self) -> Image<f32> {
+    pub fn shoot_old(&self) -> Image<f32> {
         let tmpdir = Path::new("/mnt/ramdisk");
 
         let jpeg_file = NamedTempFile::new_in(tmpdir).unwrap();
@@ -65,6 +75,20 @@ impl Camera {
         assert!(status.success());
         debug!("jpeg file len: {}", fs::metadata(jpeg_file.path()).unwrap().len());
         fs::copy(jpeg_file.path(), tmpdir.join(Path::new("latest.jpeg"))).unwrap();
+
+        let image = Image::<Rgb<f32>>::open_jpeg_file(jpeg_file.path());
+        image.center_crop(900, 900).to_gray()
+    }
+
+    pub fn shoot(&mut self) -> Image<f32> {
+        let capture = self.camera.capture_image(&mut self.context).unwrap();
+        println!(" (done) {:?}", capture.basename());
+
+        let tmpdir = Path::new("/mnt/ramdisk");
+        let jpeg_file = NamedTempFile::new_in(tmpdir).unwrap();
+        debug!("saving jpeg to {:?}", jpeg_file.path());
+        let mut file = gphoto::FileMedia::create(jpeg_file.path()).unwrap();
+        self.camera.download(&mut self.context, &capture, &mut file).unwrap();
 
         let image = Image::<Rgb<f32>>::open_jpeg_file(jpeg_file.path());
         image.center_crop(900, 900).to_gray()
