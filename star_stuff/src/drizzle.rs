@@ -94,12 +94,16 @@ mod tests {
     use image::Image;
 
     fn run_resample_test(pixels: Vec<f32>, x: f32, y: f32, expected: f32) {
+        run_resample_test_with_factor(1.0, pixels, x, y, expected);
+    }
+
+    fn run_resample_test_with_factor(factor: f32, pixels: Vec<f32>, x: f32, y: f32, expected: f32) {
         let image = Image {
             width: 3,
             height: 3,
             pixels: pixels,
         };
-        let mut stack = ImageStack::new(3, 3, 1.0);
+        let mut stack = ImageStack::new(3, 3, factor);
         stack.add(&image, Vector { x: -x, y: -y });
         let v = *stack.into_image().pixel_at(0, 0);
         assert_eq!(v, expected);
@@ -144,6 +148,19 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_factor() {
+        run_resample_test_with_factor(
+            2.0,
+            vec![
+                0.5, 0.5, 0.5,
+                0.5, 1.0, 0.5,
+                0.5, 0.5, 0.5,
+            ],
+            1.0, 1.0,
+            0.25
+        );
+    }
     //#[bench]
     //fn bench_resample(b: &mut Bencher) {
         //let image = Image {
