@@ -3,6 +3,21 @@ use std::ops::{AddAssign, DivAssign, Mul};
 use image::Image;
 use point::{Vector, Point};
 
+#[inline(always)]
+fn min(a: f32, b: f32) -> f32 {
+    if a < b { a } else { b }
+}
+
+#[inline(always)]
+fn max(a: f32, b: f32) -> f32 {
+    if a > b { a } else { b }
+}
+
+#[inline(always)]
+fn positive(v: f32) -> f32 {
+    if v > 0.0 { v } else { 0.0 }
+}
+
 pub struct ImageStack<P> {
     image: Image<P>,
     count: usize,
@@ -43,21 +58,29 @@ impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default
 
     fn resample(&self, image: &Image<P>, x: f32, y: f32) -> P {
         // `src` refers to `image`, `dst` refers to `self.image`.
-        // `x` and `y` above are in the `src` coordinate system.
+        // `x` and `y` above are the origin of the `dst` pixel in the `src` coordinate system.
 
         let mut src_val: P = Default::default();
-        let dx = x.ceil() - x; // distance to right pixel
-        let dy = y.ceil() - y; // distance to bottom pixel
-        let dxp = 1.0 - dx; // distance to left pixel
-        let dyp = 1.0 - dy; // distance to top pixel
-        let dst_w = 1.0 / self.factor; // width & height of dst pixel (in src coords)
-        let src_margin = (1.0 - self.pixel_size) / 2.0; // margin around src pixel
 
-        // areas of the four `src` pixels with the `dst` pixel.
-        let sw = dx * dyp;
-        let nw = dx * dy;
-        let ne = dxp * dy;
-        let se = dxp * dyp;
+        // TODO
+        //let src_margin = (1.0 - self.pixel_size) / 2.0; // margin around src pixel
+
+        let dst_size = 1.0 / self.factor; // width & height of dst pixel (in src coords)
+
+        // east, or right
+        let e = positive((x + dst_size) - x.ceil());
+        // south, or bottom
+        let s = positive((y + dst_size) - y.ceil());
+        // west, or left
+        let w = min(x + dst_size, x.ceil()) - x;
+        // north, or top
+        let n = min(y + dst_size, y.ceil()) - y;
+
+        // areas of intersection of the four `src` pixels with the `dst` pixel.
+        let nw = n * w;
+        let se = s * e;
+        let sw = s * w;
+        let ne = n * e;
 
         // integer coords of the four `src` pixels
         let e_x = x.ceil() as isize;
@@ -148,19 +171,34 @@ mod tests {
         );
     }
 
+
     #[test]
     fn test_factor() {
-        run_resample_test_with_factor(
-            2.0,
-            vec![
-                0.5, 0.5, 0.5,
-                0.5, 1.0, 0.5,
-                0.5, 0.5, 0.5,
-            ],
-            1.0, 1.0,
-            0.25
-        );
+        let run = |x, y, expected| {
+            run_resample_test_with_factor(
+                2.0,
+                vec![
+                    0.5, 0.5, 0.5,
+                    0.5, 1.0, 0.5,
+                    0.5, 0.5, 0.5,
+                ],
+                x, y,
+                expected
+            );
+        };
+        run(-3.0, -3.0, 0.0);
+        run(0.0, 0.0, 0.125);
+        run(0.5, 0.5, 0.125);
+        run(1.0, 1.0, 0.25);
+        run(1.5, 1.5, 0.25);
+        run(2.0, 2.0, 0.125);
+        run(2.5, 2.5, 0.125);
+        run(3.0, 3.0, 0.0);
+
+        run(1.75, 1.0, 0.25 / 2.0 + 0.125 / 2.0);
+        run(1.0, 1.75, 0.25 / 2.0 + 0.125 / 2.0);
     }
+
     //#[bench]
     //fn bench_resample(b: &mut Bencher) {
         //let image = Image {
