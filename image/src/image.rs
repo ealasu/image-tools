@@ -3,6 +3,7 @@ use pgm;
 use dcraw;
 use std::default::Default;
 use std::f32;
+use std::u16;
 use std::fmt;
 use std::iter::repeat;
 use convert::convert_vec;
@@ -101,11 +102,11 @@ impl Image<u16> {
         }
     }
 
-    pub fn rescale_to_f32(&self) -> Image<f32> {
-        // TODO: rescale to 0..1?
+    pub fn to_f32(&self) -> Image<f32> {
+        let max = u16::MAX as f32;
         let mut out: Vec<f32> = Vec::with_capacity(self.pixels.len());
         for v in self.pixels.iter() {
-            out.push(*v as f32);
+            out.push(*v as f32 / max);
         }
         Image {
             width: self.width,

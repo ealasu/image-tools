@@ -27,6 +27,14 @@ impl Sub for Point<Unit> {
     }
 }
 
+impl Div<Unit> for Point<Unit> {
+    type Output = Self;
+
+    fn div(self, rhs: Unit) -> Self::Output {
+        Point {x: self.x / rhs, y: self.y / rhs}
+    }
+}
+
 impl Add<Vector> for Point<Unit> {
     type Output = Self;
 
