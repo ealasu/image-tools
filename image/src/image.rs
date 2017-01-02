@@ -54,17 +54,17 @@ impl Image<f32> {
         }
     }
 
-    pub fn open_pgm(path: &str) -> Self {
-        let (width, height, data) = pgm::read_from_file(path);
-        let data = if let pgm::Format::F32(d) = data { d } else {
-            panic!("bad format")
-        };
-        Image {
-            width: width,
-            height: height,
-            pixels: data,
-        }
-    }
+    //pub fn open_pgm(path: &str) -> Self {
+        //let (width, height, data) = pgm::read_from_file(path);
+        //let data = if let pgm::Format::F32(d) = data { d } else {
+            //panic!("bad format")
+        //};
+        //Image {
+            //width: width,
+            //height: height,
+            //pixels: data,
+        //}
+    //}
 
     pub fn open_jpeg_file<P: AsRef<Path>>(path: P) -> Self {
         Image::<Rgb<f32>>::open_jpeg_file(path).to_gray()
@@ -74,10 +74,10 @@ impl Image<f32> {
         magick_convert(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
     }
 
-    pub fn save_pgm(&self, path: &str) {
-        let data = pgm::Format::F32(self.pixels.clone());
-        pgm::write_to_file(path, self.width, self.height, data);
-    }
+    //pub fn save_pgm(&self, path: &str) {
+        //let data = pgm::Format::F32(self.pixels.clone());
+        //pgm::write_to_file(path, self.width, self.height, data);
+    //}
 
     pub fn average(&self) -> f32 {
         self.pixels.iter().fold(0.0, |acc, v| acc + v) / self.pixels.len() as f32
@@ -104,10 +104,37 @@ impl Image<u16> {
 
     pub fn to_f32(&self) -> Image<f32> {
         let max = u16::MAX as f32;
-        let mut out: Vec<f32> = Vec::with_capacity(self.pixels.len());
-        for v in self.pixels.iter() {
-            out.push(*v as f32 / max);
+        let pixels = self.pixels.iter().map(|&v| {
+            v as f32 / max
+        }).collect();
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: pixels,
         }
+    }
+
+    pub fn to_rggb(&self) -> Image<RgbBayer> {
+        let max = u16::MAX as f32;
+        let out = self.pixels.iter().enumerate().map(|(i, &gray)| {
+            let x = i % self.width;
+            let y = (i - x) / self.height;
+            let x = x % 2;
+            let y = y % 2;
+            let mut pix: RgbBayer = Default::default();
+            {
+                let (v, vc) = match (x, y) {
+                    (0, 0) => (&mut pix.r, &mut pix.rc),
+                    (1, 0) => (&mut pix.g, &mut pix.gc),
+                    (0, 1) => (&mut pix.g, &mut pix.gc),
+                    (1, 1) => (&mut pix.b, &mut pix.bc),
+                    _ => panic!("invalid bayer coords: {},{}", x, y)
+                };
+                *v = gray as f32 / max;
+                *vc = 1.0;
+            }
+            pix
+        }).collect();
         Image {
             width: self.width,
             height: self.height,
@@ -162,7 +189,7 @@ impl<P: Rand> Image<P> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Default)]
 pub struct Rgb<T> {
     r: T,
     g: T,
@@ -175,16 +202,6 @@ impl<T: Rand> Rand for Rgb<T> {
             r: rng.gen(),
             g: rng.gen(),
             b: rng.gen(),
-        }
-    }
-}
-
-impl<T: Default> Default for Rgb<T> {
-    fn default() -> Self {
-        Rgb {
-            r: Default::default(),
-            g: Default::default(),
-            b: Default::default(),
         }
     }
 }
@@ -271,6 +288,81 @@ impl Image<Rgb<f32>> {
     pub fn to_gray(&self) -> Image<f32> {
         let pixels = self.pixels.iter().map(|p| {
             (p.r + p.g + p.b) / 3.0
+        }).collect();
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: pixels,
+        }
+    }
+}
+
+
+#[derive(Copy, Clone, PartialEq, Default)]
+pub struct RgbBayer {
+    r: f32,
+    g: f32,
+    b: f32,
+    rc: f32,
+    gc: f32,
+    bc: f32,
+}
+
+impl AddAssign for RgbBayer {
+    fn add_assign(&mut self, rhs: Self) {
+        self.r += rhs.r;
+        self.g += rhs.g;
+        self.b += rhs.b;
+        self.rc += rhs.rc;
+        self.gc += rhs.gc;
+        self.bc += rhs.bc;
+    }
+}
+
+impl DivAssign<f32> for RgbBayer {
+    fn div_assign(&mut self, rhs: f32) {
+        self.r /= rhs;
+        self.g /= rhs;
+        self.b /= rhs;
+        self.rc /= rhs;
+        self.gc /= rhs;
+        self.bc /= rhs;
+    }
+}
+
+impl Mul<f32> for RgbBayer {
+    type Output = Self;
+    fn mul(self, rhs: f32) -> Self::Output {
+        RgbBayer {
+            r: self.r * rhs,
+            g: self.g * rhs,
+            b: self.b * rhs,
+            rc: self.rc * rhs,
+            gc: self.gc * rhs,
+            bc: self.bc * rhs,
+        }
+    }
+}
+
+impl Image<RgbBayer> {
+    pub fn to_green(&self) -> Image<f32> {
+        let pixels = self.pixels.iter().map(|p| {
+            if p.gc == 0.0 { 0.0 } else { p.g / p.gc }
+        }).collect();
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: pixels,
+        }
+    }
+
+    pub fn to_rgb(&self) -> Image<Rgb<f32>> {
+        let pixels = self.pixels.iter().map(|p| {
+            Rgb {
+                r: if p.rc == 0.0 { 0.0 } else { p.r / p.rc },
+                g: if p.gc == 0.0 { 0.0 } else { p.g / p.gc },
+                b: if p.bc == 0.0 { 0.0 } else { p.b / p.bc },
+            }
         }).collect();
         Image {
             width: self.width,

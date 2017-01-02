@@ -7,3 +7,4 @@ convert = { path = "../convert" }
 regex = "*"
 turbojpeg = { path = "../../turbojpeg-rs" }
 rand = "*"
+byteorder = "*"
