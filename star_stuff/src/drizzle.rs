@@ -9,11 +9,6 @@ fn min(a: f32, b: f32) -> f32 {
 }
 
 #[inline(always)]
-fn max(a: f32, b: f32) -> f32 {
-    if a > b { a } else { b }
-}
-
-#[inline(always)]
 fn positive(v: f32) -> f32 {
     if v > 0.0 { v } else { 0.0 }
 }
@@ -22,18 +17,18 @@ pub struct ImageStack<P> {
     image: Image<P>,
     count: usize,
     factor: f32,
-    pixel_size: f32,
+    pixel_aperture: f32,
 }
 
 impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default> ImageStack<P> {
-    pub fn new(width: usize, height: usize, factor: f32) -> Self {
+    pub fn new(width: usize, height: usize, factor: f32, pixel_aperture: f32) -> Self {
         let w = (width as f32 * factor) as usize;
         let h = (height as f32 * factor) as usize;
         ImageStack {
             image: Image::new(w, h),
             count: 0,
             factor: factor,
-            pixel_size: 1.0,
+            pixel_aperture: pixel_aperture,
         }
     }
 
@@ -62,19 +57,18 @@ impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default
 
         let mut src_val: P = Default::default();
 
-        // TODO
-        //let src_margin = (1.0 - self.pixel_size) / 2.0; // margin around src pixel
+        let src_margin = (1.0 - self.pixel_aperture) / 2.0; // margin around src pixel
 
         let dst_size = 1.0 / self.factor; // width & height of dst pixel (in src coords)
 
         // east, or right
-        let e = positive((x + dst_size) - x.ceil());
+        let e = positive((x + dst_size) - x.ceil() - src_margin);
         // south, or bottom
-        let s = positive((y + dst_size) - y.ceil());
+        let s = positive((y + dst_size) - y.ceil() - src_margin);
         // west, or left
-        let w = min(x + dst_size, x.ceil()) - x;
+        let w = positive(min(x + dst_size, x.ceil()) - x - src_margin);
         // north, or top
-        let n = min(y + dst_size, y.ceil()) - y;
+        let n = positive(min(y + dst_size, y.ceil()) - y - src_margin);
 
         // areas of intersection of the four `src` pixels with the `dst` pixel.
         let nw = n * w;
@@ -117,16 +111,16 @@ mod tests {
     use image::Image;
 
     fn run_resample_test(pixels: Vec<f32>, x: f32, y: f32, expected: f32) {
-        run_resample_test_with_factor(1.0, pixels, x, y, expected);
+        run_resample_test_with_factor(1.0, 1.0, pixels, x, y, expected);
     }
 
-    fn run_resample_test_with_factor(factor: f32, pixels: Vec<f32>, x: f32, y: f32, expected: f32) {
+    fn run_resample_test_with_factor(factor: f32, pixel_aperture: f32, pixels: Vec<f32>, x: f32, y: f32, expected: f32) {
         let image = Image {
             width: 3,
             height: 3,
             pixels: pixels,
         };
-        let mut stack = ImageStack::new(3, 3, factor);
+        let mut stack = ImageStack::new(3, 3, factor, pixel_aperture);
         stack.add(&image, Vector { x: -x, y: -y });
         let v = *stack.into_image().pixel_at(0, 0);
         assert_eq!(v, expected);
@@ -177,6 +171,7 @@ mod tests {
         let run = |x, y, expected| {
             run_resample_test_with_factor(
                 2.0,
+                1.0,
                 vec![
                     0.5, 0.5, 0.5,
                     0.5, 1.0, 0.5,
@@ -197,6 +192,42 @@ mod tests {
 
         run(1.75, 1.0, 0.25 / 2.0 + 0.125 / 2.0);
         run(1.0, 1.75, 0.25 / 2.0 + 0.125 / 2.0);
+    }
+
+    #[test]
+    fn small_pixel() {
+        let run = |x, y, expected| {
+            run_resample_test_with_factor(
+                2.0,
+                0.5,
+                vec![
+                    0.5, 0.5, 0.5,
+                    0.5, 1.0, 0.5,
+                    0.5, 0.5, 0.5,
+                ],
+                x, y,
+                expected
+            );
+        };
+        run(1.0, 1.0, 0.25 / 4.0);
+    }
+
+    #[bench]
+    fn bench_stack(b: &mut Bencher) {
+        let image = Image {
+            width: 3,
+            height: 3,
+            pixels: vec![
+                0.5, 0.5, 0.5,
+                0.5, 1.0, 0.5,
+                0.5, 0.5, 0.5,
+            ]
+        };
+        b.iter(|| {
+            let mut stack = ImageStack::new(3, 3, 1.0, 1.0);
+            stack.add(&image, Vector { x: 0.5, y: 0.5 });
+            stack.into_image()
+        });
     }
 
     //#[bench]
@@ -221,13 +252,13 @@ mod tests {
             height: 3,
             pixels: pixels,
         };
-        let mut stacker = ImageStack::new(3, 3, 1.0);
+        let mut stacker = ImageStack::new(3, 3, 1.0, 1.0);
         stacker.add(&image, Vector {x: x, y: y});
         assert_eq!(stacker.into_image().pixels, expected);
     }
 
     fn run_stack_test_2(pixels1: Vec<f32>, x1: f32, y1: f32, pixels2: Vec<f32>, x2: f32, y2: f32, expected: Vec<f32>) {
-        let mut stacker = ImageStack::new(3, 3, 1.0);
+        let mut stacker = ImageStack::new(3, 3, 1.0, 1.0);
         let image1: Image<f32> = Image {
             width: 3,
             height: 3,
