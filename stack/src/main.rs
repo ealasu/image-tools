@@ -34,6 +34,7 @@ fn main() {
         //println!("{}", v);
     //}
     raw_ref.to_f32().save("ref-bayer.tif");
+    raw_ref.to_rggb().to_rgb().save("ref-bayer-rgb.tif");
     let ref_image = raw_ref.to_rggb().to_green().center_crop(900, 900);
     ref_image.save("ref.tif");
     let mut stack = ImageStack::new(ref_image.width, ref_image.height, 1.0, 1.0);
