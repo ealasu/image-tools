@@ -160,65 +160,94 @@ mod tests {
         //});
     //}
 
-    #[test]
-    fn test_stack_1() {
+    fn run_stack_test(pixels: Vec<f32>, x: f32, y: f32, expected: Vec<f32>) {
         let image: Image<f32> = Image {
             width: 3,
             height: 3,
-            pixels: vec![
+            pixels: pixels,
+        };
+        let mut stacker = ImageStack::new(3, 3, 1.0);
+        stacker.add(&image, Vector {x: x, y: y});
+        assert_eq!(stacker.into_image().pixels, expected);
+    }
+
+    fn run_stack_test_2(pixels1: Vec<f32>, x1: f32, y1: f32, pixels2: Vec<f32>, x2: f32, y2: f32, expected: Vec<f32>) {
+        let mut stacker = ImageStack::new(3, 3, 1.0);
+        let image1: Image<f32> = Image {
+            width: 3,
+            height: 3,
+            pixels: pixels1,
+        };
+        stacker.add(&image1, Vector {x: x1, y: y1});
+        let image2: Image<f32> = Image {
+            width: 3,
+            height: 3,
+            pixels: pixels2,
+        };
+        stacker.add(&image2, Vector {x: x2, y: y2});
+        assert_eq!(stacker.into_image().pixels, expected);
+    }
+
+    #[test]
+    fn test_stack_1() {
+        run_stack_test(
+            vec![
+                0.5, 0.5, 0.5,
+                0.5, 1.0, 0.5,
+                0.5, 0.5, 0.5,
+            ],
+            0.0, 0.0,
+            vec![
                 0.5, 0.5, 0.5,
                 0.5, 1.0, 0.5,
                 0.5, 0.5, 0.5,
             ]
-        };
-        let mut stacker = ImageStack::new(3, 3, 1.0);
-        stacker.add(&image, Vector {x: 0.0, y: 0.0});
-        assert_eq!(stacker.into_image().pixels, vec![
-            0.5, 0.5, 0.5,
-            0.5, 1.0, 0.5,
-            0.5, 0.5, 0.5,
-        ]);
+        );
     }
 
     #[test]
     fn test_stack_2() {
-        let image = Image {
-            width: 3,
-            height: 3,
-            pixels: vec![
+        run_stack_test_2(
+            vec![
+                0.5, 0.5, 0.5,
+                0.5, 1.0, 0.5,
+                0.5, 0.5, 0.5,
+            ],
+            0.0, 0.0,
+            vec![
+                0.5, 0.5, 0.5,
+                0.5, 1.0, 0.5,
+                0.5, 0.5, 0.5,
+            ],
+            0.0, 0.0,
+            vec![
                 0.5, 0.5, 0.5,
                 0.5, 1.0, 0.5,
                 0.5, 0.5, 0.5,
             ]
-        };
-        let mut stacker = ImageStack::new(3, 3, 1.0);
-        stacker.add(&image, Vector {x: 0.0, y: 0.0});
-        stacker.add(&image, Vector {x: 0.0, y: 0.0});
-        assert_eq!(stacker.into_image().pixels, vec![
-            0.5, 0.5, 0.5,
-            0.5, 1.0, 0.5,
-            0.5, 0.5, 0.5,
-        ]);
+        );
     }
 
     #[test]
     fn test_stack_3() {
-        let image = Image {
-            width: 3,
-            height: 3,
-            pixels: vec![
+        run_stack_test_2(
+            vec![
                 0.5, 0.5, 0.5,
                 0.5, 1.0, 0.5,
                 0.5, 0.5, 0.5,
+            ],
+            0.0, 0.0,
+            vec![
+                0.5, 0.5, 0.5,
+                0.5, 1.0, 0.5,
+                0.5, 0.5, 0.5,
+            ],
+            0.5, 0.5,
+            vec![
+                0.3125, 0.375, 0.375,
+                0.375, 0.8125, 0.5625,
+                0.375, 0.5625, 0.5625,
             ]
-        };
-        let mut stacker = ImageStack::new(3, 3, 1.0);
-        stacker.add(&image, Vector {x: 0.0, y: 0.0});
-        stacker.add(&image, Vector {x: 0.5, y: 0.5});
-        assert_eq!(stacker.into_image().pixels, vec![
-            0.3125, 0.375, 0.375,
-            0.375, 0.8125, 0.5625,
-            0.375, 0.5625, 0.5625,
-        ]);
+        );
     }
 }
