@@ -8,7 +8,7 @@ pub fn open_raw(path: &str) -> (usize, usize, Vec<u16>) {
     let out = Command::new("dcraw")
         .arg("-c") // to stdout
         .arg("-4")
-        .arg("-D")
+        .arg("-d")
         .arg(path)
         .output()
         .unwrap();

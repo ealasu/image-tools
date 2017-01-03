@@ -358,6 +358,30 @@ impl Image<RgbBayer> {
         }
     }
 
+    pub fn to_green_interpolated(&self) -> Image<f32> {
+        let mut pixels = Vec::with_capacity(self.width * self.height);
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let p = *self.pixel_at(x, y);
+                let gray = if p.gc > 0.0 {
+                    p.g
+                } else {
+                    let left = if x == 0 { 0.0 } else { self.pixel_at(x - 1, y).g };
+                    let right = if x == self.width - 1 { 0.0 } else { self.pixel_at(x + 1, y).g };
+                    let top = if y == 0 { 0.0 } else { self.pixel_at(x, y - 1).g };
+                    let bottom = if y == self.height - 1 { 0.0 } else { self.pixel_at(x, y + 1).g };
+                    (left + right + top + bottom) / 4.0
+                };
+                pixels.push(gray);
+            }
+        }
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: pixels,
+        }
+    }
+
     pub fn to_rgb(&self) -> Image<Rgb<f32>> {
         let pixels = self.pixels.iter().map(|p| {
             Rgb {
