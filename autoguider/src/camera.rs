@@ -7,8 +7,8 @@ use gphoto;
 
 pub struct Camera {
     pub keep_raw: bool,
-    context: gphoto::Context,
-    camera: gphoto::Camera,
+    //context: gphoto::Context,
+    //camera: gphoto::Camera,
 }
 
 unsafe impl Send for Camera {}
@@ -26,17 +26,17 @@ impl Camera {
             .expect("failed to execute mount");
         assert!(status.success());
 
-        let mut context = gphoto::Context::new().unwrap();
-        let mut camera = gphoto::Camera::autodetect(&mut context).unwrap();
+        //let mut context = gphoto::Context::new().unwrap();
+        //let camera = gphoto::Camera::autodetect(&mut context).unwrap();
 
         Camera {
             keep_raw: true,
-            context: context,
-            camera: camera,
+            //context: context,
+            //camera: camera,
         }
     }
 
-    pub fn shoot_old(&self) -> Image<f32> {
+    pub fn shoot(&self) -> Image<f32> {
         let tmpdir = Path::new("/mnt/ramdisk");
 
         let jpeg_file = NamedTempFile::new_in(tmpdir).unwrap();
@@ -58,15 +58,16 @@ impl Camera {
                 .arg("--set-config").arg("imageformat=0");
         }
         command
-            // Choice: 37 1/160
+             //Choice: 37 1/160
             //.arg("--set-config").arg("shutterspeed=37")
-            // Choice: 1 100
+             //Choice: 1 100
             //.arg("--set-config").arg("iso=1")
 
             // 20
             .arg("--set-config").arg("shutterspeed=3")
             // 5000
             .arg("--set-config").arg("iso=18")
+
             .arg("--capture-image-and-download");
 
         let status = command
@@ -80,17 +81,22 @@ impl Camera {
         image.center_crop(900, 900).to_gray()
     }
 
-    pub fn shoot(&mut self) -> Image<f32> {
-        let capture = self.camera.capture_image(&mut self.context).unwrap();
-        println!(" (done) {:?}", capture.basename());
+    //pub fn shoot(&mut self) -> Image<f32> {
+        //let res = self.camera.capture_image(&mut self.context);
+        //if let Err(ref e) = res {
+            //println!(" (error) {:?}", e.message());
+        //}
+        //let capture = res.unwrap();
+        //println!(" (done) {:?}", capture.basename());
 
-        let tmpdir = Path::new("/mnt/ramdisk");
-        let jpeg_file = NamedTempFile::new_in(tmpdir).unwrap();
-        debug!("saving jpeg to {:?}", jpeg_file.path());
-        let mut file = gphoto::FileMedia::create(jpeg_file.path()).unwrap();
-        self.camera.download(&mut self.context, &capture, &mut file).unwrap();
+        //let tmpdir = Path::new("/mnt/ramdisk");
+        //let jpeg_file = NamedTempFile::new_in(tmpdir).unwrap();
+        //debug!("saving jpeg to {:?}", jpeg_file.path());
+        //let mut file = gphoto::FileMedia::create(jpeg_file.path()).unwrap();
+        //self.camera.download(&mut self.context, &capture, &mut file).unwrap();
+        //fs::copy(jpeg_file.path(), tmpdir.join(Path::new("latest.jpeg"))).unwrap();
 
-        let image = Image::<Rgb<f32>>::open_jpeg_file(jpeg_file.path());
-        image.center_crop(900, 900).to_gray()
-    }
+        //let image = Image::<Rgb<f32>>::open_jpeg_file(jpeg_file.path());
+        //image.center_crop(900, 900).to_gray()
+    //}
 }

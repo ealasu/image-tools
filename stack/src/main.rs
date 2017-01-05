@@ -53,7 +53,7 @@ fn main() {
         //.center_crop(900, 900);
     //ref_image.save("ref.tif");
 
-    let mut stack = ImageStack::new(raw_ref.width, raw_ref.height, 1.0, 0.6);
+    let mut stack = ImageStack::new(raw_ref.width, raw_ref.height, 2.0, 0.95);
 
     //let ref_image = raw_ref
         //.to_rggb()

@@ -56,7 +56,7 @@ fn main() {
                 None
             } else {
                 Some(RaDec {
-                    ra: -ra_controller.update(offset.y, 1.0), // TODO: calc time delta
+                    ra: -ra_controller.update(-offset.y, 1.0), // TODO: calc time delta
                     dec: -dec_controller.update(offset.x, 1.0),
                 })
             }

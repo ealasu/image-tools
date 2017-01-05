@@ -1,3 +1,4 @@
 paths = [
   "../../gphoto2-sys",
+  "../../gphoto-rs",
   ]
