@@ -67,7 +67,7 @@ impl Image<f32> {
     //}
 
     pub fn open_jpeg_file<P: AsRef<Path>>(path: P) -> Self {
-        Image::<Rgb<f32>>::open_jpeg_file(path).to_gray()
+        Image::<Rgb<u8>>::open_jpeg_file(path).to_f32().to_gray()
     }
 
     pub fn save(&self, path: &str) {
@@ -246,6 +246,65 @@ impl<T: Copy + Mul<T,Output=T>> Mul<T> for Rgb<T> {
     }
 }
 
+impl Image<Rgb<u8>> {
+    pub fn to_f32(&self) -> Image<Rgb<f32>> {
+        let max = u8::MAX as f32;
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: self.pixels.iter().map(|p| {
+                Rgb {
+                    r: p.r as f32 / max,
+                    g: p.g as f32 / max,
+                    b: p.b as f32 / max,
+                }
+            }).collect()
+        }
+    }
+
+    pub fn open_jpeg_data(data: &[u8]) -> Self {
+        let image = turbojpeg::decompress(data);
+        Image {
+            width: image.width,
+            height: image.height,
+            pixels: image.pixels.iter().map(|p| {
+                Rgb {
+                    r: p.r,
+                    g: p.g,
+                    b: p.b,
+                }
+            }).collect()
+        }
+    }
+
+    pub fn open_jpeg_file<P: AsRef<Path>>(path: P) -> Self {
+        let mut f = File::open(path).unwrap();
+        let mut data = vec![];
+        f.read_to_end(&mut data).unwrap();
+        Self::open_jpeg_data(&data)
+    }
+
+    pub fn save_jpeg(&self) -> Vec<u8> {
+        let image = turbojpeg::Image {
+            width: self.width,
+            height: self.height,
+            pixels: self.pixels.iter().map(|p| {
+                turbojpeg::Pixel {
+                    r: p.r,
+                    g: p.g,
+                    b: p.b,
+                }
+            }).collect()
+        };
+        turbojpeg::compress(&image)
+    }
+
+    pub fn save_jpeg_file<P: AsRef<Path>>(&self, path: P) {
+        let data = self.save_jpeg();
+        let mut f = File::create(path).unwrap();
+        f.write_all(&data).unwrap();
+    }
+}
 
 impl Image<Rgb<f32>> {
     pub fn open(path: &str) -> Self {
@@ -259,29 +318,6 @@ impl Image<Rgb<f32>> {
         }
     }
 
-    pub fn open_jpeg_data(data: &[u8]) -> Self {
-        let image = turbojpeg::decompress(data);
-        let max = u8::MAX as f32;
-        Image {
-            width: image.width as usize,
-            height: image.height as usize,
-            pixels: image.pixels.iter().map(|p| {
-                Rgb {
-                    r: p.r as f32 / max,
-                    g: p.g as f32 / max,
-                    b: p.b as f32 / max,
-                }
-            }).collect(),
-        }
-    }
-
-    pub fn open_jpeg_file<P: AsRef<Path>>(path: P) -> Self {
-        let mut f = File::open(path).unwrap();
-        let mut data = vec![];
-        f.read_to_end(&mut data).unwrap();
-        Self::open_jpeg_data(&data)
-    }
-
     pub fn save(&self, path: &str) {
         let data = convert_vec(self.pixels.clone());
         magick_convert(&data, self.width, self.height, "rgb", "truecolor", path);
@@ -290,6 +326,21 @@ impl Image<Rgb<f32>> {
     pub fn to_gray(&self) -> Image<f32> {
         let pixels = self.pixels.iter().map(|p| {
             (p.r + p.g + p.b) / 3.0
+        }).collect();
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: pixels,
+        }
+    }
+
+    pub fn to_u8(&self) -> Image<Rgb<u8>> {
+        let pixels = self.pixels.iter().map(|p| {
+            Rgb {
+                r: (p.r * 255.0) as u8,
+                g: (p.g * 255.0) as u8,
+                b: (p.b * 255.0) as u8,
+            }
         }).collect();
         Image {
             width: self.width,

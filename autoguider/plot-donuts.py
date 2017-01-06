@@ -21,7 +21,7 @@ def parse(path):
     dec = 0.0
     with open(path, 'r') as f:
         for line in f:
-            m = re.search(r' donuts out: (.+),(.+)', line)
+            m = re.search(r'Vector { x: (.+), y: (.+) }', line)
             if m:
                 ra = 0.0
                 dec = 0.0
