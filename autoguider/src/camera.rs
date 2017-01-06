@@ -63,10 +63,17 @@ impl Camera {
              //Choice: 1 100
             //.arg("--set-config").arg("iso=1")
 
-            // 20
-            .arg("--set-config").arg("shutterspeed=3")
+            // 15 
+            //.arg("--set-config").arg("shutterspeed=3")
+
+            // 30
+            .arg("--set-config").arg("shutterspeed=0")
+
             // 5000
-            .arg("--set-config").arg("iso=18")
+            //.arg("--set-config").arg("iso=18")
+
+            // 3200
+            .arg("--set-config").arg("iso=16")
 
             .arg("--capture-image-and-download");
 
