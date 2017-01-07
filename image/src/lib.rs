@@ -15,6 +15,7 @@ mod image;
 mod pgm;
 mod dcraw;
 mod identify;
+mod fits;
 
 pub use image::{Image, Rgb};
 //pub use rgb_image::*;

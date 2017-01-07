@@ -90,11 +90,21 @@ fn main() {
     img.center_crop(400, 400).save(&args.arg_output);
 }
 
-//#[cfg(test)]
-//mod tests {
-//    use super::*;
-//    use image::*;
-//
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use image::*;
+
+    #[test]
+    fn test_1() {
+        let img = Image::<f32>::open("out.tif");
+        println!("min: {}", img.min());
+        println!("max: {}", img.max());
+        println!("range: {}", img.max() - img.min());
+        println!("avg: {}", img.average());
+        img.to_u8().to_rgb().save_jpeg_file("out.jpg");
+    }
+
 //    #[test]
 //    fn test_1() {
 //        let mut chan: Channel<f32> = Channel::from_data(8, 4, vec![
@@ -145,4 +155,4 @@ fn main() {
 //            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 
 //        ]);
 //    }
-//}
+}

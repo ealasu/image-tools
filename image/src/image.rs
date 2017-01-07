@@ -114,7 +114,18 @@ impl Image<f32> {
     }
 
     pub fn save(&self, path: &str) {
-        magick_convert(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
+        magick_convert_float(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
+    }
+
+    pub fn save_fits(&self, filename: &str) {
+        //use fitsio::*;
+
+        //let f = FitsFile::create(filename).unwrap();
+        //let image_description = ImageDescription {
+            //data_type: ImageType::FLOAT_IMG,
+            //dimensions: vec![self.width, self.height],
+        //};
+        //let img = f.create_image("image".to_string(), &image_description).unwrap();
     }
 
     //pub fn save_pgm(&self, path: &str) {
@@ -124,6 +135,26 @@ impl Image<f32> {
 
     pub fn average(&self) -> f32 {
         self.pixels.iter().fold(0.0, |acc, v| acc + v) / self.pixels.len() as f32
+    }
+
+    pub fn to_u16(&self) -> Image<u16> {
+        let src_min = self.pixels.iter().fold(f32::MAX, |acc, &v| acc.min(v));
+        let src_max = self.pixels.iter().fold(f32::MIN, |acc, &v| acc.max(v));
+        let src_d = src_max - src_min;
+        let dst_min = u16::MIN as f32;
+        let dst_max = u16::MAX as f32;
+        let dst_d = dst_max - dst_min;
+        self.map(|&p| (((p - src_min) * dst_d) / src_d) as u16)
+    }
+
+    pub fn to_u8(&self) -> Image<u8> {
+        let src_min = self.pixels.iter().fold(f32::MAX, |acc, &v| acc.min(v));
+        let src_max = self.pixels.iter().fold(f32::MIN, |acc, &v| acc.max(v));
+        let src_d = src_max - src_min;
+        let dst_min = u8::MIN as f32;
+        let dst_max = u8::MAX as f32;
+        let dst_d = dst_max - dst_min;
+        self.map(|&p| (((p - src_min) * dst_d) / src_d) as u8)
     }
 
     pub fn to_rggb(&self) -> Image<RgbBayer> {
@@ -153,6 +184,12 @@ impl Image<f32> {
             height: self.height,
             pixels: pixels,
         }
+    }
+}
+
+impl Image<u8> {
+    pub fn to_rgb(&self) -> Image<Rgb<u8>> {
+        self.map(|&p| Rgb { r: p, g: p, b: p })
     }
 }
 

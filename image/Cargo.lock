@@ -2,6 +2,7 @@
 name = "image"
 version = "0.0.0"
 dependencies = [
+ "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "convert 0.0.0",
  "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.44 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -15,6 +16,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "memchr 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "byteorder"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "convert"
@@ -62,6 +68,7 @@ version = "0.1.0"
 
 [metadata]
 "checksum aho-corasick 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8f36f237c490deb976b38aca6369182dceb5a7af249aabf41c0ba5a964bac5ed"
+"checksum byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c40977b0ee6b9885c9013cd41d9feffdd22deb3bb4dc3a71d901cc7a77de18c8"
 "checksum libc 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "10569e57695cc2c91ca4214357907649c9e242dc822c9ae623d0e0b0d68aa4d9"
 "checksum memchr 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "dc66b0957bf6ae6590681ceac49b0df16823d43037d49aaf2ee658d483af30ab"
 "checksum rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)" = "022e0636ec2519ddae48154b028864bdce4eaf7d35226ab8e65c611be97b189d"
