@@ -84,7 +84,7 @@ impl Camera {
         debug!("jpeg file len: {}", fs::metadata(jpeg_file.path()).unwrap().len());
         fs::copy(jpeg_file.path(), tmpdir.join(Path::new("latest.jpeg"))).unwrap();
 
-        let image = Image::<Rgb<f32>>::open_jpeg_file(jpeg_file.path());
+        let image = Image::<Rgb<u8>>::open_jpeg_file(jpeg_file.path()).to_f32();
         image.center_crop(900, 900).to_gray()
     }
 

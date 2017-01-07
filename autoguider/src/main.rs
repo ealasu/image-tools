@@ -31,7 +31,7 @@ fn main() {
     let camera = Mutex::new(Camera::new());
     let mut aligner = Aligner::new();
     let mut mount = Mount::new();
-    let num_images = 150;
+    let num_images = 200;
     let shot_duration = Duration::from_secs(5 + 30);
     let mut ra_controller = PIDController::new(0.3, 0.04, 0.0);
     let mut dec_controller = PIDController::new(0.10, 0.015, 0.0);

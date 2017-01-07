@@ -25,3 +25,7 @@ pub fn y_projection(image: &Image<f32>) -> Vec<f32> {
     }
     res
 }
+
+pub fn radial_projection(image: &Image<f32>, center_x: f32, center_y: f32, margin: f32) -> Vec<f32> {
+    vec![]
+}
