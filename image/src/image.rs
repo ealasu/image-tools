@@ -42,6 +42,15 @@ impl<P> Image<P> {
         //assert!(y < self.height);
         &mut self.pixels[x + y * self.width]
     }
+
+    pub fn map<F,R>(&self, f: F) -> Image<R> where F: FnMut(&P) -> R {
+        let pixels = self.pixels.iter().map(f).collect();
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: pixels,
+        }
+    }
 }
 
 impl Image<f32> {
@@ -83,12 +92,33 @@ impl Image<f32> {
         self.pixels.iter().fold(0.0, |acc, v| acc + v) / self.pixels.len() as f32
     }
 
-    pub fn min(&self) -> f32 {
-        self.pixels.iter().fold(f32::MAX, |acc, &v| acc.min(v))
-    }
-
-    pub fn max(&self) -> f32 {
-        self.pixels.iter().fold(f32::MIN, |acc, &v| acc.max(v))
+    pub fn to_rggb(&self) -> Image<RgbBayer> {
+        let mut pixels = Vec::with_capacity(self.width * self.height);
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let gray = *self.pixel_at(x, y);
+                let x = x % 2;
+                let y = y % 2;
+                let mut pix: RgbBayer = Default::default();
+                {
+                    let (v, vc) = match (x, y) {
+                        (0, 0) => (&mut pix.r, &mut pix.rc),
+                        (1, 0) => (&mut pix.g, &mut pix.gc),
+                        (0, 1) => (&mut pix.g, &mut pix.gc),
+                        (1, 1) => (&mut pix.b, &mut pix.bc),
+                        _ => panic!("invalid bayer coords: {},{}", x, y)
+                    };
+                    *v = gray;
+                    *vc = 1.0;
+                }
+                pixels.push(pix);
+            }
+        }
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: pixels,
+        }
     }
 }
 
@@ -350,15 +380,24 @@ impl Image<Rgb<f32>> {
     }
 }
 
+impl<T: PartialOrd + Copy> Image<T> {
+    pub fn min(&self) -> T {
+        *self.pixels.iter().min_by(|a,b| a.partial_cmp(b).unwrap()).unwrap()
+    }
+
+    pub fn max(&self) -> T {
+        *self.pixels.iter().max_by(|a,b| a.partial_cmp(b).unwrap()).unwrap()
+    }
+}
 
 #[derive(Copy, Clone, PartialEq, Default)]
 pub struct RgbBayer {
-    r: f32,
-    g: f32,
-    b: f32,
-    rc: f32,
-    gc: f32,
-    bc: f32,
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub rc: f32,
+    pub gc: f32,
+    pub bc: f32,
 }
 
 impl AddAssign for RgbBayer {

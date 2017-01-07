@@ -1,4 +1,6 @@
 #![feature(test)]
+#![feature(iter_min_by)]
+#![feature(iter_max_by)]
 
 #[macro_use] extern crate convert;
 extern crate regex;
