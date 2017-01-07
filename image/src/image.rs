@@ -11,7 +11,7 @@ use std::path::Path;
 use std::fs::File;
 use std::io::prelude::*;
 use std::u8;
-use std::ops::{AddAssign, DivAssign, Mul};
+use std::ops::{AddAssign, DivAssign, Add, Mul, Div};
 use turbojpeg;
 use rand::{self, Rng, Rand};
 
@@ -49,6 +49,40 @@ impl<P> Image<P> {
             width: self.width,
             height: self.height,
             pixels: pixels,
+        }
+    }
+}
+
+impl<P: AddAssign> Add for Image<P> {
+    type Output = Self;
+    fn add(mut self, rhs: Self) -> Self {
+        self += rhs;
+        self
+    }
+}
+
+impl<P: AddAssign> AddAssign for Image<P> {
+    fn add_assign(&mut self, rhs: Self) {
+        assert_eq!(self.width, rhs.width);
+        assert_eq!(self.height, rhs.height);
+        for (l,r) in self.pixels.iter_mut().zip(rhs.pixels.into_iter()) {
+            l.add_assign(r);
+        }
+    }
+}
+
+impl<P: DivAssign + Copy> Div<P> for Image<P> {
+    type Output = Self;
+    fn div(mut self, rhs: P) -> Self {
+        self /= rhs;
+        self
+    }
+}
+
+impl<P: DivAssign + Copy> DivAssign<P> for Image<P> {
+    fn div_assign(&mut self, rhs: P) {
+        for p in self.pixels.iter_mut() {
+            *p /= rhs;
         }
     }
 }

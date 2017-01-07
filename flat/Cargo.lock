@@ -4,6 +4,7 @@ version = "0.0.0"
 dependencies = [
  "docopt 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.0.0",
+ "rayon 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "star_stuff 0.0.0",
 ]

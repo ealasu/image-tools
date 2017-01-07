@@ -2,10 +2,12 @@ extern crate docopt;
 extern crate rustc_serialize;
 extern crate image;
 extern crate star_stuff;
+extern crate rayon;
 
 use docopt::Docopt;
 use star_stuff::stack::ImageStack;
 use image::*;
+use rayon::prelude::*;
 
 
 const USAGE: &'static str = "
@@ -25,33 +27,45 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     let first = Image::<u16>::open_raw(&args.arg_input[0]);
-    let mut stack = ImageStack::new(first.width, first.height);
-    for f in args.arg_input.iter() {
-        println!("stacking {}", f);
-        let img = Image::<u16>::open_raw(f).to_f32();
-        stack.add(&img);
-    }
-    let img = stack.finish();
+    let (w, h) = (first.width, first.height);
+    let count = args.arg_input.len() as f32;
+    let img = args.arg_input
+        .into_par_iter()
+        .map(|f| {
+            println!("stacking {}", f);
+            Image::<u16>::open_raw(&f).to_f32()
+        })
+        .reduce(|| Image::<f32>::new(w, h), |a, b| a + b);
+    let img = img / count;
 
     println!("min: {}", img.min());
     println!("max: {}", img.max());
     println!("avg: {}", img.average());
 
     let mut r_max = 0.0;
+    let mut r_count = 0;
     let mut g_max = 0.0;
+    let mut g_count = 0;
     let mut b_max = 0.0;
+    let mut b_count = 0;
     let img = img.to_rggb();
     for p in img.pixels.iter() {
         if p.rc > 0.0 && p.r > r_max {
-            r_max = p.r;
+            r_max += p.r;
+            r_count += 1;
         }
         if p.gc > 0.0 && p.g > g_max {
-            g_max = p.g;
+            g_max += p.g;
+            g_count += 1;
         }
         if p.bc > 0.0 && p.b > b_max {
-            b_max = p.b;
+            b_max += p.b;
+            b_count += 1;
         }
     }
+    r_max = r_max / r_count as f32;
+    g_max = g_max / g_count as f32;
+    b_max = b_max / b_count as f32;
     println!("r_max: {}", r_max);
     println!("g_max: {}", g_max);
     println!("b_max: {}", b_max);
@@ -67,7 +81,13 @@ fn main() {
             unreachable!()
         }
     });
-    img.save(&args.arg_output);
+
+    println!("min: {}", img.min());
+    println!("max: {}", img.max());
+    println!("avg: {}", img.average());
+
+    //img.save(&args.arg_output);
+    img.center_crop(400, 400).save(&args.arg_output);
 }
 
 //#[cfg(test)]

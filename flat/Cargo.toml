@@ -7,3 +7,4 @@ docopt = "*"
 rustc-serialize = "*"
 image = { path = "../image" }
 star_stuff = { path = "../star_stuff" }
+rayon = "*"
