@@ -7,7 +7,6 @@ extern crate rayon;
 
 use docopt::Docopt;
 use star_stuff::drizzle::{self, ImageStack};
-use star_stuff::point::*;
 use image::{Image, Rgb, RgbBayer};
 use rayon::prelude::*;
 
@@ -36,38 +35,37 @@ fn main() {
 
 }
 
-fn open(path: &str) -> Image<f32> {
-    Image::<f32>::open(path).center_crop(900, 900)
-}
 
-fn align(args: Args) {
-    let ref_image = open(&args.arg_input[0]);
-    let reference = donuts::preprocess_image(ref_image.clone());
-
-    for (i, file) in args.arg_input.iter().enumerate() {
-        println!("adding {}", i);
-        let mut stack = ImageStack::new(ref_image.width, ref_image.height, 1.0, 0.9);
-        //let raw_sample = Image::<u16>::open_raw(file).to_rggb();
-        let sample_image = open(&file);
-        let p = donuts::preprocess_image(sample_image.clone());
-        let (x, y) = donuts::align(&reference, &p);
-        println!("offset: {},{}", x, y);
-        stack.add(&sample_image, Vector { x:x, y:y });
-        let mut img = stack.finish();
-        for y in 0..img.height {
-            *img.pixel_at_mut(900 / 2, y) *= 0.5;
-        }
-        for x in 0..img.width {
-            *img.pixel_at_mut(x, 900 / 2) *= 0.5;
-        }
-        img.save(&format!("{}/{}.jpg", args.flag_output, i));
-    }
-}
+//fn align(args: Args) {
+//    let ref_image = open(&args.arg_input[0]);
+//    let reference = donuts::preprocess_image(ref_image..center_crop(900, 900));
+//
+//    for (i, file) in args.arg_input.iter().enumerate() {
+//        println!("adding {}", i);
+//        let mut stack = ImageStack::new(ref_image.width, ref_image.height, 1.0, 0.9);
+//        //let raw_sample = Image::<u16>::open_raw(file).to_rggb();
+//        let sample_image = open(&file);
+//        let p = donuts::preprocess_image(sample_image.clone());
+//        let (x, y) = donuts::align(&reference, &p);
+//        println!("offset: {},{}", x, y);
+//        stack.add(&sample_image, Vector { x:x, y:y });
+//        let mut img = stack.finish();
+//        for y in 0..img.height {
+//            *img.pixel_at_mut(900 / 2, y) *= 0.5;
+//        }
+//        for x in 0..img.width {
+//            *img.pixel_at_mut(x, 900 / 2) *= 0.5;
+//        }
+//        img.save(&format!("{}/{}.jpg", args.flag_output, i));
+//    }
+//}
 
 fn stack(args: Args) {
     println!("processing ref image");
+    let factor = 1.0;
     let raw_ref = Image::<u16>::open_raw(&args.arg_input[0]);
-    let (w, h) = (raw_ref.width, raw_ref.height);
+    let w = (raw_ref.width as f32 * factor) as usize;
+    let h = (raw_ref.height as f32 * factor) as usize;
     let flat = Image::<f32>::open_fits(&args.flag_flat);
     //for v in raw_ref.to_f32().pixels.iter() {
         //println!("{}", v);
@@ -99,7 +97,8 @@ fn stack(args: Args) {
         //.to_green_interpolated()
         //.center_crop(900, 900);
     let ref_image = open(&args.arg_input[0]);
-    let reference = donuts::preprocess_image(ref_image);
+    let reference = donuts::preprocess_image(ref_image.center_crop(900, 900));
+    let three_axis = donuts::three_axis::ThreeAxisDonuts::new(&ref_image);
 
     println!("stacking");
 
@@ -108,19 +107,26 @@ fn stack(args: Args) {
         .map(|file| {
             println!("adding {}", file);
             let sample_image = open(&file);
-            let p = donuts::preprocess_image(sample_image);
-            let (x, y) = donuts::align(&reference, &p);
-            println!("offset: {},{}", x, y);
+            three_axis.align(&sample_image);
+            let p = donuts::preprocess_image(sample_image.center_crop(900, 900));
+            let d = donuts::align(&reference, &p);
+            println!("offset: {:?}", d);
             let img = Image::<u16>::open_raw(&file).to_f32();
             let img = img / &flat;
             let img = img.to_rggb();
             let mut stack = Image::<RgbBayer>::new(w, h);
-            drizzle::add(&mut stack, &img, Vector { x:x, y:y }, 2.0, 0.80);
+            drizzle::add(&mut stack, &img, d, factor, 0.80);
             stack
         })
         .reduce(
-            || Image::<RgbBayer>::new(w, h),
-            |a, b| a + b);
+            || {
+                println!("reduce init");
+                Image::<RgbBayer>::new(w, h)
+            },
+            |a, b| {
+                println!("adding");
+                a + b
+            });
 
     //for file in args.arg_input.iter() {
         //println!("adding {}", file);
@@ -134,4 +140,9 @@ fn stack(args: Args) {
     //}
     //let img = stack.into_image();
     img.to_rgb().save(&args.flag_output);
+    img.center_crop(900, 900).holes().to_u8().save_jpeg_file("holes.jpg");
+}
+
+fn open(path: &str) -> Image<f32> {
+    Image::<f32>::open(path)
 }

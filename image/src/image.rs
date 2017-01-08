@@ -461,19 +461,36 @@ impl Image<Rgb<f32>> {
         }
     }
 
-    pub fn to_u8(&self) -> Image<Rgb<u8>> {
-        let pixels = self.pixels.iter().map(|p| {
-            Rgb {
-                r: (p.r * 255.0) as u8,
-                g: (p.g * 255.0) as u8,
-                b: (p.b * 255.0) as u8,
-            }
-        }).collect();
-        Image {
-            width: self.width,
-            height: self.height,
-            pixels: pixels,
+    pub fn min_max(&self) -> ((f32, f32, f32), (f32, f32, f32)) {
+        let mut min_r = f32::MAX;
+        let mut min_g = f32::MAX;
+        let mut min_b = f32::MAX;
+        let mut max_r = f32::MIN;
+        let mut max_g = f32::MIN;
+        let mut max_b = f32::MIN;
+        for p in self.pixels.iter() {
+            if p.r < min_r { min_r = p.r; }
+            if p.g < min_g { min_g = p.g; }
+            if p.b < min_b { min_b = p.b; }
+            if p.r > max_r { max_r = p.r; }
+            if p.g > max_g { max_g = p.g; }
+            if p.b > max_b { max_b = p.b; }
         }
+        ((min_r, min_g, min_b), (max_r, max_g, max_b))
+    }
+
+    pub fn to_u8(&self) -> Image<Rgb<u8>> {
+        let ((min_r, min_g, min_b), (max_r, max_g, max_b)) = self.min_max();
+        let dst_min = u8::MIN as f32;
+        let dst_max = u8::MAX as f32;
+        let dst_d = dst_max - dst_min;
+        self.map(|p| {
+            Rgb {
+                r: (((p.r - min_r) * dst_d) / (max_r - min_r)) as u8,
+                g: (((p.g - min_g) * dst_d) / (max_g - min_g)) as u8,
+                b: (((p.b - min_b) * dst_d) / (max_b - min_b)) as u8,
+            }
+        })
     }
 }
 
@@ -535,14 +552,9 @@ impl Mul<f32> for RgbBayer {
 
 impl Image<RgbBayer> {
     pub fn to_green(&self) -> Image<f32> {
-        let pixels = self.pixels.iter().map(|p| {
+        self.map(|p| {
             if p.gc == 0.0 { 0.0 } else { p.g / p.gc }
-        }).collect();
-        Image {
-            width: self.width,
-            height: self.height,
-            pixels: pixels,
-        }
+        })
     }
 
     pub fn to_green_interpolated(&self) -> Image<f32> {
@@ -570,18 +582,23 @@ impl Image<RgbBayer> {
     }
 
     pub fn to_rgb(&self) -> Image<Rgb<f32>> {
-        let pixels = self.pixels.iter().map(|p| {
+        self.map(|p| {
             Rgb {
                 r: if p.rc == 0.0 { 0.0 } else { p.r / p.rc },
                 g: if p.gc == 0.0 { 0.0 } else { p.g / p.gc },
                 b: if p.bc == 0.0 { 0.0 } else { p.b / p.bc },
             }
-        }).collect();
-        Image {
-            width: self.width,
-            height: self.height,
-            pixels: pixels,
-        }
+        })
+    }
+
+    pub fn holes(&self) -> Image<Rgb<f32>> {
+        self.map(|p| {
+            Rgb {
+                r: p.rc,
+                g: p.gc / 2.0,
+                b: p.bc,
+            }
+        })
     }
 
     pub fn correct_white_balance(&self) -> Image<RgbBayer> {

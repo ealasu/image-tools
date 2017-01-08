@@ -1,7 +1,7 @@
 use std::default::Default;
 use std::ops::{AddAssign, DivAssign, Mul};
 use image::Image;
-use point::{Vector, Point};
+use geom::{Vector, Point};
 
 pub struct ImageStack<P> {
     image: Image<P>,

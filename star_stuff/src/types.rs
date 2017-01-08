@@ -1,4 +1,4 @@
-use point::*;
+use geom::*;
 
 pub type Star = Point<f32>;
 pub type Stars = Vec<Star>;

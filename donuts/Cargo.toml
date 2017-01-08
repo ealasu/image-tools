@@ -6,6 +6,7 @@ version = "0.1.0"
 log = "*"
 quickersort = "*"
 image = { path = "../image" }
+geom = { path = "../geom" }
 
 [dev-dependencies]
 rand = "*"

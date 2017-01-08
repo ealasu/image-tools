@@ -5,6 +5,7 @@
 #[macro_use] extern crate log;
 extern crate quickersort;
 extern crate image;
+extern crate geom;
 #[cfg(test)] extern crate test;
 #[cfg(test)] extern crate rand;
 #[cfg(test)] extern crate byteorder;
@@ -12,28 +13,20 @@ extern crate image;
 pub mod remove_background;
 pub mod projection;
 pub mod correlation;
+pub mod align;
+pub mod three_axis;
+
+pub use align::align;
 
 use image::Image;
+use projection::Projection;
 
-pub struct Projection {
-    pub x: Vec<f32>,
-    pub y: Vec<f32>,
-}
 
 pub fn preprocess_image(mut image: Image<f32>) -> Projection {
     remove_background::remove_background(&mut image, 32);
-    Projection {
-        x: projection::x_projection(&image),
-        y: projection::y_projection(&image),
-    }
+    Projection::new(&image)
 }
 
-pub fn align(reference: &Projection, sample: &Projection) -> (f32, f32) {
-    let n = 200;
-    let x = correlation::calc_offset(&reference.x[..], &sample.x[..], n);
-    let y = correlation::calc_offset(&reference.y[..], &sample.y[..], n);
-    (x, y)
-}
 
 #[cfg(test)]
 mod tests {

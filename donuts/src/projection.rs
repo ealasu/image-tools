@@ -1,5 +1,19 @@
 use image::Image;
 
+pub struct Projection {
+    pub x: Vec<f32>,
+    pub y: Vec<f32>,
+}
+
+impl Projection {
+    pub fn new(image: &Image<f32>) -> Self {
+        Projection {
+            x: x_projection(image),
+            y: y_projection(image),
+        }
+    }
+}
+
 pub fn x_projection(image: &Image<f32>) -> Vec<f32> {
     let mut res = Vec::with_capacity(image.height);
     let height = image.height as f32;
