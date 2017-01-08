@@ -41,6 +41,7 @@ fn main() {
     println!("max: {}", img.max());
     println!("avg: {}", img.average());
 
+    let img = img.to_rggb();
     let (r_avg, g_avg, b_avg) = img.avg();
     println!("r_avg: {}", r_avg);
     println!("g_avg: {}", g_avg);

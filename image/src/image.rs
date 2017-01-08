@@ -89,10 +89,18 @@ impl<P: DivAssign + Copy> DivAssign<P> for Image<P> {
     }
 }
 
-impl<P: DivAssign + Copy> DivAssign for Image<P> {
-    fn div_assign(&mut self, rhs: Self) {
-        for (left, right) in self.pixels.iter_mut().zip(rhs.pixels.into_iter()) {
-            *left /= right;
+impl<'a, P: DivAssign + Copy> Div<&'a Image<P>> for Image<P> {
+    type Output = Self;
+    fn div(mut self, rhs: &Self) -> Self {
+        self /= rhs;
+        self
+    }
+}
+
+impl<'a, P: DivAssign + Copy> DivAssign<&'a Image<P>> for Image<P> {
+    fn div_assign(&mut self, rhs: &Self) {
+        for (left, right) in self.pixels.iter_mut().zip(rhs.pixels.iter()) {
+            *left /= *right;
         }
     }
 }
