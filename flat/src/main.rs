@@ -87,7 +87,7 @@ fn main() {
     println!("avg: {}", img.average());
 
     //img.save(&args.arg_output);
-    img.center_crop(400, 400).save(&args.arg_output);
+    img.center_crop(400, 400).save_fits(&args.arg_output);
 }
 
 #[cfg(test)]

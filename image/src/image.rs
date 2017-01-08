@@ -14,6 +14,7 @@ use std::u8;
 use std::ops::{AddAssign, DivAssign, Add, Mul, Div};
 use turbojpeg;
 use rand::{self, Rng, Rand};
+use fits;
 
 #[derive(Clone)]
 pub struct Image<P> {
@@ -97,6 +98,20 @@ impl Image<f32> {
         }
     }
 
+    pub fn open_fits(path: &str) -> Self {
+        let mut f = File::open(path).unwrap();
+        let (w, h, data) = fits::read_image(&mut f);
+        let pixels = match data {
+            fits::Data::F32(v) => v,
+            _ => panic!()
+        };
+        Image {
+            width: w,
+            height: h,
+            pixels: pixels,
+        }
+    }
+
     //pub fn open_pgm(path: &str) -> Self {
         //let (width, height, data) = pgm::read_from_file(path);
         //let data = if let pgm::Format::F32(d) = data { d } else {
@@ -118,14 +133,8 @@ impl Image<f32> {
     }
 
     pub fn save_fits(&self, filename: &str) {
-        //use fitsio::*;
-
-        //let f = FitsFile::create(filename).unwrap();
-        //let image_description = ImageDescription {
-            //data_type: ImageType::FLOAT_IMG,
-            //dimensions: vec![self.width, self.height],
-        //};
-        //let img = f.create_image("image".to_string(), &image_description).unwrap();
+        let mut f = File::create(filename).unwrap();
+        fits::write_image(&mut f, self.width, self.height, &fits::Data::F32(self.pixels.clone()));
     }
 
     //pub fn save_pgm(&self, path: &str) {
