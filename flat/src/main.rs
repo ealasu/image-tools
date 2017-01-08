@@ -100,12 +100,27 @@ mod tests {
         println!("flat min: {}, max: {}", flat.min(), flat.max());
         println!("first pixels: {:?}", &flat.pixels[..5]);
         println!("last pixels: {:?}", &flat.pixels[flat.pixels.len() - 5..]);
+
         let mut img = Image::<u16>::open_raw("test.cr2").to_f32();
-        println!("before min: {}, max: {}", img.min(), img.max());
-        img.save("before.tif");
+
+        img.save("before-nc.tif");
+        let img_b = img.to_rggb();
+        println!("before avg: {:?}", img_b.avg());
+        let im2 = img_b.correct_white_balance();
+        println!("before c avg: {:?}", im2.avg());
+        //println!("before min: {}, max: {}", im2.min(), im2.max());
+        im2.to_rgb().to_gray().save("before.tif");
+
         img /= flat;
-        println!("after min: {}, max: {}", img.min(), img.max());
-        img.save("after.tif");
+
+        img.save("after-nc.tif");
+        let img_b = img.to_rggb();
+        println!("after avg: {:?}", img_b.avg());
+        let im2 = img_b.correct_white_balance();
+        println!("after c avg: {:?}", im2.avg());
+        im2.to_rgb().to_gray().save("after.tif");
+        //println!("after min: {}, max: {}", im2.min(), im2.max());
+
         //println!("max: {}", img.max());
         //println!("range: {}", img.max() - img.min());
         //println!("avg: {}", img.average());

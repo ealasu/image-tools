@@ -575,6 +575,45 @@ impl Image<RgbBayer> {
             pixels: pixels,
         }
     }
+
+    pub fn correct_white_balance(&self) -> Image<RgbBayer> {
+        let (avg_r, avg_g, avg_b) = self.avg();
+        let m_r = avg_g / avg_r;
+        let m_b = avg_g / avg_b;
+        self.map(|p| {
+            RgbBayer {
+                r: p.r * m_r,
+                rc: p.rc,
+                g: p.g,
+                gc: p.gc,
+                b: p.b * m_b,
+                bc: p.bc,
+            }
+        })
+    }
+
+    /// Computes the average of each component separately.
+    /// Returns a tuple of `(red_avg, green_avg, blue_avg)`.
+    pub fn avg(&self) -> (f32, f32, f32) {
+        let mut sum_r = 0.0;
+        let mut count_r = 0.0;
+        let mut sum_g = 0.0;
+        let mut count_g = 0.0;
+        let mut sum_b = 0.0;
+        let mut count_b = 0.0;
+        for p in self.pixels.iter() {
+            sum_r += p.r * p.rc;
+            count_r += p.rc;
+            sum_g += p.g * p.gc;
+            count_g += p.gc;
+            sum_b += p.b * p.bc;
+            count_b += p.bc;
+        }
+        let avg_r = sum_r / count_r;
+        let avg_g = sum_g / count_g;
+        let avg_b = sum_b / count_b;
+        (avg_r, avg_g, avg_b)
+    }
 }
 
 #[cfg(test)]
