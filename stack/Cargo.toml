@@ -8,3 +8,4 @@ rustc-serialize = "*"
 star_stuff = { path = "../star_stuff" }
 donuts = { path = "../donuts" }
 image = { path = "../image" }
+rayon = "*"
