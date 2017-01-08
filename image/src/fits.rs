@@ -16,14 +16,20 @@ pub struct HeaderRecord {
 
 pub fn read_header<R: Read>(r: &mut R) -> Vec<HeaderRecord> {
     let mut records = vec![];
+    let mut records_read = 0;
     loop {
         let mut buf = [0u8; RECORD_LEN];
         r.read_exact(&mut buf).unwrap();
+        records_read  += 1;
         let name = str::from_utf8(&buf[..NAME_LEN]).unwrap().trim().to_string();
         if name == "" {
             continue;
         }
         if name == "END" {
+            for _ in 0..RECORDS_PER_BLOCK - records_read % RECORDS_PER_BLOCK {
+                let mut buf = [0u8; RECORD_LEN];
+                r.read_exact(&mut buf).unwrap();
+            }
             break;
         }
         let text = str::from_utf8(&buf[10..]).unwrap().trim();
@@ -54,7 +60,6 @@ pub fn write_header<W: Write>(w: &mut W, records: &[HeaderRecord]) {
         let name = record.name.as_bytes();
         assert!(name.len() <= NAME_LEN);
         w.write_all(name).unwrap();
-        let padding = [b' '];
         write_padding(w, NAME_LEN - name.len());
 
         // write the value

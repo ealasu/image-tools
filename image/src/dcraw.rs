@@ -1,8 +1,6 @@
 use std::str;
 use std::process::Command;
-use std::io::BufReader;
 use pgm;
-
 
 pub fn open_raw(path: &str) -> (usize, usize, Vec<u16>) {
     let out = Command::new("dcraw")

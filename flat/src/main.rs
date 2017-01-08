@@ -5,8 +5,7 @@ extern crate star_stuff;
 extern crate rayon;
 
 use docopt::Docopt;
-use star_stuff::stack::ImageStack;
-use image::*;
+use image::Image;
 use rayon::prelude::*;
 
 
@@ -86,8 +85,8 @@ fn main() {
     println!("max: {}", img.max());
     println!("avg: {}", img.average());
 
-    //img.save(&args.arg_output);
-    img.center_crop(400, 400).save_fits(&args.arg_output);
+    img.save_fits(&args.arg_output);
+    //img.center_crop(400, 400).save_fits(&args.arg_output);
 }
 
 #[cfg(test)]
@@ -97,12 +96,19 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let img = Image::<f32>::open("out.tif");
-        println!("min: {}", img.min());
-        println!("max: {}", img.max());
-        println!("range: {}", img.max() - img.min());
-        println!("avg: {}", img.average());
-        img.to_u8().to_rgb().save_jpeg_file("out.jpg");
+        let flat = Image::<f32>::open_fits("flat.fits");
+        println!("flat min: {}, max: {}", flat.min(), flat.max());
+        println!("first pixels: {:?}", &flat.pixels[..5]);
+        println!("last pixels: {:?}", &flat.pixels[flat.pixels.len() - 5..]);
+        let mut img = Image::<u16>::open_raw("test.cr2").to_f32();
+        println!("before min: {}, max: {}", img.min(), img.max());
+        img.save("before.tif");
+        img /= flat;
+        println!("after min: {}, max: {}", img.min(), img.max());
+        img.save("after.tif");
+        //println!("max: {}", img.max());
+        //println!("range: {}", img.max() - img.min());
+        //println!("avg: {}", img.average());
     }
 
 //    #[test]

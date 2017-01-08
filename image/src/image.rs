@@ -10,6 +10,7 @@ use convert::convert_vec;
 use std::path::Path;
 use std::fs::File;
 use std::io::prelude::*;
+use std::io::{BufReader, BufWriter};
 use std::u8;
 use std::ops::{AddAssign, DivAssign, Add, Mul, Div};
 use turbojpeg;
@@ -88,6 +89,14 @@ impl<P: DivAssign + Copy> DivAssign<P> for Image<P> {
     }
 }
 
+impl<P: DivAssign + Copy> DivAssign for Image<P> {
+    fn div_assign(&mut self, rhs: Self) {
+        for (left, right) in self.pixels.iter_mut().zip(rhs.pixels.into_iter()) {
+            *left /= right;
+        }
+    }
+}
+
 impl Image<f32> {
     pub fn open(path: &str) -> Self {
         let (width, height, data) = magick_stream(path, "gray");
@@ -99,8 +108,8 @@ impl Image<f32> {
     }
 
     pub fn open_fits(path: &str) -> Self {
-        let mut f = File::open(path).unwrap();
-        let (w, h, data) = fits::read_image(&mut f);
+        let mut r = BufReader::new(File::open(path).unwrap());
+        let (w, h, data) = fits::read_image(&mut r);
         let pixels = match data {
             fits::Data::F32(v) => v,
             _ => panic!()
@@ -129,11 +138,11 @@ impl Image<f32> {
     }
 
     pub fn save(&self, path: &str) {
-        magick_convert_float(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
+        magick_convert(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
     }
 
     pub fn save_fits(&self, filename: &str) {
-        let mut f = File::create(filename).unwrap();
+        let mut f = BufWriter::new(File::create(filename).unwrap());
         fits::write_image(&mut f, self.width, self.height, &fits::Data::F32(self.pixels.clone()));
     }
 

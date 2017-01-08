@@ -57,7 +57,7 @@ pub fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, m
 }
 
 pub fn magick_convert_float(data: &[f32], width: usize, height: usize, format: &str, magick_type: &str, path: &str) {
-    let mut data: Vec<u8> = convert_vec(data.to_vec());
+    let data: Vec<u8> = convert_vec(data.to_vec());
     //data.pop();
     let child = Command::new("convert")
         .arg("-size").arg(format!("{}x{}", width, height))

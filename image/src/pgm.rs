@@ -1,7 +1,5 @@
 use std::io::prelude::*;
-use std::io::BufReader;
 use std::io::Result as IoResult;
-use std::fs::File;
 use convert::*;
 use byteorder::{ReadBytesExt, BigEndian as BE};
 
