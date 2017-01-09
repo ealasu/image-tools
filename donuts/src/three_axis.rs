@@ -2,7 +2,7 @@ use image::Image;
 use projection::Projection;
 use remove_background::remove_background;
 use align::align;
-use geom::Vector;
+use geom::*;
 
 pub struct ThreeAxisDonuts {
     center: Vector,
@@ -77,7 +77,7 @@ impl ThreeAxisDonuts {
         }
     }
 
-    pub fn align(&self, image: &Image<f32>) {
+    pub fn align(&self, image: &Image<f32>) -> Matrix3x3 {
         let sam_center = Projection::new(
             &fix(image.center_crop(SIZE, SIZE)));
         let d_c = align(&self.ref_center, &sam_center);
@@ -119,5 +119,10 @@ impl ThreeAxisDonuts {
         let q3_a = (self.q3 + d_q3 - self.center).angle() - (self.q3 - self.center).angle();
         let q4_a = (self.q4 + d_q4 - self.center).angle() - (self.q4 - self.center).angle();
         println!("angles: {},{},{},{}", q1_a, q2_a, q3_a, q4_a);
+        let angle = (q1_a + q2_a + q3_a + q4_a) / 4.0;
+
+        Matrix3x3::translation(image.width as f32 / 2.0 + d_c.x, image.height as f32 / 2.0 + d_c.y) *
+        (Matrix3x3::rotation(angle) *
+        Matrix3x3::translation(-(image.width as f32) / 2.0, -(image.height as f32) / 2.0))
     }
 }

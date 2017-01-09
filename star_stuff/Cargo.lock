@@ -4,6 +4,7 @@ version = "0.0.0"
 dependencies = [
  "convert 0.0.0",
  "docopt 0.6.86 (registry+https://github.com/rust-lang/crates.io-index)",
+ "geom 0.1.0",
  "image 0.0.0",
  "itertools 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -51,6 +52,10 @@ dependencies = [
 name = "either"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "geom"
+version = "0.1.0"
 
 [[package]]
 name = "image"

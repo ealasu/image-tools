@@ -3,6 +3,7 @@ name = "donuts"
 version = "0.1.0"
 dependencies = [
  "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "geom 0.1.0",
  "image 0.0.0",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickersort 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -27,9 +28,14 @@ name = "convert"
 version = "0.0.0"
 
 [[package]]
+name = "geom"
+version = "0.1.0"
+
+[[package]]
 name = "image"
 version = "0.0.0"
 dependencies = [
+ "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "convert 0.0.0",
  "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 0.1.80 (registry+https://github.com/rust-lang/crates.io-index)",

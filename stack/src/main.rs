@@ -107,9 +107,10 @@ fn stack(args: Args) {
         .map(|file| {
             println!("adding {}", file);
             let sample_image = open(&file);
-            three_axis.align(&sample_image);
-            let p = donuts::preprocess_image(sample_image.center_crop(900, 900));
-            let d = donuts::align(&reference, &p);
+            //three_axis.align(&sample_image);
+            //let p = donuts::preprocess_image(sample_image.center_crop(900, 900));
+            //let d = donuts::align(&reference, &p);
+            let d = three_axis.align(&sample_image);
             println!("offset: {:?}", d);
             let img = Image::<u16>::open_raw(&file).to_f32();
             let img = img / &flat;

@@ -2,7 +2,9 @@ mod unit;
 mod point;
 mod vector;
 mod math;
+mod matrix;
 
-pub use unit::Unit;
-pub use point::Point;
-pub use vector::Vector;
+pub use unit::*;
+pub use point::*;
+pub use vector::*;
+pub use matrix::*;

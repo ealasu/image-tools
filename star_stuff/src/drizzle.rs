@@ -1,7 +1,7 @@
 use std::default::Default;
 use std::ops::{AddAssign, DivAssign, Mul};
 use image::Image;
-use geom::{Vector, Point};
+use geom::{Point, Matrix3x3, Matrix3x1};
 
 #[inline(always)]
 fn min(a: f32, b: f32) -> f32 {
@@ -32,7 +32,7 @@ impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default
         }
     }
 
-    pub fn add(&mut self, image: &Image<P>, transform: Vector) {
+    pub fn add(&mut self, image: &Image<P>, transform: Matrix3x3) {
         add(&mut self.image, image, transform, self.factor, self.pixel_aperture);
         self.count += 1;
     }
@@ -50,15 +50,15 @@ impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default
 pub fn add<P>(
     stack: &mut Image<P>,
     image: &Image<P>,
-    transform: Vector,
+    transform: Matrix3x3,
     factor: f32,
     pixel_aperture: f32
 )
 where P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default {
     for y in 0..stack.height {
         for x in 0..stack.width {
-            let src_pos = Point {x: x as f32, y: y as f32} / factor - transform;
-            *stack.pixel_at_mut(x, y) += resample(image, src_pos.x, src_pos.y, factor,
+            let src_pos = transform * Matrix3x1::point((x as f32) / factor, (y as f32) / factor);
+            *stack.pixel_at_mut(x, y) += resample(image, src_pos.v11, src_pos.v21, factor,
                                                        pixel_aperture);
         }
     }
