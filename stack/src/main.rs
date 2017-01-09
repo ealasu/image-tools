@@ -140,7 +140,9 @@ fn stack(args: Args) {
     //}
     //let img = stack.into_image();
     img.to_rgb().save(&args.flag_output);
-    img.center_crop(900, 900).holes().to_u8().save_jpeg_file("holes.jpg");
+    let holes = img.center_crop(900, 900).holes();
+    println!("holes min/max: {:?}", holes.min_max());
+    holes.to_u8().save_jpeg_file("holes.jpg");
 }
 
 fn open(path: &str) -> Image<f32> {

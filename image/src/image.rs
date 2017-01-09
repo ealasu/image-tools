@@ -318,7 +318,7 @@ impl<P: Rand> Image<P> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, PartialEq, Default)]
+#[derive(Copy, Clone, PartialEq, Default, Debug)]
 pub struct Rgb<T> {
     r: T,
     g: T,
@@ -461,34 +461,41 @@ impl Image<Rgb<f32>> {
         }
     }
 
-    pub fn min_max(&self) -> ((f32, f32, f32), (f32, f32, f32)) {
-        let mut min_r = f32::MAX;
-        let mut min_g = f32::MAX;
-        let mut min_b = f32::MAX;
-        let mut max_r = f32::MIN;
-        let mut max_g = f32::MIN;
-        let mut max_b = f32::MIN;
+    pub fn min_max(&self) -> (Rgb<f32>, Rgb<f32>) {
+        let mut min = Rgb {
+            r: f32::MAX,
+            g: f32::MAX,
+            b: f32::MAX,
+        };
+        let mut max = Rgb {
+            r: f32::MIN,
+            g: f32::MIN,
+            b: f32::MIN,
+        };
         for p in self.pixels.iter() {
-            if p.r < min_r { min_r = p.r; }
-            if p.g < min_g { min_g = p.g; }
-            if p.b < min_b { min_b = p.b; }
-            if p.r > max_r { max_r = p.r; }
-            if p.g > max_g { max_g = p.g; }
-            if p.b > max_b { max_b = p.b; }
+            if p.r < min.r { min.r = p.r; }
+            if p.g < min.g { min.g = p.g; }
+            if p.b < min.b { min.b = p.b; }
+            if p.r > max.r { max.r = p.r; }
+            if p.g > max.g { max.g = p.g; }
+            if p.b > max.b { max.b = p.b; }
         }
-        ((min_r, min_g, min_b), (max_r, max_g, max_b))
+        (min, max)
     }
 
     pub fn to_u8(&self) -> Image<Rgb<u8>> {
-        let ((min_r, min_g, min_b), (max_r, max_g, max_b)) = self.min_max();
+        let (min_p, max_p) = self.min_max();
+        let src_min = min(min_p.r, min(min_p.g, min_p.b));
+        let src_max = max(max_p.r, max(max_p.g, max_p.b));
         let dst_min = u8::MIN as f32;
         let dst_max = u8::MAX as f32;
         let dst_d = dst_max - dst_min;
+        let src_d = src_max - src_min;
         self.map(|p| {
             Rgb {
-                r: (((p.r - min_r) * dst_d) / (max_r - min_r)) as u8,
-                g: (((p.g - min_g) * dst_d) / (max_g - min_g)) as u8,
-                b: (((p.b - min_b) * dst_d) / (max_b - min_b)) as u8,
+                r: (((p.r - src_min) * dst_d) / src_d) as u8,
+                g: (((p.g - src_min) * dst_d) / src_d) as u8,
+                b: (((p.b - src_min) * dst_d) / src_d) as u8,
             }
         })
     }
@@ -639,6 +646,16 @@ impl Image<RgbBayer> {
         let avg_b = sum_b / count_b;
         (avg_r, avg_g, avg_b)
     }
+}
+
+#[inline(always)]
+fn min(a: f32, b: f32) -> f32 {
+    if a < b { a } else { b }
+}
+
+#[inline(always)]
+fn max(a: f32, b: f32) -> f32 {
+    if a > b { a } else { b }
 }
 
 #[cfg(test)]
