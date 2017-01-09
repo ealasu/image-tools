@@ -1,6 +1,6 @@
 use std::io::prelude::*;
 use std::io::Result as IoResult;
-use convert::*;
+//use convert::*;
 use byteorder::{ReadBytesExt, BigEndian as BE};
 
 fn read_until<R: BufRead>(r: &mut R, until: char) -> IoResult<String> {
