@@ -20,6 +20,13 @@ impl Vector {
         self.x.atan2(self.y)
     }
 
+    pub fn floor(&self) -> Self {
+        Vector {
+            x: self.x.floor(),
+            y: self.y.floor(),
+        }
+    }
+
     //pub fn is_close_to(self, other: Self, epsilon: f32) -> bool {
         //are_close(self.x, other.x, epsilon) &&
         //are_close(self.y, other.y, epsilon)
