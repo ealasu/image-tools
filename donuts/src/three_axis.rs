@@ -24,7 +24,7 @@ pub struct ThreeAxisDonuts {
 const N: usize = 200;
 const SIZE: usize = 800;
 const BG_TILES: usize = 4;
-const N_SMALL: usize = 40;
+const N_SMALL: usize = 10;
 const SIZE_SMALL: usize = 80;
 //const BG_TILES_SMALL: usize = 4;
 const MARGIN: usize = 200;
@@ -88,6 +88,7 @@ impl ThreeAxisDonuts {
         let sam_center = Projection::new(
             &fix(image.center_crop(SIZE, SIZE)));
         let d_c = align(&self.ref_center, &sam_center, N);
+        println!("estimate d_c: {:?}", d_c);
         let d_small = d_c.floor();
         let sam_center_small = Projection::new(
             &fix(image.crop(
@@ -95,6 +96,7 @@ impl ThreeAxisDonuts {
                 image.height / 2 - SIZE_SMALL / 2 - d_small.y as usize,
                 SIZE_SMALL, SIZE_SMALL)));
         let d_c = d_small + align(&self.ref_center_small, &sam_center_small, N_SMALL);
+        println!("precise d_c: {:?}", d_c);
 
         let sam_q1 = Projection::new(
             &fix(image.crop(
@@ -122,7 +124,6 @@ impl ThreeAxisDonuts {
         let d_q3 = align(&self.ref_q3, &sam_q3, N);
         let d_q4 = align(&self.ref_q4, &sam_q4, N);
 
-        println!("d_c: {:?}", d_c);
         println!("d_q1: {:?}", d_q1);
         println!("d_q2: {:?}", d_q2);
         println!("d_q3: {:?}", d_q3);
