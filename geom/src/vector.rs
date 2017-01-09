@@ -12,9 +12,13 @@ impl Vector {
         self.x * other.y - self.y * other.x
     }
 
-    //pub fn length(self) -> Unit {
-        //(self.x * self.x + self.y * self.y).sqrt()
-    //}
+    pub fn length(&self) -> Unit {
+        (self.x * self.x + self.y * self.y).sqrt()
+    }
+
+    pub fn angle(&self) -> Unit {
+        self.x.atan2(self.y)
+    }
 
     //pub fn is_close_to(self, other: Self, epsilon: f32) -> bool {
         //are_close(self.x, other.x, epsilon) &&
@@ -24,24 +28,40 @@ impl Vector {
 
 impl Add for Vector {
     type Output = Self;
-
     fn add(self, rhs: Self) -> Self::Output {
-        Vector {x: self.x + rhs.x, y: self.y + rhs.y}
+        Vector {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
     }
 }
 
 impl Sub for Vector {
     type Output = Self;
-
     fn sub(self, rhs: Self) -> Self::Output {
-        Vector {x: self.x - rhs.x, y: self.y - rhs.y}
+        Vector {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
     }
 }
 
-impl Div<f32> for Vector {
+impl Div<Unit> for Vector {
     type Output = Self;
+    fn div(self, rhs: Unit) -> Self::Output {
+        Vector {
+            x: self.x / rhs,
+            y: self.y / rhs,
+        }
+    }
+}
 
-    fn div(self, rhs: f32) -> Self::Output {
-        Vector {x: self.x / rhs, y: self.y / rhs}
+impl Mul<Unit> for Vector {
+    type Output = Self;
+    fn mul(self, rhs: Unit) -> Self::Output {
+        Vector {
+            x: self.x * rhs,
+            y: self.y * rhs,
+        }
     }
 }
