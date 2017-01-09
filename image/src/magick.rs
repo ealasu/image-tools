@@ -7,7 +7,6 @@ use std::io::prelude::*;
 use regex::Regex;
 use convert::*;
 
-
 fn stretch(data: &[f32]) -> Vec<u16> {
     let src_min = data.iter().fold(f32::MAX, |acc, &v| acc.min(v));
     let src_max = data.iter().fold(f32::MIN, |acc, &v| acc.max(v));
@@ -55,38 +54,3 @@ pub fn magick_convert(data: &[f32], width: usize, height: usize, format: &str, m
         .spawn().unwrap();
     child.stdin.unwrap().write_all(&data).unwrap();
 }
-
-pub fn magick_convert_float(data: &[f32], width: usize, height: usize, format: &str, magick_type: &str, path: &str) {
-    let data: Vec<u8> = convert_vec(data.to_vec());
-    //data.pop();
-    let child = Command::new("convert")
-        .arg("-size").arg(format!("{}x{}", width, height))
-        .arg("-define").arg("quantum:format=floating-point")
-        .arg(format!("{}:-", format))
-        .arg("-depth").arg("32")
-        .arg("-define").arg("quantum:format=floating-point")
-        //.arg("-depth").arg("16")
-        .arg("-type").arg(magick_type)
-        .arg(path)
-        .stdin(Stdio::piped())
-        .spawn().unwrap();
-    child.stdin.unwrap().write_all(&data).unwrap();
-}
-
-//pub fn magick_save_raw(data: &[f32], width: usize, height: usize, path: &str) {
-    //let data: Vec<u8> = convert_vec(data.to_vec());
-    //let mut f = File::create(format!("{}.dat", path)).unwrap();
-    //f.write_all(&data).unwrap();
-    //let child = Command::new("convert")
-        //.arg("-size").arg(format!("{}x{}", width, height))
-        //.arg("-depth").arg("32")
-        //.arg("-define").arg("quantum:format=floating-point")
-        //.arg("gray:-")
-        //.arg("-type").arg("grayscale")
-        //.arg("-depth").arg("32")
-        //.arg("-define").arg("quantum:format=floating-point")
-        //.arg(path)
-        //.stdin(Stdio::piped())
-        //.spawn().unwrap();
-    //child.stdin.unwrap().write_all(&data).unwrap();
-//}

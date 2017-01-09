@@ -34,18 +34,6 @@ impl Image<f32> {
         }
     }
 
-    //pub fn open_pgm(path: &str) -> Self {
-        //let (width, height, data) = pgm::read_from_file(path);
-        //let data = if let pgm::Format::F32(d) = data { d } else {
-            //panic!("bad format")
-        //};
-        //Image {
-            //width: width,
-            //height: height,
-            //pixels: data,
-        //}
-    //}
-
     pub fn open_jpeg_file<P: AsRef<Path>>(path: P) -> Self {
         Image::<Rgb<u8>>::open_jpeg_file(path).to_f32().to_gray()
     }
@@ -58,11 +46,6 @@ impl Image<f32> {
         let mut f = BufWriter::new(File::create(filename).unwrap());
         fits::write_image(&mut f, self.width, self.height, &fits::Data::F32(self.pixels.clone()));
     }
-
-    //pub fn save_pgm(&self, path: &str) {
-        //let data = pgm::Format::F32(self.pixels.clone());
-        //pgm::write_to_file(path, self.width, self.height, data);
-    //}
 
     pub fn average(&self) -> f32 {
         self.pixels.iter().fold(0.0, |acc, v| acc + v) / self.pixels.len() as f32

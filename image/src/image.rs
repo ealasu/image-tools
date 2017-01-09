@@ -137,12 +137,12 @@ impl<P: Rand> Image<P> {
     }
 }
 
-impl<T: PartialOrd + Copy> Image<T> {
-    pub fn min(&self) -> T {
+impl<P: PartialOrd + Copy> Image<P> {
+    pub fn min(&self) -> P {
         *self.pixels.iter().min_by(|a,b| a.partial_cmp(b).unwrap()).unwrap()
     }
 
-    pub fn max(&self) -> T {
+    pub fn max(&self) -> P {
         *self.pixels.iter().max_by(|a,b| a.partial_cmp(b).unwrap()).unwrap()
     }
 }
