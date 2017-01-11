@@ -121,12 +121,12 @@ fn get_value<'a>(records: &'a [HeaderRecord], name: &str) -> &'a String {
     }
 }
 
-pub fn write_image<W: Write>(w: &mut W, width: usize, height: usize, data: &Data) {
+pub fn write_image<W: Write>(w: &mut W, shape: &[usize], data: &Data) {
     let bitpix = match data {
         &Data::U16(_) => "16",
         &Data::F32(_) => "-32",
     }.to_string();
-    let header = [
+    let mut header = vec![
         HeaderRecord {
             name: "SIMPLE".to_string(),
             value: Some("T".to_string()),
@@ -139,25 +139,17 @@ pub fn write_image<W: Write>(w: &mut W, width: usize, height: usize, data: &Data
         },
         HeaderRecord {
             name: "NAXIS".to_string(),
-            value: Some("2".to_string()),
-            comment: "".to_string(),
-        },
-        HeaderRecord {
-            name: "NAXIS1".to_string(),
-            value: Some(format!("{}", width)),
-            comment: "".to_string(),
-        },
-        HeaderRecord {
-            name: "NAXIS2".to_string(),
-            value: Some(format!("{}", height)),
-            comment: "".to_string(),
-        },
-        HeaderRecord {
-            name: "NAXIS2".to_string(),
-            value: Some(format!("{}", height)),
+            value: Some(format!("{}", shape.len())),
             comment: "".to_string(),
         },
     ];
+    for (i, axis) in shape.iter().enumerate() {
+        header.push(HeaderRecord {
+            name: format!("NAXIS{}", i + 1),
+            value: Some(format!("{}", axis)),
+            comment: "".to_string(),
+        });
+    }
     write_header(w, &header[..]);
     match data {
         &Data::U16(ref vec) => {
@@ -173,14 +165,17 @@ pub fn write_image<W: Write>(w: &mut W, width: usize, height: usize, data: &Data
     }
 }
 
-pub fn read_image<R: Read>(r: &mut R) -> (usize, usize, Data) {
+pub fn read_image<R: Read>(r: &mut R) -> (Vec<usize>, Data) {
     let records = read_header(r);
-    let naxis = get_value(&records, "NAXIS");
-    assert_eq!(naxis, "2");
-    let width = get_value(&records, "NAXIS1").parse::<usize>().unwrap();
-    let height = get_value(&records, "NAXIS2").parse::<usize>().unwrap();
+    let naxis = get_value(&records, "NAXIS").parse::<usize>().unwrap();
+    let mut shape = vec![];
+    let mut data_len = 1;
+    for i in 0..naxis {
+        let axis = get_value(&records, &format!("NAXIS{}", i + 1)).parse::<usize>().unwrap();
+        shape.push(axis);
+        data_len *= axis;
+    }
     let bitpix = get_value(&records, "BITPIX");
-    let data_len = width * height;
     let data = match bitpix.as_str() {
         "16" => {
             let mut data = vec![];
@@ -198,7 +193,7 @@ pub fn read_image<R: Read>(r: &mut R) -> (usize, usize, Data) {
         },
         _ => panic!("unexpected BITPIX: {}", bitpix)
     };
-    (width, height, data)
+    (shape, data)
 }
 
 #[cfg(test)]

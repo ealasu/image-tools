@@ -7,6 +7,7 @@ extern crate regex;
 extern crate turbojpeg;
 extern crate rand;
 extern crate byteorder;
+extern crate quickersort;
 #[cfg(test)] extern crate test;
 
 mod magick;

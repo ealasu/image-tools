@@ -140,7 +140,8 @@ fn stack(args: Args) {
         //stack.add(&raw_sample.to_rggb(), Vector { x:x, y:y });
     //}
     //let img = stack.into_image();
-    img.to_rgb().save(&args.flag_output);
+    //img.to_rgb().save(&args.flag_output);
+    img.to_rgb().save_fits(&args.flag_output);
     let holes = img.center_crop(900, 900).holes();
     println!("holes min/max: {:?}", holes.min_max());
     holes.to_u8().save_jpeg_file("holes.jpg");

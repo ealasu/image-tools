@@ -22,7 +22,10 @@ impl Image<f32> {
 
     pub fn open_fits(path: &str) -> Self {
         let mut r = BufReader::new(File::open(path).unwrap());
-        let (w, h, data) = fits::read_image(&mut r);
+        let (shape, data) = fits::read_image(&mut r);
+        assert_eq!(shape.len(), 2);
+        let w = shape[0];
+        let h = shape[1];
         let pixels = match data {
             fits::Data::F32(v) => v,
             _ => panic!()
@@ -44,7 +47,8 @@ impl Image<f32> {
 
     pub fn save_fits(&self, filename: &str) {
         let mut f = BufWriter::new(File::create(filename).unwrap());
-        fits::write_image(&mut f, self.width, self.height, &fits::Data::F32(self.pixels.clone()));
+        let shape = [self.width, self.height];
+        fits::write_image(&mut f, &shape[..], &fits::Data::F32(self.pixels.clone()));
     }
 
     pub fn average(&self) -> f32 {
