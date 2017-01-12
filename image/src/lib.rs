@@ -32,3 +32,4 @@ pub use image::*;
 pub use rgb::*;
 pub use rgb_bayer::*;
 pub use identify::*;
+pub use image_kind::*;

@@ -7,7 +7,7 @@ extern crate rayon;
 
 use docopt::Docopt;
 use star_stuff::drizzle::{self, ImageStack};
-use image::{Image, Rgb, RgbBayer};
+use image::{Image, Rgb, RgbBayer, ImageKind};
 use rayon::prelude::*;
 
 
@@ -66,7 +66,11 @@ fn stack(args: Args) {
     let raw_ref = Image::<u16>::open_raw(&args.arg_input[0]);
     let w = (raw_ref.width as f64 * factor) as usize;
     let h = (raw_ref.height as f64 * factor) as usize;
-    let flat = Image::<f32>::open_fits(&args.flag_flat).to_f64();
+    let flat = if let ImageKind::F64(v) = ImageKind::open_fits(&args.flag_flat) {
+        v
+    } else {
+        panic!();
+    };
     //for v in raw_ref.to_f32().pixels.iter() {
         //println!("{}", v);
     //}
