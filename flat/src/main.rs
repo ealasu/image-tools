@@ -27,14 +27,14 @@ fn main() {
 
     let first = Image::<u16>::open_raw(&args.arg_input[0]);
     let (w, h) = (first.width, first.height);
-    let count = args.arg_input.len() as f32;
+    let count = args.arg_input.len() as f64;
     let img = args.arg_input
         .into_par_iter()
         .map(|f| {
             println!("stacking {}", f);
-            Image::<u16>::open_raw(&f).to_f32()
+            Image::<u16>::open_raw(&f).into_f64()
         })
-        .reduce(|| Image::<f32>::new(w, h), |a, b| a + b);
+        .reduce(|| Image::<f64>::new(w, h), |a, b| a + b);
     let img = img / count;
 
     println!("min: {}", img.min());

@@ -14,13 +14,15 @@ impl Image<u16> {
 
     pub fn to_f32(&self) -> Image<f32> {
         let max = u16::MAX as f32;
-        let pixels = self.pixels.iter().map(|&v| {
-            v as f32 / max
-        }).collect();
-        Image {
-            width: self.width,
-            height: self.height,
-            pixels: pixels,
-        }
+        self.map(|&p| {
+            p as f32 / max
+        })
+    }
+
+    pub fn into_f64(&self) -> Image<f64> {
+        let max = u16::MAX as f64;
+        self.map(|&p| {
+            p as f64 / max
+        })
     }
 }
