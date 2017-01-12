@@ -80,6 +80,12 @@ impl<P: Float + Default> Image<P> {
             pixels: pixels,
         }
     }
+
+    pub fn to_f64(&self) -> Image<f64> {
+        self.map(|&p| {
+            p.to_f64().unwrap()
+        })
+    }
 }
 
 impl Image<f32> {

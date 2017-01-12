@@ -1,22 +1,22 @@
 use std::ops::*;
-use unit::Unit;
+use num::Float;
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
-pub struct Vector {
-    pub x: Unit,
-    pub y: Unit,
+pub struct Vector<T: Float> {
+    pub x: T,
+    pub y: T,
 }
 
-impl Vector {
-    pub fn cross_product(self, other: Self) -> Unit {
+impl<T: Float> Vector<T> {
+    pub fn cross_product(self, other: Self) -> T {
         self.x * other.y - self.y * other.x
     }
 
-    pub fn length(&self) -> Unit {
+    pub fn length(&self) -> T {
         (self.x * self.x + self.y * self.y).sqrt()
     }
 
-    pub fn angle(&self) -> Unit {
+    pub fn angle(&self) -> T {
         self.x.atan2(self.y)
     }
 
@@ -33,7 +33,7 @@ impl Vector {
     //}
 }
 
-impl Add for Vector {
+impl<T: Float> Add for Vector<T> {
     type Output = Self;
     fn add(self, rhs: Self) -> Self::Output {
         Vector {
@@ -43,7 +43,7 @@ impl Add for Vector {
     }
 }
 
-impl Sub for Vector {
+impl<T: Float> Sub for Vector<T> {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
         Vector {
@@ -53,9 +53,9 @@ impl Sub for Vector {
     }
 }
 
-impl Div<Unit> for Vector {
+impl<T: Float> Div<T> for Vector<T> {
     type Output = Self;
-    fn div(self, rhs: Unit) -> Self::Output {
+    fn div(self, rhs: T) -> Self::Output {
         Vector {
             x: self.x / rhs,
             y: self.y / rhs,
@@ -63,9 +63,9 @@ impl Div<Unit> for Vector {
     }
 }
 
-impl Mul<Unit> for Vector {
+impl<T: Float> Mul<T> for Vector<T> {
     type Output = Self;
-    fn mul(self, rhs: Unit) -> Self::Output {
+    fn mul(self, rhs: T) -> Self::Output {
         Vector {
             x: self.x * rhs,
             y: self.y * rhs,

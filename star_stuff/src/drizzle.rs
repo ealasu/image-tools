@@ -2,6 +2,7 @@ use std::default::Default;
 use std::ops::{AddAssign, DivAssign, Mul};
 use image::Image;
 use geom::{Point, Matrix3x3, Matrix3x1};
+use num::{Float, FromPrimitive};
 
 #[inline(always)]
 fn min(a: f32, b: f32) -> f32 {
@@ -32,7 +33,7 @@ impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default
         }
     }
 
-    pub fn add(&mut self, image: &Image<P>, transform: Matrix3x3) {
+    pub fn add(&mut self, image: &Image<P>, transform: Matrix3x3<f32>) {
         add(&mut self.image, image, transform, self.factor, self.pixel_aperture);
         self.count += 1;
     }
@@ -47,33 +48,35 @@ impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default
 
 }
 
-pub fn add<P>(
+pub fn add<P,F>(
     stack: &mut Image<P>,
     image: &Image<P>,
-    transform: Matrix3x3,
-    factor: f32,
-    pixel_aperture: f32
+    transform: Matrix3x3<F>,
+    factor: F,
+    pixel_aperture: F
 )
-where P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default {
+where P: Copy + Clone + AddAssign + DivAssign<F> + Mul<F, Output=P> + Default, F: Float + FromPrimitive {
     for y in 0..stack.height {
         for x in 0..stack.width {
-            let src_pos = transform * Matrix3x1::point((x as f32) / factor, (y as f32) / factor);
-            *stack.pixel_at_mut(x, y) += resample(image, src_pos.v11, src_pos.v21, factor,
+            let src_pos = transform * Matrix3x1::point(
+                F::from_usize(x).unwrap() / factor,
+                F::from_usize(y).unwrap() / factor);
+            let pixel = stack.pixel_at_mut(x, y);
+            *pixel += resample(image, src_pos.v11, src_pos.v21, factor,
                                                        pixel_aperture);
         }
     }
 }
 
-fn resample<P>(image: &Image<P>, x: f32, y: f32, factor: f32, pixel_aperture: f32) -> P
-where P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default {
+fn resample<P,F>(image: &Image<P>, x: F, y: F, factor: F, pixel_aperture: F) -> P
+where P: Copy + Clone + AddAssign + DivAssign<F> + Mul<F, Output=P> + Default, F: Float {
     // `src` refers to `image`, `dst` refers to `self.image`.
     // `x` and `y` above are the origin of the `dst` pixel in the `src` coordinate system.
 
     let mut src_val: P = Default::default();
-
-    let src_margin = (1.0 - pixel_aperture) / 2.0; // margin around src pixel
-
-    let dst_size = 1.0 / factor; // width & height of dst pixel (in src coords)
+    let two = P::one() + P::one();
+    let src_margin = (P::one() - pixel_aperture) / two; // margin around src pixel
+    let dst_size = P::one() / factor; // width & height of dst pixel (in src coords)
 
     // east, or right
     let e = positive((x + dst_size) - x.ceil() - src_margin);
@@ -91,8 +94,8 @@ where P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Defaul
     let ne = n * e;
 
     // integer coords of the four `src` pixels
-    let e_x = x.ceil() as isize;
-    let s_y = y.ceil() as isize;
+    let e_x = x.ceil().to_isize().unwrap();
+    let s_y = y.ceil().to_isize().unwrap();
     let w_x = e_x - 1;
     let n_y = s_y - 1;
 

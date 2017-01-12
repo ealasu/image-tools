@@ -1,3 +1,5 @@
+extern crate num;
+
 mod unit;
 mod point;
 mod vector;

@@ -1,66 +1,67 @@
 use unit::Unit;
 use std::ops::*;
+use num::Float;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Matrix3x1 {
-    pub v11: Unit,
-    pub v21: Unit,
-    pub v31: Unit,
+pub struct Matrix3x1<T: Float> {
+    pub v11: T,
+    pub v21: T,
+    pub v31: T,
 }
 
-impl Matrix3x1 {
-    pub fn point(x: f32, y: f32) -> Self {
+impl<T: Float> Matrix3x1<T> {
+    pub fn point(x: T, y: T) -> Self {
         Matrix3x1 {
             v11: x,
             v21: y,
-            v31: 1.0,
+            v31: T::one(),
         }
     }
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct Matrix3x3 {
-    pub v11: Unit,
-    pub v12: Unit,
-    pub v13: Unit,
-    pub v21: Unit,
-    pub v22: Unit,
-    pub v23: Unit,
-    pub v31: Unit,
-    pub v32: Unit,
-    pub v33: Unit,
+pub struct Matrix3x3<T: Float> {
+    pub v11: T,
+    pub v12: T,
+    pub v13: T,
+    pub v21: T,
+    pub v22: T,
+    pub v23: T,
+    pub v31: T,
+    pub v32: T,
+    pub v33: T,
 }
 
-impl Matrix3x3 {
+impl<T: Float> Matrix3x3<T> {
     pub fn identity() -> Self {
         Matrix3x3 {
-            v11: 1.0, v12: 0.0, v13: 0.0,
-            v21: 0.0, v22: 1.0, v23: 0.0,
-            v31: 0.0, v32: 0.0, v33: 1.0,
+            v11: T::one(), v12: T::zero(), v13: T::zero(),
+            v21: T::zero(), v22: T::one(), v23: T::zero(),
+            v31: T::zero(), v32: T::zero(), v33: T::one(),
         }
     }
 
-    pub fn translation(x: f32, y: f32) -> Self {
+    pub fn translation(x: T, y: T) -> Self {
         Matrix3x3 {
-            v11: 1.0, v12: 0.0, v13: x,
-            v21: 0.0, v22: 1.0, v23: y,
-            v31: 0.0, v32: 0.0, v33: 1.0,
+            v11: T::one(), v12: T::zero(), v13: x,
+            v21: T::zero(), v22: T::one(), v23: y,
+            v31: T::zero(), v32: T::zero(), v33: T::one(),
         }
     }
 
-    pub fn rotation(angle: f32) -> Self {
+    pub fn rotation(angle: T) -> Self {
         let cos = angle.cos();
         let sin = angle.sin();
         Matrix3x3 {
-            v11: cos, v12: -sin, v13: 0.0,
-            v21: sin, v22: cos,  v23: 0.0,
-            v31: 0.0, v32: 0.0,  v33: 1.0,
+            v11: cos, v12: -sin, v13: T::zero(),
+            v21: sin, v22: cos,  v23: T::zero(),
+            v31: T::zero(), v32: T::zero(),  v33: T::one(),
         }
     }
 }
 
-impl Mul for Matrix3x3 {
-    type Output = Matrix3x3;
+impl<T: Float> Mul for Matrix3x3<T> {
+    type Output = Matrix3x3<T>;
     fn mul(self, rhs: Self) -> Self::Output {
         Matrix3x3 {
             v11: self.v11 * rhs.v11 + self.v12 * rhs.v21 + self.v13 * rhs.v31,
@@ -78,9 +79,9 @@ impl Mul for Matrix3x3 {
     }
 }
 
-impl Mul<Matrix3x1> for Matrix3x3 {
-    type Output = Matrix3x1;
-    fn mul(self, rhs: Matrix3x1) -> Self::Output {
+impl<T: Float> Mul<Matrix3x1<T>> for Matrix3x3<T> {
+    type Output = Matrix3x1<T>;
+    fn mul(self, rhs: Matrix3x1<T>) -> Self::Output {
         Matrix3x1 {
             v11: self.v11 * rhs.v11 + self.v12 * rhs.v21 + self.v13 * rhs.v31,
             v21: self.v21 * rhs.v11 + self.v22 * rhs.v21 + self.v23 * rhs.v31,

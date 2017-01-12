@@ -66,7 +66,7 @@ fn stack(args: Args) {
     let raw_ref = Image::<u16>::open_raw(&args.arg_input[0]);
     let w = (raw_ref.width as f32 * factor) as usize;
     let h = (raw_ref.height as f32 * factor) as usize;
-    let flat = Image::<f32>::open_fits(&args.flag_flat);
+    let flat = Image::<f32>::open_fits(&args.flag_flat).to_f64();
     //for v in raw_ref.to_f32().pixels.iter() {
         //println!("{}", v);
     //}
@@ -112,17 +112,17 @@ fn stack(args: Args) {
             //let d = donuts::align(&reference, &p);
             let d = three_axis.align(&sample_image);
             println!("offset: {:?}", d);
-            let img = Image::<u16>::open_raw(&file).to_f32();
+            let img = Image::<u16>::open_raw(&file).to_f32().to_f64();
             let img = img / &flat;
             let img = img.to_rggb();
-            let mut stack = Image::<RgbBayer>::new(w, h);
+            let mut stack = Image::<RgbBayer<f64>>::new(w, h);
             drizzle::add(&mut stack, &img, d, factor, 0.80);
             stack
         })
         .reduce(
             || {
                 println!("reduce init");
-                Image::<RgbBayer>::new(w, h)
+                Image::<RgbBayer<f64>>::new(w, h)
             },
             |a, b| {
                 println!("adding");

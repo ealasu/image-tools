@@ -1,5 +1,6 @@
 #![feature(test)]
 
+extern crate num;
 extern crate image;
 extern crate geom;
 #[cfg(test)] extern crate test;
