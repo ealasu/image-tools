@@ -53,7 +53,6 @@ dependencies = [
  "geom 0.1.0",
  "image 0.0.0",
  "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "num 0.1.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickersort 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

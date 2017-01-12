@@ -16,7 +16,7 @@ impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default
         }
     }
 
-    pub fn add(&mut self, image: &Image<P>, transform: Vector) {
+    pub fn add(&mut self, image: &Image<P>, transform: Vector<f32>) {
         for y in 0..self.image.height {
             for x in 0..self.image.width {
                 let src_pos = Point {x: x as f32, y: y as f32} - transform;

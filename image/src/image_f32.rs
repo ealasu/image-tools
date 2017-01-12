@@ -129,3 +129,11 @@ impl Image<f32> {
         fits::write_image(&mut f, &shape[..], &fits::Data::F32(self.pixels.clone()));
     }
 }
+
+impl Image<f64> {
+    pub fn save_fits(&self, filename: &str) {
+        let mut f = BufWriter::new(File::create(filename).unwrap());
+        let shape = [self.width, self.height];
+        fits::write_image(&mut f, &shape[..], &fits::Data::F64(self.pixels.clone()));
+    }
+}

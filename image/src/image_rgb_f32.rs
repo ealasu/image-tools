@@ -55,6 +55,15 @@ impl Image<Rgb<f32>> {
     }
 }
 
+impl Image<Rgb<f64>> {
+    pub fn save_fits(&self, filename: &str) {
+        let data = convert_vec(self.pixels.clone());
+        let mut f = BufWriter::new(File::create(filename).unwrap());
+        let shape = [3, self.width, self.height];
+        fits::write_image(&mut f, &shape[..], &fits::Data::F64(data));
+    }
+}
+
 impl<P: Float> Image<Rgb<P>> {
     pub fn to_gray(&self) -> Image<P> {
         let three = P::one() + P::one() + P::one();

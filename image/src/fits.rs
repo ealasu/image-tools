@@ -105,6 +105,7 @@ fn write_padding<W: Write>(w: &mut W, len: usize) {
 pub enum Data {
     U16(Vec<u16>),
     F32(Vec<f32>),
+    F64(Vec<f64>),
 }
 
 fn get_value<'a>(records: &'a [HeaderRecord], name: &str) -> &'a String {
@@ -125,6 +126,7 @@ pub fn write_image<W: Write>(w: &mut W, shape: &[usize], data: &Data) {
     let bitpix = match data {
         &Data::U16(_) => "16",
         &Data::F32(_) => "-32",
+        &Data::F64(_) => "-64",
     }.to_string();
     let mut header = vec![
         HeaderRecord {
@@ -162,6 +164,11 @@ pub fn write_image<W: Write>(w: &mut W, shape: &[usize], data: &Data) {
                 w.write_f32::<BigEndian>(v).unwrap();
             }
         },
+        &Data::F64(ref vec) => {
+            for &v in vec.iter() {
+                w.write_f64::<BigEndian>(v).unwrap();
+            }
+        },
     }
 }
 
@@ -190,6 +197,13 @@ pub fn read_image<R: Read>(r: &mut R) -> (Vec<usize>, Data) {
                 data.push(r.read_f32::<BigEndian>().unwrap());
             }
             Data::F32(data)
+        },
+        "-64" => {
+            let mut data = vec![];
+            for _ in 0..data_len {
+                data.push(r.read_f64::<BigEndian>().unwrap());
+            }
+            Data::F64(data)
         },
         _ => panic!("unexpected BITPIX: {}", bitpix)
     };

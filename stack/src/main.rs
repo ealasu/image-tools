@@ -62,10 +62,10 @@ fn main() {
 
 fn stack(args: Args) {
     println!("processing ref image");
-    let factor = 1.0;
+    let factor: f64 = 1.0;
     let raw_ref = Image::<u16>::open_raw(&args.arg_input[0]);
-    let w = (raw_ref.width as f32 * factor) as usize;
-    let h = (raw_ref.height as f32 * factor) as usize;
+    let w = (raw_ref.width as f64 * factor) as usize;
+    let h = (raw_ref.height as f64 * factor) as usize;
     let flat = Image::<f32>::open_fits(&args.flag_flat).to_f64();
     //for v in raw_ref.to_f32().pixels.iter() {
         //println!("{}", v);
@@ -110,7 +110,7 @@ fn stack(args: Args) {
             //three_axis.align(&sample_image);
             //let p = donuts::preprocess_image(sample_image.center_crop(900, 900));
             //let d = donuts::align(&reference, &p);
-            let d = three_axis.align(&sample_image);
+            let d = three_axis.align(&sample_image).to_f64();
             println!("offset: {:?}", d);
             let img = Image::<u16>::open_raw(&file).to_f32().to_f64();
             let img = img / &flat;

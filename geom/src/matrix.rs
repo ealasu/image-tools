@@ -33,6 +33,20 @@ pub struct Matrix3x3<T: Float> {
 }
 
 impl<T: Float> Matrix3x3<T> {
+    pub fn to_f64(&self) -> Matrix3x3<f64> {
+        Matrix3x3 {
+            v11: self.v11.to_f64().unwrap(),
+            v12: self.v12.to_f64().unwrap(),
+            v13: self.v13.to_f64().unwrap(),
+            v21: self.v21.to_f64().unwrap(),
+            v22: self.v22.to_f64().unwrap(),
+            v23: self.v23.to_f64().unwrap(),
+            v31: self.v31.to_f64().unwrap(),
+            v32: self.v32.to_f64().unwrap(),
+            v33: self.v33.to_f64().unwrap(),
+        }
+    }
+
     pub fn identity() -> Self {
         Matrix3x3 {
             v11: T::one(), v12: T::zero(), v13: T::zero(),

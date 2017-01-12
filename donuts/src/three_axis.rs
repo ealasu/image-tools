@@ -5,11 +5,11 @@ use align::align;
 use geom::*;
 
 pub struct ThreeAxisDonuts {
-    center: Vector,
-    q1: Vector,
-    q2: Vector,
-    q3: Vector,
-    q4: Vector,
+    center: Vector<f32>,
+    q1: Vector<f32>,
+    q2: Vector<f32>,
+    q3: Vector<f32>,
+    q4: Vector<f32>,
     ref_center: Projection,
     ref_center_small: Projection,
     // q2 | q1
@@ -84,7 +84,7 @@ impl ThreeAxisDonuts {
         }
     }
 
-    pub fn align(&self, image: &Image<f32>) -> Matrix3x3 {
+    pub fn align(&self, image: &Image<f32>) -> Matrix3x3<f32> {
         let sam_center = Projection::new(
             &fix(image.center_crop(SIZE, SIZE)));
         let d_c = align(&self.ref_center, &sam_center, N);

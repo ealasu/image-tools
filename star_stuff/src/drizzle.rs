@@ -5,13 +5,8 @@ use geom::{Point, Matrix3x3, Matrix3x1};
 use num::{Float, FromPrimitive};
 
 #[inline(always)]
-fn min(a: f32, b: f32) -> f32 {
-    if a < b { a } else { b }
-}
-
-#[inline(always)]
-fn positive(v: f32) -> f32 {
-    if v > 0.0 { v } else { 0.0 }
+fn positive<T: Float>(v: T) -> T {
+    if v > T::zero() { v } else { T::zero() }
 }
 
 pub struct ImageStack<P> {
@@ -74,18 +69,18 @@ where P: Copy + Clone + AddAssign + DivAssign<F> + Mul<F, Output=P> + Default, F
     // `x` and `y` above are the origin of the `dst` pixel in the `src` coordinate system.
 
     let mut src_val: P = Default::default();
-    let two = P::one() + P::one();
-    let src_margin = (P::one() - pixel_aperture) / two; // margin around src pixel
-    let dst_size = P::one() / factor; // width & height of dst pixel (in src coords)
+    let two = F::one() + F::one();
+    let src_margin = (F::one() - pixel_aperture) / two; // margin around src pixel
+    let dst_size = F::one() / factor; // width & height of dst pixel (in src coords)
 
     // east, or right
     let e = positive((x + dst_size) - x.ceil() - src_margin);
     // south, or bottom
     let s = positive((y + dst_size) - y.ceil() - src_margin);
     // west, or left
-    let w = positive(min(x + dst_size, x.ceil()) - x - src_margin);
+    let w = positive((x + dst_size).min(x.ceil()) - x - src_margin);
     // north, or top
-    let n = positive(min(y + dst_size, y.ceil()) - y - src_margin);
+    let n = positive((y + dst_size).min(y.ceil()) - y - src_margin);
 
     // areas of intersection of the four `src` pixels with the `dst` pixel.
     let nw = n * w;
