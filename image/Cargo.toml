@@ -9,3 +9,4 @@ turbojpeg = { path = "../../turbojpeg-rs" }
 rand = "*"
 byteorder = "*"
 quickersort = "*"
+num = "*"

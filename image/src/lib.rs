@@ -8,6 +8,7 @@ extern crate turbojpeg;
 extern crate rand;
 extern crate byteorder;
 extern crate quickersort;
+extern crate num;
 #[cfg(test)] extern crate test;
 
 mod magick;
@@ -25,6 +26,7 @@ mod pgm;
 mod dcraw;
 mod identify;
 mod fits;
+mod image_kind;
 
 pub use image::*;
 pub use rgb::*;

@@ -9,6 +9,78 @@ use fits;
 use magick::*;
 use rgb::Rgb;
 use rgb_bayer::RgbBayer;
+use num::Float;
+use num::cast::NumCast;
+
+impl<P: Float + Default> Image<P> {
+    pub fn average(&self) -> P {
+        let start: P = P::zero();
+        let count: P = NumCast::from(self.pixels.len()).unwrap();
+        self.pixels.iter().fold(start, |acc, v| acc + *v) / count
+    }
+
+    pub fn min_max(&self) -> (P, P) {
+        let mut min = P::max_value();
+        let mut max = P::min_value();
+        for &p in self.pixels.iter() {
+            if p < min {
+                min = p;
+            }
+            if p > max {
+                max = p;
+            }
+        }
+        (min, max)
+    }
+
+    pub fn stretch(&self, dst_min: P, dst_max: P) -> Image<P> {
+        let (src_min, src_max) = self.min_max();
+        let dst_d = dst_max - dst_min;
+        let src_d = src_max - src_min;
+        self.map(|&p| {
+            ((p - src_min) * dst_d) / src_d
+        })
+    }
+
+    pub fn to_u16(&self) -> Image<u16> {
+        self.stretch(P::from(u16::MIN).unwrap(), P::from(u16::MAX).unwrap())
+            .map(|p| p.to_u16().unwrap())
+    }
+
+    pub fn to_u8(&self) -> Image<u8> {
+        self.stretch(P::from(u8::MIN).unwrap(), P::from(u8::MAX).unwrap())
+            .map(|p| p.to_u8().unwrap())
+    }
+
+    pub fn to_rggb(&self) -> Image<RgbBayer<P>> {
+        let mut pixels = Vec::with_capacity(self.width * self.height);
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let gray = *self.pixel_at(x, y);
+                let x = x % 2;
+                let y = y % 2;
+                let mut pix: RgbBayer<P> = Default::default();
+                {
+                    let (v, vc) = match (x, y) {
+                        (0, 0) => (&mut pix.r, &mut pix.rc),
+                        (1, 0) => (&mut pix.g, &mut pix.gc),
+                        (0, 1) => (&mut pix.g, &mut pix.gc),
+                        (1, 1) => (&mut pix.b, &mut pix.bc),
+                        _ => panic!("invalid bayer coords: {},{}", x, y)
+                    };
+                    *v = gray;
+                    *vc = P::one();
+                }
+                pixels.push(pix);
+            }
+        }
+        Image {
+            width: self.width,
+            height: self.height,
+            pixels: pixels,
+        }
+    }
+}
 
 impl Image<f32> {
     pub fn open(path: &str) -> Self {
@@ -49,58 +121,5 @@ impl Image<f32> {
         let mut f = BufWriter::new(File::create(filename).unwrap());
         let shape = [self.width, self.height];
         fits::write_image(&mut f, &shape[..], &fits::Data::F32(self.pixels.clone()));
-    }
-
-    pub fn average(&self) -> f32 {
-        self.pixels.iter().fold(0.0, |acc, v| acc + v) / self.pixels.len() as f32
-    }
-
-    pub fn to_u16(&self) -> Image<u16> {
-        let src_min = self.pixels.iter().fold(f32::MAX, |acc, &v| acc.min(v));
-        let src_max = self.pixels.iter().fold(f32::MIN, |acc, &v| acc.max(v));
-        let src_d = src_max - src_min;
-        let dst_min = u16::MIN as f32;
-        let dst_max = u16::MAX as f32;
-        let dst_d = dst_max - dst_min;
-        self.map(|&p| (((p - src_min) * dst_d) / src_d) as u16)
-    }
-
-    pub fn to_u8(&self) -> Image<u8> {
-        let src_min = self.pixels.iter().fold(f32::MAX, |acc, &v| acc.min(v));
-        let src_max = self.pixels.iter().fold(f32::MIN, |acc, &v| acc.max(v));
-        let src_d = src_max - src_min;
-        let dst_min = u8::MIN as f32;
-        let dst_max = u8::MAX as f32;
-        let dst_d = dst_max - dst_min;
-        self.map(|&p| (((p - src_min) * dst_d) / src_d) as u8)
-    }
-
-    pub fn to_rggb(&self) -> Image<RgbBayer> {
-        let mut pixels = Vec::with_capacity(self.width * self.height);
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let gray = *self.pixel_at(x, y);
-                let x = x % 2;
-                let y = y % 2;
-                let mut pix: RgbBayer = Default::default();
-                {
-                    let (v, vc) = match (x, y) {
-                        (0, 0) => (&mut pix.r, &mut pix.rc),
-                        (1, 0) => (&mut pix.g, &mut pix.gc),
-                        (0, 1) => (&mut pix.g, &mut pix.gc),
-                        (1, 1) => (&mut pix.b, &mut pix.bc),
-                        _ => panic!("invalid bayer coords: {},{}", x, y)
-                    };
-                    *v = gray;
-                    *vc = 1.0;
-                }
-                pixels.push(pix);
-            }
-        }
-        Image {
-            width: self.width,
-            height: self.height,
-            pixels: pixels,
-        }
     }
 }

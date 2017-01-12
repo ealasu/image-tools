@@ -9,6 +9,7 @@ use convert::convert_vec;
 use magick::*;
 use fits;
 use quickersort::sort_floats;
+use num::Float;
 
 impl Image<Rgb<f32>> {
     pub fn open(path: &str) -> Self {
@@ -52,28 +53,26 @@ impl Image<Rgb<f32>> {
         let shape = [3, self.width, self.height];
         fits::write_image(&mut f, &shape[..], &fits::Data::F32(data));
     }
+}
 
-    pub fn to_gray(&self) -> Image<f32> {
-        let pixels = self.pixels.iter().map(|p| {
-            (p.r + p.g + p.b) / 3.0
-        }).collect();
-        Image {
-            width: self.width,
-            height: self.height,
-            pixels: pixels,
-        }
+impl<P: Float> Image<Rgb<P>> {
+    pub fn to_gray(&self) -> Image<P> {
+        let three = P::one() + P::one() + P::one();
+        self.map(|p| {
+            (p.r + p.g + p.b) / three
+        })
     }
 
-    pub fn min_max(&self) -> (Rgb<f32>, Rgb<f32>) {
+    pub fn min_max(&self) -> (Rgb<P>, Rgb<P>) {
         let mut min = Rgb {
-            r: f32::MAX,
-            g: f32::MAX,
-            b: f32::MAX,
+            r: P::max_value(),
+            g: P::max_value(),
+            b: P::max_value(),
         };
         let mut max = Rgb {
-            r: f32::MIN,
-            g: f32::MIN,
-            b: f32::MIN,
+            r: P::min_value(),
+            g: P::min_value(),
+            b: P::min_value(),
         };
         for p in self.pixels.iter() {
             if p.r < min.r { min.r = p.r; }
@@ -86,10 +85,10 @@ impl Image<Rgb<f32>> {
         (min, max)
     }
 
-    pub fn stretch(&self, dst_min: f32, dst_max: f32) -> Image<Rgb<f32>> {
+    pub fn stretch(&self, dst_min: P, dst_max: P) -> Image<Rgb<P>> {
         let (min_p, max_p) = self.min_max();
-        let src_min = min(min_p.r, min(min_p.g, min_p.b));
-        let src_max = max(max_p.r, max(max_p.g, max_p.b));
+        let src_min = min_p.r.min(min_p.g.min(min_p.b));
+        let src_max = max_p.r.max(max_p.g.max(max_p.b));
         let dst_d = dst_max - dst_min;
         let src_d = src_max - src_min;
         self.map(|p| {
@@ -102,21 +101,22 @@ impl Image<Rgb<f32>> {
     }
 
     pub fn to_u8(&self) -> Image<Rgb<u8>> {
-        self.stretch(u8::MIN as f32, u8::MAX as f32).map(|p| {
+        self.stretch(P::from(u8::MIN).unwrap(), P::from(u8::MAX).unwrap()).map(|p| {
             Rgb {
-                r: p.r as u8,
-                g: p.g as u8,
-                b: p.b as u8,
+                r: p.r.to_u8().unwrap(),
+                g: p.g.to_u8().unwrap(),
+                b: p.b.to_u8().unwrap(),
             }
         })
     }
 
-    pub fn median(&self) -> Rgb<f32> {
-        fn median_by<F>(pixels: &[Rgb<f32>], f: F) -> f32
-        where F: Fn(Rgb<f32>) -> f32 {
-            let mut pixels = pixels.iter().map(|p| p.r).collect::<Vec<_>>();
+    pub fn median(&self) -> Rgb<P> {
+        fn median_by<P,F>(pixels: &[Rgb<P>], f: F) -> P
+        where P: Float, F: Fn(&Rgb<P>) -> P {
+            let mut pixels = pixels.iter().map(f).collect::<Vec<_>>();
+            let two = P::one() + P::one();
             sort_floats(&mut pixels[..]);
-            pixels[pixels.len() / 2]
+            pixels[pixels.len() / two.to_usize().unwrap()]
         }
         Rgb {
             r: median_by(&self.pixels, |p| p.r),
@@ -125,19 +125,19 @@ impl Image<Rgb<f32>> {
         }
     }
 
-    pub fn remove_background(&self, amount: f32) -> Image<Rgb<f32>> {
+    pub fn remove_background(&self, amount: P) -> Image<Rgb<P>> {
         let median = self.median() * amount;
         self.map(|&p| {
             Rgb {
-                r: max(0.0, p.r - median.r),
-                g: max(0.0, p.g - median.g),
-                b: max(0.0, p.b - median.b),
+                r: P::zero().max(p.r - median.r),
+                g: P::zero().max(p.g - median.g),
+                b: P::zero().max(p.b - median.b),
             }
         })
     }
 
-    pub fn gamma(&self, amount: f32) -> Image<Rgb<f32>> {
-        let f = |v: f32| {
+    pub fn gamma(&self, amount: P) -> Image<Rgb<P>> {
+        let f = |v: P| {
             v.powf(amount)
         };
         self.map(|p| {
