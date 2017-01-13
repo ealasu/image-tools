@@ -4,7 +4,6 @@ use std::io::{BufReader, BufWriter};
 use std::fs::File;
 use image::Image;
 use rgb::Rgb;
-use util::{min, max};
 use convert::convert_vec;
 use magick::*;
 use fits;

@@ -4,6 +4,7 @@ extern crate star_stuff;
 extern crate donuts;
 extern crate image;
 extern crate rayon;
+extern crate align_api;
 
 use docopt::Docopt;
 use star_stuff::drizzle::{self, ImageStack};
@@ -15,13 +16,14 @@ const USAGE: &'static str = "
 Stacker.
 
 Usage:
-    stack --output=<filename> --flat=<filename> <input>...
+    stack --output=<filename> --flat=<filename> --alignment=<filename> <input>...
 ";
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
     flag_output: String,
     flag_flat: String,
+    flag_alignment: String,
     arg_input: Vec<String>,
 }
 
@@ -100,27 +102,23 @@ fn stack(args: Args) {
         //.to_rggb()
         //.to_green_interpolated()
         //.center_crop(900, 900);
-    let ref_image = open(&args.arg_input[0]);
-    let reference = donuts::preprocess_image(ref_image.center_crop(900, 900));
-    let three_axis = donuts::three_axis::ThreeAxisDonuts::new(&ref_image);
 
-    println!("stacking");
+    let alignment = align_api::read(&args.flag_alignment);
 
     let img = args.arg_input
         .into_par_iter()
         .map(|file| {
             println!("adding {}", file);
-            let sample_image = open(&file);
-            //three_axis.align(&sample_image);
-            //let p = donuts::preprocess_image(sample_image.center_crop(900, 900));
-            //let d = donuts::align(&reference, &p);
-            let d = three_axis.align(&sample_image).to_f64();
-            println!("offset: {:?}", d);
+            let transform = alignment
+                .iter()
+                .find(|i| i.filename == file)
+                .unwrap()
+                .transform.to_f64();
             let img = Image::<u16>::open_raw(&file).to_f32().to_f64();
             let img = img / &flat;
             let img = img.to_rggb();
             let mut stack = Image::<RgbBayer<f64>>::new(w, h);
-            drizzle::add(&mut stack, &img, d, factor, 0.80);
+            drizzle::add(&mut stack, &img, transform, factor, 0.80);
             stack
         })
         .reduce(
@@ -133,18 +131,6 @@ fn stack(args: Args) {
                 a + b
             });
 
-    //for file in args.arg_input.iter() {
-        //println!("adding {}", file);
-        //let sample_image = open(&file);
-        //let p = donuts::preprocess_image(sample_image);
-        //let (x, y) = donuts::align(&reference, &p);
-        //println!("offset: {},{}", x, y);
-
-        //let raw_sample = Image::<u16>::open_raw(file).to_f32() / &flat;
-        //stack.add(&raw_sample.to_rggb(), Vector { x:x, y:y });
-    //}
-    //let img = stack.into_image();
-    //img.to_rgb().save(&args.flag_output);
     img.to_rgb().save_fits(&args.flag_output);
     let holes = img.center_crop(900, 900).holes();
     println!("holes min/max: {:?}", holes.min_max());

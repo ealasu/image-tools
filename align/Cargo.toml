@@ -1,12 +1,11 @@
 [package]
-name = "stack"
-version = "0.0.0"
+name = "align"
+version = "0.1.0"
 
 [dependencies]
 docopt = "*"
 rustc-serialize = "*"
-star_stuff = { path = "../star_stuff" }
-donuts = { path = "../donuts" }
 image = { path = "../image" }
-rayon = "*"
+donuts = { path = "../donuts" }
 align_api = { path = "../align-api" }
+rayon = "*"

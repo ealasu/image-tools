@@ -1,4 +1,3 @@
-use unit::Unit;
 use std::ops::*;
 use num::Float;
 
@@ -19,7 +18,7 @@ impl<T: Float> Matrix3x1<T> {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Matrix3x3<T: Float> {
     pub v11: T,
     pub v12: T,

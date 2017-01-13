@@ -1,6 +1,5 @@
-use std::fmt::Debug;
 use std::ops::*;
-use math::*;
+//use math::*;
 use vector::Vector;
 use num::Float;
 
