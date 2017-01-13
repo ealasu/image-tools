@@ -1,0 +1,9 @@
+[package]
+name = "post"
+version = "0.1.0"
+
+[dependencies]
+docopt = "*"
+rustc-serialize = "*"
+donuts = { path = "../donuts" }
+image = { path = "../image" }
