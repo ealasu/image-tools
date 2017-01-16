@@ -36,6 +36,8 @@ fn main() {
     let mut ra_controller = PIDController::new(0.3, 0.04, 0.0);
     let mut dec_controller = PIDController::new(0.10, 0.015, 0.0);
 
+    mount.start();
+
     autoguider::run_autoguider(
         0..num_images,
         shot_duration,
@@ -66,6 +68,8 @@ fn main() {
             mount.slew(pixel_to_step(speed.ra), pixel_to_step(speed.dec));
         }
     );
+
+    mount.stop();
 }
 
 fn pixel_to_step(v: f64) -> i32 {

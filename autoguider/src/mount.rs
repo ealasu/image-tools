@@ -39,4 +39,12 @@ impl Mount {
         thread::sleep(Duration::from_secs(2));
     }
 
+    pub fn start(&mut self) {
+        self.client.start().unwrap();
+        thread::sleep(Duration::from_secs(2));
+    }
+
+    pub fn stop(&mut self) {
+        self.client.stop().unwrap();
+    }
 }
