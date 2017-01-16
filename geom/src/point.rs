@@ -4,7 +4,7 @@ use vector::Vector;
 use num::Float;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
-pub struct Point<T: Float> {
+pub struct Point<T> {
     pub x: T,
     pub y: T,
 }

@@ -73,9 +73,6 @@ fn stack(args: Args) {
     } else {
         panic!();
     };
-    //for v in raw_ref.to_f32().pixels.iter() {
-        //println!("{}", v);
-    //}
     //raw_ref
         //.to_f32()
         //.center_crop(900, 900)
@@ -95,9 +92,6 @@ fn stack(args: Args) {
         //.to_green()
         //.center_crop(900, 900);
     //ref_image.save("ref.tif");
-
-    //let mut stack = ImageStack::new(raw_ref.width, raw_ref.height, 2.0, 0.80);
-
     //let ref_image = raw_ref
         //.to_rggb()
         //.to_green_interpolated()
@@ -111,8 +105,7 @@ fn stack(args: Args) {
             println!("adding {}", file);
             let transform = alignment
                 .iter()
-                .find(|i| i.filename == file)
-                .unwrap()
+                .find(|i| i.filename == file).expect("missing alignment")
                 .transform.to_f64();
             let img = Image::<u16>::open_raw(&file).to_f32().to_f64();
             let img = img / &flat;

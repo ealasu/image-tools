@@ -61,6 +61,16 @@ impl Image<Rgb<f64>> {
         let shape = [3, self.width, self.height];
         fits::write_image(&mut f, &shape[..], &fits::Data::F64(data));
     }
+
+    pub fn to_f32(&self) -> Image<Rgb<f32>> {
+        self.map(|p| {
+            Rgb {
+                r: p.r as f32,
+                g: p.g as f32,
+                b: p.b as f32,
+            }
+        })
+    }
 }
 
 impl<P: Float> Image<Rgb<P>> {
