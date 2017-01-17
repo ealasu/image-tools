@@ -15,16 +15,16 @@ unsafe impl Send for Camera {}
 
 impl Camera {
     pub fn new() -> Self {
-        let status = Command::new("umount")
-            .arg("/mnt/ramdisk")
-            .status()
-            .expect("failed to execute umount");
-        assert!(status.success());
-        let status = Command::new("mount")
-            .arg("-a")
-            .status()
-            .expect("failed to execute mount");
-        assert!(status.success());
+        //let status = Command::new("umount")
+            //.arg("/mnt/ramdisk")
+            //.status()
+            //.expect("failed to execute umount");
+        //assert!(status.success());
+        //let status = Command::new("mount")
+            //.arg("-a")
+            //.status()
+            //.expect("failed to execute mount");
+        //assert!(status.success());
 
         //let mut context = gphoto::Context::new().unwrap();
         //let camera = gphoto::Camera::autodetect(&mut context).unwrap();
@@ -68,6 +68,9 @@ impl Camera {
 
             // 30
             .arg("--set-config").arg("shutterspeed=0")
+
+            // 25
+            //.arg("--set-config").arg("shutterspeed=1")
 
             // 5000
             //.arg("--set-config").arg("iso=18")

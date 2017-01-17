@@ -12,6 +12,7 @@ pid_control = "*"
 mount_service_api = { path = "../../scope-mount/mount_service_api" }
 donuts = { path = "../donuts" }
 image = { path = "../image" }
+geom = { path = "../geom" }
 #gphoto2-sys = { path = "../../gphoto2-sys" }
 gphoto = "*"
 

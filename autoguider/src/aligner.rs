@@ -1,9 +1,9 @@
-use pos::Vector;
+use geom::Vector;
 use donuts;
 use image::Image;
 
 pub struct Aligner {
-    reference_image: Option<donuts::Projection>,
+    reference_image: Option<donuts::projection::Projection>,
 }
 
 impl Aligner {
@@ -13,14 +13,10 @@ impl Aligner {
         }
     }
 
-    pub fn align(&mut self, image: Image<f32>) -> Vector {
+    pub fn align(&mut self, image: Image<f32>) -> Vector<f32> {
         let processed_image = donuts::preprocess_image(image);
         if let Some(ref reference_image) = self.reference_image {
-            let (x, y) = donuts::align(reference_image, &processed_image);
-            Vector {
-                x: x as f64,
-                y: y as f64,
-            }
+            donuts::align(reference_image, &processed_image, 200)
         } else {
             self.reference_image = Some(processed_image);
             Vector {

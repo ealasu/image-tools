@@ -6,6 +6,7 @@ extern crate log4rs;
 extern crate mount_service_api;
 extern crate image;
 extern crate donuts;
+extern crate geom;
 extern crate gphoto;
 #[cfg(test)] extern crate env_logger;
 
@@ -23,7 +24,7 @@ use mount::Mount;
 use pos::*;
 use pid_control::{Controller, PIDController};
 
-const MAX: f64 = 150.0;
+const MAX: f32 = 150.0;
 
 fn main() {
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();
@@ -58,8 +59,8 @@ fn main() {
                 None
             } else {
                 Some(RaDec {
-                    ra: -ra_controller.update(-offset.y, 1.0), // TODO: calc time delta
-                    dec: -dec_controller.update(offset.x, 1.0),
+                    ra: -ra_controller.update(-offset.y as f64, 1.0), // TODO: calc time delta
+                    dec: -dec_controller.update(offset.x as f64, 1.0),
                 })
             }
         },

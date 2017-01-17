@@ -21,7 +21,7 @@ pub struct Mount {
 
 impl Mount {
     pub fn new() -> Self {
-        let client = Client::new("localhost:1234").unwrap();
+        let client = Client::new("ubuntu:1234").unwrap();
         Mount {
             client: client,
         }
