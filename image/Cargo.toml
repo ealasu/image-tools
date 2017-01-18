@@ -4,6 +4,7 @@ version = "0.0.0"
 
 [dependencies]
 convert = { path = "../convert" }
+fits = { path = "../fits" }
 regex = "*"
 turbojpeg = { path = "../../turbojpeg-rs" }
 rand = "*"

@@ -7,6 +7,7 @@ extern crate rand;
 extern crate byteorder;
 extern crate quickersort;
 extern crate num;
+extern crate fits;
 #[cfg(test)] extern crate test;
 
 mod magick;
@@ -23,7 +24,6 @@ mod util;
 mod pgm;
 mod dcraw;
 mod identify;
-mod fits;
 mod image_kind;
 
 pub use image::*;
