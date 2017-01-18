@@ -71,6 +71,7 @@ fn main() {
     );
 
     mount.stop();
+    println!("Done.");
 }
 
 fn pixel_to_step(v: f64) -> i32 {
