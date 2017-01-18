@@ -1,0 +1,10 @@
+[package]
+name = "find-stars"
+version = "0.1.0"
+
+[dependencies]
+docopt = "*"
+rustc-serialize = "*"
+image = { path = "../image" }
+geom = { path = "../geom" }
+byteorder = "*"
