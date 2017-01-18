@@ -1,3 +1,5 @@
+extern crate byteorder;
+
 use std::io::prelude::*;
 use std::str;
 use byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
@@ -108,7 +110,7 @@ pub enum Data {
     F64(Vec<f64>),
 }
 
-fn get_value<'a>(records: &'a [HeaderRecord], name: &str) -> &'a String {
+pub fn get_header_value<'a>(records: &'a [HeaderRecord], name: &str) -> &'a String {
     if let Some(ref r) = records
         .iter()
         .find(|r| r.name == name) {
@@ -174,15 +176,15 @@ pub fn write_image<W: Write>(w: &mut W, shape: &[usize], data: &Data) {
 
 pub fn read_image<R: Read>(r: &mut R) -> (Vec<usize>, Data) {
     let records = read_header(r);
-    let naxis = get_value(&records, "NAXIS").parse::<usize>().unwrap();
+    let naxis = get_header_value(&records, "NAXIS").parse::<usize>().unwrap();
     let mut shape = vec![];
     let mut data_len = 1;
     for i in 0..naxis {
-        let axis = get_value(&records, &format!("NAXIS{}", i + 1)).parse::<usize>().unwrap();
+        let axis = get_header_value(&records, &format!("NAXIS{}", i + 1)).parse::<usize>().unwrap();
         shape.push(axis);
         data_len *= axis;
     }
-    let bitpix = get_value(&records, "BITPIX");
+    let bitpix = get_header_value(&records, "BITPIX");
     let data = match bitpix.as_str() {
         "16" => {
             let mut data = vec![];

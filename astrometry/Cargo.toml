@@ -1,0 +1,8 @@
+[package]
+name = "astrometry"
+version = "0.1.0"
+
+[dependencies]
+fits = { path = "../fits" }
+tempfile = "*"
+regex = "*"

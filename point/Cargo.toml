@@ -1,0 +1,10 @@
+[package]
+name = "point"
+version = "0.1.0"
+
+[dependencies]
+mount_service_api = { path = "../../scope-mount/mount_service_api" }
+astrometry = { path = "../astrometry" }
+docopt = "*"
+rustc-serialize = "*"
+tempfile = "*"

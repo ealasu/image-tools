@@ -11,12 +11,12 @@ use rayon::prelude::*;
 
 const USAGE: &'static str = "
 Usage:
-    flat <output> <input>...
+    flat --output=<output> <input>...
 ";
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
-    arg_output: String,
+    flag_output: String,
     arg_input: Vec<String>,
 }
 
@@ -63,8 +63,7 @@ fn main() {
     println!("max: {}", img.max());
     println!("avg: {}", img.average());
 
-    img.save_fits(&args.arg_output);
-    //img.center_crop(400, 400).save_fits(&args.arg_output);
+    img.save_fits(&args.flag_output);
 }
 
 #[cfg(test)]
