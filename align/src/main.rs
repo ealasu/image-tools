@@ -5,8 +5,6 @@ extern crate image;
 extern crate align_api;
 extern crate rayon;
 
-use std::fs::File;
-use std::io::prelude::*;
 use docopt::Docopt;
 use rayon::prelude::*;
 use image::Image;
