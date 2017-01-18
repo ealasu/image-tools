@@ -14,13 +14,14 @@ use mount_service_api::{Client, Msg, Pos};
 
 const USAGE: &'static str = "
 Usage:
-  slew --ra=<ra> --dec=<dec>
+  slew --ra=<degrees> --dec=<degrees> --threshold=<degrees>
 ";
 
 #[derive(RustcDecodable)]
 struct Args {
     flag_ra: f64,
     flag_dec: f64,
+    flag_threshold: f64,
 }
 
 fn shoot_and_solve() -> (f64, f64) {
@@ -35,29 +36,17 @@ fn main() {
 
     let client = Client::new("ubuntu:1234").unwrap();
 
-    let threshold = 0.1;
-
     loop {
       let (ra, dec) = shoot_and_solve();
       let d_ra = args.flag_ra - ra;
       let d_dec = args.flag_dec - dec;
       println!("d_ra: {} d_dec: {}", d_ra, d_dec);
-      if d_ra.abs() < threshold && d_dec.abs() < threshold {
+      if d_ra.abs() < args.flag_threshold && d_dec.abs() < args.flag_threshold {
         break;
       }
       client.slew_by(Pos { ra: d_ra, dec: d_dec });
+      // TODO: either change slew_by to wait for slew to finish, or estimate how long it takes and
+      // sleep
       thread::sleep(Duration::from_secs(5));
     }
-
-    /*
-
-gphoto2 \
-  --set-config capturetarget=0 \
-  --set-config imageformat=0 \
-  --set-config shutterspeed=4 \
-  --set-config iso=19 \
-  --capture-image-and-download \
-  --force-overwrite
-
-   */
 }
