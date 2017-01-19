@@ -5,6 +5,13 @@ import Keyboard
 import Http
 import Json.Decode as Decode
 
+main =
+  Html.program {
+    init = init,
+    view = view,
+    update = update,
+    subscriptions = subscriptions }
+
 
 type Model =
     Loading 
@@ -17,13 +24,7 @@ type Msg =
   | GotRes (Result Http.Error ())
   | GotKeypress Int
 
-
-main =
-  Html.program {
-    init = init,
-    view = view,
-    update = update,
-    subscriptions = subscriptions }
+baseUrl = "http://192.168.1.141:3000/"
 
 
 init : (Model, Cmd Msg)
@@ -70,7 +71,7 @@ view model =
       HasError err ->
         h1 [class "error"] [text err]
       HasList { head } ->
-        img [src (head)] []
+        img [src (baseUrl ++ "api/image/" ++ head)] []
       AllDone ->
         h1 [] [text "all done."]
   ]
@@ -82,17 +83,17 @@ subscriptions model =
 
 getList : Cmd Msg
 getList =
-  Http.send GotList (Http.get "http://192.168.1.141:3000/api/list" (Decode.list Decode.string))
+  Http.send GotList (Http.get (baseUrl ++ "api/list") (Decode.list Decode.string))
 
 sendYes: String -> Cmd Msg
 sendYes id =
   Http.send GotRes (
-    Http.post ("http://192.168.1.141:3000/api/yes/" ++ id) Http.emptyBody (Decode.succeed ()))
+    Http.post (baseUrl ++ "api/yes/" ++ id) Http.emptyBody (Decode.succeed ()))
 
 sendNo: String -> Cmd Msg
 sendNo id =
   Http.send GotRes (
-    Http.post ("http://192.168.1.141:3000/api/no/" ++ id) Http.emptyBody (Decode.succeed ()))
+    Http.post (baseUrl ++ "api/no/" ++ id) Http.emptyBody (Decode.succeed ()))
 
 next : List String -> (Model, Cmd Msg)
 next list =
