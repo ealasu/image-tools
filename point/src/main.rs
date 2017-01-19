@@ -25,7 +25,9 @@ struct Args {
 }
 
 fn shoot_and_solve() -> (f64, f64) {
+  println!("shooting...");
   let img = gphoto::shoot();
+  println!("solving...");
   astrometry::solve(&img.path().to_str().unwrap())
 }
 
@@ -44,6 +46,7 @@ fn main() {
       if d_ra.abs() < args.flag_threshold && d_dec.abs() < args.flag_threshold {
         break;
       }
+      println!("slewing...");
       client.slew_by(Pos { ra: d_ra, dec: d_dec });
       // TODO: either change slew_by to wait for slew to finish, or estimate how long it takes and
       // sleep

@@ -6,6 +6,11 @@ use std::path::Path;
 pub fn shoot() -> NamedTempFile {
     let keep_raw = false;
 
+    Command::new("pkill")
+        .arg("PTPCamera")
+        .status()
+        .expect("failed to execute pkill");
+
     let tmpdir = Path::new("/mnt/ramdisk");
 
     let jpeg_file = NamedTempFile::new_in(tmpdir).unwrap();
@@ -27,11 +32,11 @@ pub fn shoot() -> NamedTempFile {
             .arg("--set-config").arg("imageformat=0");
     }
     command
-        // 5
-        .arg("--set-config").arg("shutterspeed=5")
+        // 5?
+        .arg("--set-config").arg("shutterspeed=6")
 
         // 6400
-        .arg("--set-config").arg("iso=19")
+        .arg("--set-config").arg("iso=20")
 
         .arg("--capture-image-and-download");
 
