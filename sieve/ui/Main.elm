@@ -69,7 +69,7 @@ view model =
         h1 [] [text "loading..."]
       HasError err ->
         h1 [class "error"] [text err]
-      HasList { head, tail } ->
+      HasList { head } ->
         img [src (head)] []
       AllDone ->
         h1 [] [text "all done."]
@@ -94,6 +94,7 @@ sendNo id =
   Http.send GotRes (
     Http.post ("http://192.168.1.141:3000/api/no/" ++ id) Http.emptyBody (Decode.succeed ()))
 
+next : List String -> (Model, Cmd Msg)
 next list =
   case (List.head list) of
     Just head ->
