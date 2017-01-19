@@ -8,9 +8,8 @@ import Json.Decode as Decode
 
 type Model =
     Loading 
-  --| AllDone
-  | HasList (List String)
-  --| HasList { head: String, tail: (List String) }
+  | AllDone
+  | HasList { head: String, tail: (List String) }
   | HasError String
 
 type Msg = 
@@ -36,32 +35,26 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     GotList (Ok list) ->
-      (HasList list, Cmd.none)
+      next list
     GotList (Err err) ->
       (HasError (toString err), Cmd.none)
     GotRes (Ok ()) ->
       case model of
-        HasList list ->
-          (HasList (List.drop 1 list), Cmd.none)
+        HasList { tail } ->
+          next tail
         _ ->
           (model, Cmd.none)
     GotRes (Err err) ->
       (HasError (toString err), Cmd.none)
     GotKeypress code ->
       case model of
-        HasList list ->
-          case (List.head list) of
-            Just id ->
-              case (Char.fromCode code) of
-                'r' ->
-                  (Loading, Cmd.none)
-                'y' ->
-                  (Loading, sendYes id)
-                'n' ->
-                  (Loading, sendNo id)
-                _ ->
-                  (model, Cmd.none)
-            Nothing ->
+        HasList { head } ->
+          case (Char.fromCode code) of
+            'y' ->
+              (Loading, sendYes head)
+            'n' ->
+              (Loading, sendNo head)
+            _ ->
               (model, Cmd.none)
         _ ->
           (model, Cmd.none)
@@ -76,12 +69,10 @@ view model =
         h1 [] [text "loading..."]
       HasError err ->
         h1 [class "error"] [text err]
-      HasList list ->
-        case (List.head list) of
-          Just imageUrl ->
-            img [src (imageUrl)] []
-          Nothing ->
-            h1 [] [text "all done."]
+      HasList { head, tail } ->
+        img [src (head)] []
+      AllDone ->
+        h1 [] [text "all done."]
   ]
 
 
@@ -102,3 +93,10 @@ sendNo: String -> Cmd Msg
 sendNo id =
   Http.send GotRes (
     Http.post ("http://192.168.1.141:3000/api/no/" ++ id) Http.emptyBody (Decode.succeed ()))
+
+next list =
+  case (List.head list) of
+    Just head ->
+      (HasList { head = head, tail = (List.drop 1 list) }, Cmd.none)
+    Nothing ->
+      (AllDone, Cmd.none)
