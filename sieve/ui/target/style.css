@@ -1,0 +1,14 @@
+.error {
+  color: red
+}
+
+html, body, .container {
+    height: 100%;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}

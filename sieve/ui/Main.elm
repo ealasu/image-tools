@@ -1,6 +1,7 @@
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Char
+import Task
 import Keyboard
 import Http
 import Json.Decode as Decode
@@ -15,16 +16,16 @@ main =
 
 type Model =
     Loading 
-  | AllDone
   | HasList { head: String, tail: (List String) }
+  | HasListLoading Model
   | HasError String
+  | AllDone
 
 type Msg = 
     GotList (Result Http.Error (List String))
   | GotRes (Result Http.Error ())
   | GotKeypress Int
 
-baseUrl = "http://192.168.1.141:3000/"
 
 
 init : (Model, Cmd Msg)
@@ -36,25 +37,25 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     GotList (Ok list) ->
-      next list
+      (next list, Cmd.none)
     GotList (Err err) ->
       (HasError (toString err), Cmd.none)
     GotRes (Ok ()) ->
       case model of
-        HasList { tail } ->
-          next tail
+        HasListLoading nextModel ->
+          (nextModel, Cmd.none)
         _ ->
           (model, Cmd.none)
     GotRes (Err err) ->
       (HasError (toString err), Cmd.none)
     GotKeypress code ->
       case model of
-        HasList { head } ->
+        HasList { head, tail } ->
           case (Char.fromCode code) of
             'y' ->
-              (Loading, sendYes head)
+              (HasListLoading (next tail), sendYes head)
             'n' ->
-              (Loading, sendNo head)
+              (HasListLoading (next tail), sendNo head)
             _ ->
               (model, Cmd.none)
         _ ->
@@ -65,15 +66,19 @@ view : Model -> Html Msg
 view model =
   body [] [
     node "link" [rel "stylesheet", href "style.css"] [],
-    case model of
-      Loading ->
-        h1 [] [text "loading..."]
-      HasError err ->
-        h1 [class "error"] [text err]
-      HasList { head } ->
-        img [src (baseUrl ++ "api/image/" ++ head)] []
-      AllDone ->
-        h1 [] [text "all done."]
+    div [class "container"] [
+      case model of
+        Loading ->
+          div [class "info"] [text "loading..."]
+        HasError err ->
+          div [class "info error"] [text err]
+        HasList { head } ->
+          img [src (baseUrl ++ "api/image/" ++ head)] []
+        HasListLoading _ ->
+          div [class "info"] [text "loading image..."]
+        AllDone ->
+          div [class "info"] [text "all done."]
+    ]
   ]
 
 
@@ -81,24 +86,38 @@ subscriptions model =
   Keyboard.presses GotKeypress
 
 
+baseUrl = "http://192.168.1.141:3000/"
+
 getList : Cmd Msg
 getList =
   Http.send GotList (Http.get (baseUrl ++ "api/list") (Decode.list Decode.string))
 
-sendYes: String -> Cmd Msg
-sendYes id =
-  Http.send GotRes (
-    Http.post (baseUrl ++ "api/yes/" ++ id) Http.emptyBody (Decode.succeed ()))
-
 sendNo: String -> Cmd Msg
 sendNo id =
-  Http.send GotRes (
-    Http.post (baseUrl ++ "api/no/" ++ id) Http.emptyBody (Decode.succeed ()))
+  post (baseUrl ++ "api/move/" ++ id ++ "/bad")
+    |> Http.send GotRes
 
-next : List String -> (Model, Cmd Msg)
+sendYes: String -> Cmd Msg
+sendYes id =
+  post (baseUrl ++ "api/move/" ++ id ++ "/good")
+    |> Http.send GotRes
+
+next : List String -> Model
 next list =
   case (List.head list) of
     Just head ->
-      (HasList { head = head, tail = (List.drop 1 list) }, Cmd.none)
+      HasList { head = head, tail = (List.drop 1 list) }
     Nothing ->
-      (AllDone, Cmd.none)
+      AllDone
+
+post : String -> Http.Request ()
+post url =
+  Http.request
+    { method = "POST"
+    , headers = []
+    , url = url
+    , body = Http.emptyBody
+    , expect = Http.expectStringResponse (\_ -> Ok ())
+    , timeout = Nothing
+    , withCredentials = False
+    }

@@ -32,7 +32,7 @@ fn main() {
 
     let mut mount = Mount::new();
     mount.mount("/api", router);
-    mount.mount("/", Static::new(Path::new("static/")));
+    mount.mount("/", Static::new(Path::new("../ui/target")));
 
     let (logger_before, logger_after) = Logger::new(None);
     let mut chain = Chain::new(mount);
@@ -41,7 +41,7 @@ fn main() {
   
     let port = 3000;
     println!("listening on port {}", port);
-    Iron::new(chain).http(("127.0.0.1", port)).unwrap();
+    Iron::new(chain).http(("0.0.0.0", port)).unwrap();
 }
 
 fn handle_list(req: &mut Request) -> IronResult<Response> {
