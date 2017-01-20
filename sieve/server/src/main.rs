@@ -78,11 +78,13 @@ fn handle_image(req: &mut Request) -> IronResult<Response> {
 
 fn handle_move(req: &mut Request) -> IronResult<Response> {
     let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap();
-    let src_path = root().join(Path::new(id));
+    let src_path = root().join(id);
     let ref dest = req.extensions.get::<Router>().unwrap().find("dest").unwrap();
-    let dest_path = root().join(Path::new(dest));
+    let dest_dir = root().join(dest);
+    fs::create_dir_all(&dest_dir).unwrap();
+    let dest_path = dest_dir.join(id);
     info!("move {:?} to {:?}", src_path.to_str(), dest_path.to_str());
-
+    fs::rename(src_path, dest_path).unwrap();
     Ok(Response::with((status::NoContent)))
 }
 
