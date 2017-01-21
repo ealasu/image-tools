@@ -3,13 +3,15 @@ extern crate rustc_serialize;
 extern crate star_stuff;
 extern crate donuts;
 extern crate image;
-extern crate rayon;
 extern crate align_api;
+extern crate crossbeam;
 
+use std::thread;
+use std::sync::Mutex;
+use std::sync::mpsc::sync_channel;
 use docopt::Docopt;
 use star_stuff::drizzle::{self, ImageStack};
 use image::{Image, Rgb, RgbBayer, ImageKind};
-use rayon::prelude::*;
 
 
 const USAGE: &'static str = "
@@ -31,25 +33,10 @@ fn main() {
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
-
     stack(args);
-    //align(args);
-
 }
 
-
 //fn align(args: Args) {
-//    let ref_image = open(&args.arg_input[0]);
-//    let reference = donuts::preprocess_image(ref_image..center_crop(900, 900));
-//
-//    for (i, file) in args.arg_input.iter().enumerate() {
-//        println!("adding {}", i);
-//        let mut stack = ImageStack::new(ref_image.width, ref_image.height, 1.0, 0.9);
-//        //let raw_sample = Image::<u16>::open_raw(file).to_rggb();
-//        let sample_image = open(&file);
-//        let p = donuts::preprocess_image(sample_image.clone());
-//        let (x, y) = donuts::align(&reference, &p);
-//        println!("offset: {},{}", x, y);
 //        stack.add(&sample_image, Vector { x:x, y:y });
 //        let mut img = stack.finish();
 //        for y in 0..img.height {
@@ -59,7 +46,6 @@ fn main() {
 //            *img.pixel_at_mut(x, 900 / 2) *= 0.5;
 //        }
 //        img.save(&format!("{}/{}.jpg", args.flag_output, i));
-//    }
 //}
 
 fn stack(args: Args) {
@@ -99,44 +85,41 @@ fn stack(args: Args) {
 
     let alignment = align_api::read(&args.flag_alignment);
 
-    let mut stack = Image::<RgbBayer<f64>>::new(w, h);
-    for file in args.arg_input.iter() {
-        println!("adding {}", file);
-        let transform = alignment
-            .iter()
-            .find(|i| &i.filename == file).expect("missing alignment")
-            .transform.to_f64();
-        let mut img = Image::<u16>::open_raw(&file).to_f32().to_f64();
-        println!("flattening");
-        img /= &flat;
-        println!("to_rggb");
-        let img = img.to_rggb();
-        println!("stacking");
-        drizzle::add(&mut stack, &img, transform, factor, 0.80);
-    }
+    let (tx, rx) = sync_channel(1);
+    crossbeam::scope(|scope| {
+        for _ in 0..3 {
+            let input = args.arg_input.clone();
+            let alignment = alignment.clone();
+            let flat = flat.clone();
+            let tx = tx.clone();
+            scope.spawn(move || {
+                for file in input.iter() {
+                    let mut img = Image::<u16>::open_raw(&file).to_f32().to_f64();
+                    img /= &flat;
+                    let img = img.to_rggb();
 
-    //let img = args.arg_input
-        //.into_par_iter()
-        //.map(|file| {
-            //stack
-        //})
-        //.reduce(
-            //|| {
-                //println!("reduce init");
-                //Image::<RgbBayer<f64>>::new(w, h)
-            //},
-            //|a, b| {
-                //println!("adding");
-                //a + b
-            //});
+                    let transform = alignment
+                        .iter()
+                        .find(|i| &i.filename == file)
+                        .ok_or_else(|| format!("missing alignment for {}", file))
+                        .unwrap()
+                        .transform.to_f64();
 
-    let img = stack;
-    img.to_rgb().save_fits(&args.flag_output);
-    let holes = img.center_crop(900, 900).holes();
-    println!("holes min/max: {:?}", holes.min_max());
-    holes.to_u8().save_jpeg_file("holes.jpg");
-}
+                    tx.send((img, transform)).unwrap();
+                }
+            });
+        }
 
-fn open(path: &str) -> Image<f32> {
-    Image::<f32>::open(path)
+        let mut stack = Image::<RgbBayer<f64>>::new(w, h);
+        for (img, transform) in rx.iter() {
+            println!("adding");
+            drizzle::add(&mut stack, &img, transform, factor, 0.80);
+        }
+
+        let img = stack;
+        img.to_rgb().save_fits(&args.flag_output);
+        let holes = img.center_crop(900, 900).holes();
+        println!("holes min/max: {:?}", holes.min_max());
+        holes.to_u8().save_jpeg_file("holes.jpg");
+    });
 }

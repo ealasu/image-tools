@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use geom::Matrix3x3;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AlignedImage {
     pub filename: String,
     pub transform: Matrix3x3<f32>,
