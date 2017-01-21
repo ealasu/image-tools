@@ -99,31 +99,38 @@ fn stack(args: Args) {
 
     let alignment = align_api::read(&args.flag_alignment);
 
-    let img = args.arg_input
-        .into_par_iter()
-        .map(|file| {
-            println!("adding {}", file);
-            let transform = alignment
-                .iter()
-                .find(|i| i.filename == file).expect("missing alignment")
-                .transform.to_f64();
-            let img = Image::<u16>::open_raw(&file).to_f32().to_f64();
-            let img = img / &flat;
-            let img = img.to_rggb();
-            let mut stack = Image::<RgbBayer<f64>>::new(w, h);
-            drizzle::add(&mut stack, &img, transform, factor, 0.80);
-            stack
-        })
-        .reduce(
-            || {
-                println!("reduce init");
-                Image::<RgbBayer<f64>>::new(w, h)
-            },
-            |a, b| {
-                println!("adding");
-                a + b
-            });
+    let mut stack = Image::<RgbBayer<f64>>::new(w, h);
+    for file in args.arg_input.iter() {
+        println!("adding {}", file);
+        let transform = alignment
+            .iter()
+            .find(|i| &i.filename == file).expect("missing alignment")
+            .transform.to_f64();
+        let mut img = Image::<u16>::open_raw(&file).to_f32().to_f64();
+        println!("flattening");
+        img /= &flat;
+        println!("to_rggb");
+        let img = img.to_rggb();
+        println!("stacking");
+        drizzle::add(&mut stack, &img, transform, factor, 0.80);
+    }
 
+    //let img = args.arg_input
+        //.into_par_iter()
+        //.map(|file| {
+            //stack
+        //})
+        //.reduce(
+            //|| {
+                //println!("reduce init");
+                //Image::<RgbBayer<f64>>::new(w, h)
+            //},
+            //|a, b| {
+                //println!("adding");
+                //a + b
+            //});
+
+    let img = stack;
     img.to_rgb().save_fits(&args.flag_output);
     let holes = img.center_crop(900, 900).holes();
     println!("holes min/max: {:?}", holes.min_max());
