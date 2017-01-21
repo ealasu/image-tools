@@ -12,6 +12,7 @@ use std::sync::mpsc::sync_channel;
 use docopt::Docopt;
 use star_stuff::drizzle::{self, ImageStack};
 use image::{Image, Rgb, RgbBayer, ImageKind};
+use crossbeam::sync::chase_lev;
 
 
 const USAGE: &'static str = "
@@ -85,18 +86,23 @@ fn stack(args: Args) {
 
     let alignment = align_api::read(&args.flag_alignment);
 
-    let (tx, rx) = sync_channel(1);
+    let (tx, rx) = sync_channel(0);
+    let (mut worker, stealer) = chase_lev::deque();
+    for file in args.arg_input.iter() {
+        worker.push(file);
+    }
+
     crossbeam::scope(|scope| {
-        for _ in 0..3 {
+        for _ in 0..1 {
             let input = args.arg_input.clone();
             let alignment = alignment.clone();
             let flat = flat.clone();
             let tx = tx.clone();
             scope.spawn(move || {
                 for file in input.iter() {
-                    let mut img = Image::<u16>::open_raw(&file).to_f32().to_f64();
+                    let mut img = Image::<u16>::open_raw(&file);
+                    let mut img = img.to_f32().to_f64();
                     img /= &flat;
-                    let img = img.to_rggb();
 
                     let transform = alignment
                         .iter()
@@ -107,11 +113,14 @@ fn stack(args: Args) {
 
                     tx.send((img, transform)).unwrap();
                 }
+                println!("thread done.");
             });
         }
+        drop(tx);
 
         let mut stack = Image::<RgbBayer<f64>>::new(w, h);
         for (img, transform) in rx.iter() {
+            let img = img.to_rggb();
             println!("adding");
             drizzle::add(&mut stack, &img, transform, factor, 0.80);
         }
