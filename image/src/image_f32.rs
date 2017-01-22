@@ -89,7 +89,7 @@ impl<P: Float + Default> Image<P> {
 }
 
 impl Image<f32> {
-    pub fn open(path: &str) -> Self {
+    pub fn open<P: AsRef<Path>>(path: P) -> Self {
         let (width, height, data) = magick_stream(path, "gray");
         Image {
             width: width,

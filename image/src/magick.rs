@@ -4,6 +4,7 @@ use std::str;
 use std::process::Command;
 use std::process::Stdio;
 use std::io::prelude::*;
+use std::path::Path;
 use regex::Regex;
 use convert::*;
 
@@ -19,10 +20,10 @@ fn stretch(data: &[f32]) -> Vec<u16> {
     }).collect()
 }
 
-pub fn magick_stream(path: &str, map: &str) -> (usize, usize, Vec<f32>) {
+pub fn magick_stream<P: AsRef<Path>>(path: P, map: &str) -> (usize, usize, Vec<f32>) {
     let out = Command::new("convert")
         .arg("-verbose")
-        .arg(path)
+        .arg(path.as_ref().as_os_str())
         .arg("-depth").arg("32")
         .arg("-define").arg("quantum:format=floating-point")
         .arg(format!("{}:-", map))

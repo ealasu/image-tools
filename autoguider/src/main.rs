@@ -24,7 +24,7 @@ use mount::Mount;
 use pos::*;
 use pid_control::{Controller, PIDController};
 
-const MAX: f32 = 150.0;
+const MAX: f32 = 240.0;
 
 fn main() {
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();

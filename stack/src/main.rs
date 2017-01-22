@@ -19,7 +19,7 @@ const USAGE: &'static str = "
 Stacker.
 
 Usage:
-    stack --output=<filename> --flat=<filename> --alignment=<filename> <input>...
+    stack --output=<filename> --flat=<filename> --alignment=<filename>
 ";
 
 #[derive(Debug, RustcDecodable)]
@@ -27,7 +27,6 @@ struct Args {
     flag_output: String,
     flag_flat: String,
     flag_alignment: String,
-    arg_input: Vec<String>,
 }
 
 fn main() {
@@ -35,26 +34,50 @@ fn main() {
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
     stack(args);
+    //align(args);
 }
 
-//fn align(args: Args) {
-//        stack.add(&sample_image, Vector { x:x, y:y });
-//        let mut img = stack.finish();
-//        for y in 0..img.height {
-//            *img.pixel_at_mut(900 / 2, y) *= 0.5;
-//        }
-//        for x in 0..img.width {
-//            *img.pixel_at_mut(x, 900 / 2) *= 0.5;
-//        }
-//        img.save(&format!("{}/{}.jpg", args.flag_output, i));
-//}
+fn align(args: Args) {
+    let factor: f64 = 1.0;
+    let flat = if let ImageKind::F64(v) = ImageKind::open_fits(&args.flag_flat) {
+        v
+    } else {
+        panic!();
+    };
+    let alignment = align_api::read(&args.flag_alignment);
+    let mut first_img = Image::<u16>::open_raw(&alignment[0].filename).to_f32().to_f64();
+    first_img /= &flat;
+    let first_img = first_img.to_rggb();
+
+    for (i, file) in alignment.iter().enumerate() {
+        println!("adding {}", i);
+        let mut img = Image::<u16>::open_raw(&file.filename).to_f32().to_f64();
+        let transform = file.transform.to_f64();
+        img /= &flat;
+        let img = img.to_rggb();
+        let mut stack = first_img.clone();
+        drizzle::add(&mut stack, &img, transform, factor, 0.80);
+        stack
+            .to_rgb()
+            .remove_background(1.0)
+            .crop(img.width - 1500, img.height / 2 - 1000/2, 1000, 1000)
+            .gamma(1.0 / 2.2)
+            .stretch(0.0, 1.0)
+            .to_f32()
+            .save(&format!("{}/{}.jpg", args.flag_output, i));
+    }
+
+    //for y in 0..img.height {
+        //*img.pixel_at_mut(900 / 2, y) *= 0.5;
+    //}
+    //for x in 0..img.width {
+        //*img.pixel_at_mut(x, 900 / 2) *= 0.5;
+    //}
+}
 
 fn stack(args: Args) {
     println!("processing ref image");
     let factor: f64 = 1.0;
-    let raw_ref = Image::<u16>::open_raw(&args.arg_input[0]);
-    let w = (raw_ref.width as f64 * factor) as usize;
-    let h = (raw_ref.height as f64 * factor) as usize;
     let flat = if let ImageKind::F64(v) = ImageKind::open_fits(&args.flag_flat) {
         v
     } else {
@@ -88,29 +111,25 @@ fn stack(args: Args) {
 
     let (tx, rx) = sync_channel(0);
     let (mut worker, stealer) = chase_lev::deque();
-    for file in args.arg_input.iter() {
+    for file in alignment.iter() {
         worker.push(file);
     }
 
     crossbeam::scope(|scope| {
-        for _ in 0..1 {
-            let input = args.arg_input.clone();
-            let alignment = alignment.clone();
+        for _ in 0..2 {
             let flat = flat.clone();
             let tx = tx.clone();
+            let stealer = stealer.clone();
             scope.spawn(move || {
-                for file in input.iter() {
-                    let mut img = Image::<u16>::open_raw(&file);
-                    let mut img = img.to_f32().to_f64();
-                    img /= &flat;
+                loop {
+                    let file = match stealer.steal() {
+                        chase_lev::Steal::Data(d) => d,
+                        chase_lev::Steal::Abort => continue,
+                        chase_lev::Steal::Empty => break
+                    };
+                    let mut img = Image::<u16>::open_raw(&file.filename);
 
-                    let transform = alignment
-                        .iter()
-                        .find(|i| &i.filename == file)
-                        .ok_or_else(|| format!("missing alignment for {}", file))
-                        .unwrap()
-                        .transform.to_f64();
-
+                    let transform = file.transform.to_f64();
                     tx.send((img, transform)).unwrap();
                 }
                 println!("thread done.");
@@ -118,14 +137,19 @@ fn stack(args: Args) {
         }
         drop(tx);
 
-        let mut stack = Image::<RgbBayer<f64>>::new(w, h);
-        for (img, transform) in rx.iter() {
+        let img = rx.iter().enumerate().fold(None, |stack, (i, (img, transform))| {
+            println!("adding {}", i);
+            let mut img = img.to_f32().to_f64();
+            img /= &flat;
             let img = img.to_rggb();
-            println!("adding");
-            drizzle::add(&mut stack, &img, transform, factor, 0.80);
-        }
+            if let Some(mut stack) = stack {
+                drizzle::add(&mut stack, &img, transform, factor, 0.80);
+                Some(stack)
+            } else {
+                Some(img)
+            }
+        }).unwrap();
 
-        let img = stack;
         img.to_rgb().save_fits(&args.flag_output);
         let holes = img.center_crop(900, 900).holes();
         println!("holes min/max: {:?}", holes.min_max());

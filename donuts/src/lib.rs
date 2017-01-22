@@ -15,6 +15,7 @@ pub mod projection;
 pub mod correlation;
 pub mod align;
 pub mod three_axis;
+pub mod cross_iter;
 
 pub use align::align;
 
@@ -34,6 +35,7 @@ mod tests {
     use test::Bencher;
     use rand::{self, Rng};
     use image::{Image, Rgb};
+    use geom::Vector;
 
     fn save_array(data: &[f32], path: &str) {
         use byteorder::{WriteBytesExt, LittleEndian};
@@ -47,12 +49,12 @@ mod tests {
     #[test]
     fn test_end_to_end() {
         println!("reading ref");
-        let ref_image = Image::<Rgb<f32>>::open_jpeg_file("test/ref.jpg")
+        let ref_image = Image::<Rgb<u8>>::open_jpeg_file("test/ref.jpg").to_f32()
             .to_gray()
             .center_crop(900, 900);
         //ref_image.save("test/ref-gray.jpg");
         println!("reading sample");
-        let sample_image = Image::<Rgb<f32>>::open_jpeg_file("test/sample.jpg")
+        let sample_image = Image::<Rgb<u8>>::open_jpeg_file("test/sample.jpg").to_f32()
             .to_gray()
             .center_crop(900, 900);
         //sample_image.save("test/sample-gray.jpg");
@@ -68,8 +70,8 @@ mod tests {
         println!("aligning");
         save_array(&correlation::correlation(&ref_p.x, &sample_p.x, 200), "test/corr-x");
         save_array(&correlation::correlation(&ref_p.y, &sample_p.y, 200), "test/corr-y");
-        let offset = align(&ref_p, &sample_p);
-        assert_eq!(offset, (-15.721349, -18.200153));
+        let offset = align(&ref_p, &sample_p, 100);
+        assert_eq!(offset, Vector { x: -15.721349, y: -18.200153 });
     }
 
     #[bench]
@@ -90,7 +92,7 @@ mod tests {
         let ref_p = preprocess_image(ref_image);
         let sample_p = preprocess_image(sample_image);
         b.iter(|| {
-            align(&ref_p, &sample_p)
+            align(&ref_p, &sample_p, 100)
         });
     }
 }

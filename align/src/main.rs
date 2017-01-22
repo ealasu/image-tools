@@ -5,6 +5,7 @@ extern crate image;
 extern crate align_api;
 extern crate rayon;
 
+use std::fs;
 use docopt::Docopt;
 use rayon::prelude::*;
 use image::Image;
@@ -28,26 +29,23 @@ fn main() {
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
 
-    let ref_image = open(&args.arg_input[0]);
+    let ref_image = Image::<f32>::open(&args.arg_input[0]);
     let three_axis = donuts::three_axis::ThreeAxisDonuts::new(&ref_image);
 
     let res: Vec<_> = args.arg_input
         .into_par_iter()
         .map(|filename| {
-            println!("aligning {}", filename);
-            let sample_image = open(&filename);
+            let filename = fs::canonicalize(filename).unwrap();
+            println!("aligning {:?}", filename);
+            let sample_image = Image::<f32>::open(&filename);
             let transform = three_axis.align(&sample_image);
             println!("offset: {:?}", transform);
             AlignedImage {
-                filename: filename.to_string(),
+                filename: filename.to_string_lossy().into_owned(),
                 transform: transform,
             }
         })
         .collect();
 
     align_api::write(&res, &args.flag_output);
-}
-
-fn open(path: &str) -> Image<f32> {
-    Image::<f32>::open(path)
 }

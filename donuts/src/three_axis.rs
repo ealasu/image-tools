@@ -21,13 +21,13 @@ pub struct ThreeAxisDonuts {
     ref_q4: Projection,
 }
 
-const N: usize = 200;
-const SIZE: usize = 800;
-const BG_TILES: usize = 4;
+const N: usize = 300;
+const SIZE: usize = 1200;
+const BG_TILES: usize = 1;
 const N_SMALL: usize = 10;
 const SIZE_SMALL: usize = 80;
 //const BG_TILES_SMALL: usize = 4;
-const MARGIN: usize = 200;
+const MARGIN: usize = 300;
 
 fn fix(mut image: Image<f32>) -> Image<f32> {
     remove_background(&mut image, BG_TILES);
