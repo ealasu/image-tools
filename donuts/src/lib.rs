@@ -16,6 +16,7 @@ pub mod correlation;
 pub mod align;
 pub mod three_axis;
 pub mod cross_range;
+pub mod correlation_2d;
 
 pub use align::align;
 

@@ -32,6 +32,18 @@ impl<P> Image<P> {
         &mut self.pixels[x + y * self.width]
     }
 
+    #[inline(always)]
+    pub fn row(&self, y: usize) -> &[P] {
+        let i = y * self.width;
+        &self.pixels[i..i + self.width]
+    }
+
+    #[inline(always)]
+    pub fn row_slice(&self, y: usize, left: usize, right: usize) -> &[P] {
+        let i = y * self.width;
+        &self.pixels[i + left..i + self.width - right]
+    }
+
     pub fn map<F,R>(&self, f: F) -> Image<R> where F: FnMut(&P) -> R {
         let pixels = self.pixels.iter().map(f).collect();
         Image {

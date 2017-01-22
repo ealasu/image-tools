@@ -1,4 +1,6 @@
 #[macro_use] extern crate log;
+extern crate docopt;
+extern crate rustc_serialize;
 extern crate crossbeam;
 extern crate tempfile;
 extern crate pid_control;
@@ -23,16 +25,31 @@ use aligner::Aligner;
 use mount::Mount;
 use pos::*;
 use pid_control::{Controller, PIDController};
+use docopt::Docopt;
 
-const MAX: f32 = 240.0;
+const MAX: f32 = 150.0;
+
+const USAGE: &'static str = "
+Autoguider.
+
+Usage:
+    autoguider --count=<number of images to shoot>
+";
+
+#[derive(Debug, RustcDecodable)]
+struct Args {
+    flag_count: usize,
+}
 
 fn main() {
+    let args: Args = Docopt::new(USAGE)
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();
 
     let camera = Mutex::new(Camera::new());
     let mut aligner = Aligner::new();
     let mut mount = Mount::new();
-    let num_images = 150;
     let shot_duration = Duration::from_secs(5 + 30);
     let mut ra_controller = PIDController::new(0.3, 0.04, 0.0);
     let mut dec_controller = PIDController::new(0.10, 0.015, 0.0);
@@ -40,7 +57,7 @@ fn main() {
     mount.start();
 
     autoguider::run_autoguider(
-        0..num_images,
+        0..args.flag_count,
         shot_duration,
         Default::default(),
         |id| {

@@ -70,6 +70,19 @@ mod tests {
     }
 
     #[test]
+    fn test_one() {
+        let v: Vec<_> = cross_range(1).collect();
+        let expected = [
+            (1, -1),
+            (1, 0),
+            (0, 0),
+            (0, 1),
+            (-1, 1),
+        ];
+        assert_eq!(&v[..], &expected[..]);
+    }
+
+    #[test]
     fn test_zero() {
         let v: Vec<_> = cross_range(0).collect();
         let expected = [(0, 0)];
