@@ -1,5 +1,5 @@
-pub fn cross_iter(n: usize) -> CrossIter {
-    CrossIter {
+pub fn cross_range(n: usize) -> CrossRange {
+    CrossRange {
         n: n,
         a: (n as isize) + 1,
         b: -(n as isize),
@@ -12,16 +12,17 @@ enum State {
     B
 }
 
-pub struct CrossIter {
+pub struct CrossRange {
     n: usize,
     a: isize,
     b: isize,
     state: State,
 }
 
-impl Iterator for CrossIter {
+impl Iterator for CrossRange {
     type Item = (isize, isize);
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         match self.state {
             State::A => {
@@ -40,7 +41,6 @@ impl Iterator for CrossIter {
             }
         };
         Some((self.a, self.b))
-
     }
 }
 
@@ -50,7 +50,7 @@ mod tests {
     
     #[test]
     fn test() {
-        let v: Vec<_> = cross_iter(3).collect();
+        let v: Vec<_> = cross_range(3).collect();
         let expected = [
             (3, -3),
             (3, -2),
@@ -66,6 +66,13 @@ mod tests {
             (-2, 3),
             (-3, 3),
         ];
+        assert_eq!(&v[..], &expected[..]);
+    }
+
+    #[test]
+    fn test_zero() {
+        let v: Vec<_> = cross_range(0).collect();
+        let expected = [(0, 0)];
         assert_eq!(&v[..], &expected[..]);
     }
 }

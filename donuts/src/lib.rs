@@ -15,7 +15,7 @@ pub mod projection;
 pub mod correlation;
 pub mod align;
 pub mod three_axis;
-pub mod cross_iter;
+pub mod cross_range;
 
 pub use align::align;
 
