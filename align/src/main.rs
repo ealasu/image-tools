@@ -30,7 +30,7 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     let ref_image = Image::<f32>::open(&args.arg_input[0]);
-    let three_axis = donuts::three_axis::ThreeAxisDonuts::new(&ref_image);
+    let three_axis = donuts::three_axis_2d::ThreeAxisDonuts::new(&ref_image);
 
     let res: Vec<_> = args.arg_input
         .into_par_iter()

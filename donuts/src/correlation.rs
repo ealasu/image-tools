@@ -1,8 +1,8 @@
 use std::f32;
 
-struct Point {
-    x: f32,
-    y: f32,
+pub struct Point {
+    pub x: f32,
+    pub y: f32,
 }
 
 /// Calculates how far you'd need to shift `sample` for it to
@@ -55,18 +55,26 @@ pub fn correlation_peak(correlation: &[f32]) -> f32 {
     if peak_pos == 0 || peak_pos == correlation.len() - 1 {
         return peak_offset_estimate as f32;
     }
+    interpolate_peak_pos([
+        correlation[peak_pos - 1],
+        correlation[peak_pos],
+        correlation[peak_pos + 1],
+    ], peak_offset_estimate as f32)
+}
+
+pub fn interpolate_peak_pos(values: [f32; 3], peak_offset_estimate: f32) -> f32 {
     let vertex = parabola_vertex(
         Point {
-            x: (peak_offset_estimate - 1) as f32,
-            y: correlation[peak_pos - 1]
+            x: peak_offset_estimate - 1.0,
+            y: values[0]
         },
         Point {
-            x: peak_offset_estimate as f32,
-            y: correlation[peak_pos]
+            x: peak_offset_estimate,
+            y: values[1]
         },
         Point {
-            x: (peak_offset_estimate + 1) as f32,
-            y: correlation[peak_pos + 1]
+            x: peak_offset_estimate + 1.0,
+            y: values[2]
         });
     vertex.x
 }
@@ -117,7 +125,7 @@ fn next_peak(data: &[f32], peak_pos: usize) -> f32 {
         .max_by(|a,b| a.partial_cmp(b).unwrap()).unwrap()
 }
 
-fn pos_of_max(slice: &[f32]) -> usize {
+pub fn pos_of_max(slice: &[f32]) -> usize {
     let mut max_pos = 0;
     let mut max = f32::NEG_INFINITY;
     for (i, item) in slice.iter().enumerate() {
@@ -129,7 +137,7 @@ fn pos_of_max(slice: &[f32]) -> usize {
     max_pos
 }
 
-fn parabola_vertex(p1: Point, p2: Point, p3: Point) -> Point {
+pub fn parabola_vertex(p1: Point, p2: Point, p3: Point) -> Point {
     let denom = (p1.x - p2.x) * (p1.x - p3.x) * (p2.x - p3.x);
     let a     = (p3.x * (p2.y - p1.y) + p2.x * (p1.y - p3.y) + p1.x * (p3.y - p2.y)) / denom;
     let b     = (p3.x*p3.x * (p1.y - p2.y) + p2.x*p2.x * (p3.y - p1.y) + p1.x*p1.x * (p2.y - p3.y)) / denom;

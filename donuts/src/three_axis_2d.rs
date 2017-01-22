@@ -1,7 +1,7 @@
 use image::Image;
 use projection::Projection;
 use remove_background::remove_background;
-use align::align;
+use correlation_2d::align;
 use geom::*;
 
 pub struct ThreeAxisDonuts {
@@ -10,21 +10,21 @@ pub struct ThreeAxisDonuts {
     q2: Vector<f32>,
     q3: Vector<f32>,
     q4: Vector<f32>,
-    ref_center: Projection,
-    ref_center_small: Projection,
+    ref_center: Image<f32>,
+    ref_center_small: Image<f32>,
     // q2 | q1
     // ---|---
     // q3 | q4
-    ref_q1: Projection,
-    ref_q2: Projection,
-    ref_q3: Projection,
-    ref_q4: Projection,
+    ref_q1: Image<f32>,
+    ref_q2: Image<f32>,
+    ref_q3: Image<f32>,
+    ref_q4: Image<f32>,
 }
 
-const N: usize = 300;
-const SIZE: usize = 1200;
+const N: usize = 50;
+const SIZE: usize = 800;
 const BG_TILES: usize = 1;
-const N_SMALL: usize = 10;
+const N_SMALL: usize = 5;
 const SIZE_SMALL: usize = 80;
 //const BG_TILES_SMALL: usize = 4;
 const MARGIN: usize = 300;
@@ -57,70 +57,58 @@ impl ThreeAxisDonuts {
                 x: (image.width - MARGIN - SIZE / 2) as f32,
                 y: (image.height - MARGIN - SIZE / 2) as f32,
             },
-            ref_center: Projection::new(
-                &fix(image.center_crop(SIZE, SIZE))),
-            ref_center_small: Projection::new(
-                &fix(image.center_crop(SIZE_SMALL, SIZE_SMALL))),
-            ref_q1: Projection::new(
-                &fix(image.crop(
+            ref_center: fix(image.center_crop(SIZE, SIZE)),
+            ref_center_small: fix(image.center_crop(SIZE_SMALL, SIZE_SMALL)),
+            ref_q1: fix(image.crop(
                         image.width - SIZE - MARGIN,
                         MARGIN,
-                        SIZE, SIZE))),
-            ref_q2: Projection::new(
-                &fix(image.crop(
+                        SIZE, SIZE)),
+            ref_q2: fix(image.crop(
                         MARGIN,
                         MARGIN,
-                        SIZE, SIZE))),
-            ref_q3: Projection::new(
-                &fix(image.crop(
+                        SIZE, SIZE)),
+            ref_q3: fix(image.crop(
                         MARGIN,
                         image.height - SIZE - MARGIN,
-                        SIZE, SIZE))),
-            ref_q4: Projection::new(
-                &fix(image.crop(
+                        SIZE, SIZE)),
+            ref_q4: fix(image.crop(
                         image.width - SIZE - MARGIN,
                         image.height - SIZE - MARGIN,
-                        SIZE, SIZE))),
+                        SIZE, SIZE)),
         }
     }
 
     pub fn align(&self, image: &Image<f32>) -> Matrix3x3<f32> {
-        let sam_center = Projection::new(
-            &fix(image.center_crop(SIZE, SIZE)));
+        let sam_center = fix(image.center_crop(SIZE, SIZE));
         let d_c = align(&self.ref_center, &sam_center, N);
         println!("estimate d_c: {:?}", d_c);
         let d_small = d_c.floor();
-        let sam_center_small = Projection::new(
-            &fix(image.crop(
+        let sam_center_small = fix(image.crop(
                 image.width / 2 - SIZE_SMALL / 2 - d_small.x as usize,
                 image.height / 2 - SIZE_SMALL / 2 - d_small.y as usize,
-                SIZE_SMALL, SIZE_SMALL)));
+                SIZE_SMALL, SIZE_SMALL));
         let d_c = d_small + align(&self.ref_center_small, &sam_center_small, N_SMALL);
         println!("precise d_c: {:?}", d_c);
 
         println!("q1 crop: {}, {}", 
                     (image.width as isize - SIZE as isize - MARGIN as isize - d_c.x as isize) as usize,
                     (MARGIN as isize - d_c.y as isize) as usize);
-        let sam_q1 = Projection::new(
-            &fix(image.crop(
+        let sam_q1 = fix(image.crop(
                     (image.width as isize - SIZE as isize - MARGIN as isize - d_c.x as isize) as usize,
                     (MARGIN as isize - d_c.y as isize) as usize,
-                    SIZE, SIZE)));
-        let sam_q2 = Projection::new(
-            &fix(image.crop(
+                    SIZE, SIZE));
+        let sam_q2 = fix(image.crop(
                     (MARGIN as isize - d_c.x as isize) as usize,
                     (MARGIN as isize - d_c.y as isize) as usize,
-                    SIZE, SIZE)));
-        let sam_q3 = Projection::new(
-            &fix(image.crop(
+                    SIZE, SIZE));
+        let sam_q3 = fix(image.crop(
                     (MARGIN as isize - d_c.x as isize) as usize,
                     (image.height as isize - SIZE as isize - MARGIN as isize - d_c.y as isize) as usize,
-                    SIZE, SIZE)));
-        let sam_q4 = Projection::new(
-            &fix(image.crop(
+                    SIZE, SIZE));
+        let sam_q4 = fix(image.crop(
                     (image.width as isize - SIZE as isize - MARGIN as isize - d_c.x as isize) as usize,
                     (image.height as isize - SIZE as isize - MARGIN as isize - d_c.y as isize) as usize,
-                    SIZE, SIZE)));
+                    SIZE, SIZE));
 
         let d_q1 = align(&self.ref_q1, &sam_q1, N);
         let d_q2 = align(&self.ref_q2, &sam_q2, N);

@@ -119,7 +119,7 @@ impl<P: Copy + Clone + Default> Image<P> {
 
 impl<P: Clone> Image<P> {
     pub fn crop(&self, x: usize, y: usize, width: usize, height: usize) -> Image<P> {
-        assert!(x + width <= self.width);
+        assert!(x + width <= self.width, "x too big: {}", x);
         assert!(y + height <= self.height);
         let mut pixels = Vec::with_capacity(width * height);
         for y in y..y + width {

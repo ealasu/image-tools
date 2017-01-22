@@ -5,6 +5,7 @@ version = "0.1.0"
 [dependencies]
 log = "*"
 quickersort = "*"
+simd = "*"
 image = { path = "../image" }
 geom = { path = "../geom" }
 
