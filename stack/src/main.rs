@@ -49,8 +49,9 @@ fn align(args: Args) {
     first_img /= &flat;
     let first_img = first_img.to_rggb();
 
+    let total = alignment.len();
     for (i, file) in alignment.iter().enumerate() {
-        println!("adding {}", i);
+        println!("adding {} of {}", i, total);
         let mut img = Image::<u16>::open_raw(&file.filename).to_f32().to_f64();
         let transform = file.transform.to_f64();
         img /= &flat;
@@ -108,6 +109,7 @@ fn stack(args: Args) {
         //.center_crop(900, 900);
 
     let alignment = align_api::read(&args.flag_alignment);
+    let total = alignment.len();
 
     let (tx, rx) = sync_channel(0);
     let (mut worker, stealer) = chase_lev::deque();
@@ -138,7 +140,7 @@ fn stack(args: Args) {
         drop(tx);
 
         let img = rx.iter().enumerate().fold(None, |stack, (i, (img, transform))| {
-            println!("adding {}", i);
+            println!("adding {} of {}", i, total);
             let mut img = img.to_f32().to_f64();
             img /= &flat;
             let img = img.to_rggb();

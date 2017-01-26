@@ -32,7 +32,7 @@ fn main() {
     };
 
     img
-        .remove_background(1.0)
+        .remove_background(0.97)
         //.map(|&p| {
             ////(p * 9.0).truncate(0.0, 1.0)
             //p * Rgb {
