@@ -1,0 +1,7 @@
+[package]
+name = "sextractor"
+version = "0.1.0"
+
+[dependencies]
+regex = "*"
+tempdir = "*"
