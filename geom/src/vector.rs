@@ -17,7 +17,7 @@ impl<T: Float> Vector<T> {
     }
 
     pub fn angle(&self) -> T {
-        self.x.atan2(self.y)
+        self.y.atan2(self.x)
     }
 
     pub fn floor(&self) -> Self {

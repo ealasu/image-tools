@@ -12,9 +12,9 @@ use tempdir::TempDir;
 
 #[derive(Debug)]
 pub struct Object {
-    flux: f32,
-    x: f32,
-    y: f32,
+    pub flux: f32,
+    pub x: f32,
+    pub y: f32,
 }
 
 pub fn extract(path: &str) -> Vec<Object> {
