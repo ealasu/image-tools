@@ -15,11 +15,13 @@ pub struct Polygon {
 }
 
 pub fn align(ref_image: &str, sample_image: &str) -> Matrix3x3<f64> {
-    let ref_polys = polys(sextractor::extract(ref_image));
+    let mut ref_objects = sextractor::extract(ref_image);
+    let ref_polys = polys(&mut ref_objects).collect::<Vec<_>>();
     //for v in ref_polys[..12].iter() {
         //println!("ref: {:?}", v.sides);
     //}
-    let sample_polys = polys(sextractor::extract(sample_image));
+    let mut sample_objects = sextractor::extract(sample_image);
+    let sample_polys = polys(&mut sample_objects).collect::<Vec<_>>();
     //for v in sample_polys[..12].iter() {
         //println!("sam: {:?}", v.sides);
     //}
@@ -67,60 +69,54 @@ pub fn angle(stars: &[Point<f32>]) -> f32 {
     (stars[2] - stars[0]).angle() - (stars[1] - stars[0]).angle()
 }
 
-fn sliding_window<'a, T, F>(v: &'a [T], size: usize, mut f: F) where F: FnMut(&'a[T]) {
-    for i in 0..v.len() - size {
-        f(&v[i..i+size])
-    }
-}
-
-fn polys(mut objects: Vec<Object>) -> Vec<Polygon> {
+fn polys<'a>(objects: &'a mut [Object]) -> impl Iterator<Item=Polygon> + 'a {
     println!("stars detected: {}", objects.len());
     assert!(objects.len() > 2);
 
     // reverse sort by flux
     objects.sort_by(|a,b| b.flux.partial_cmp(&a.flux).unwrap());
-    objects.truncate(300);
+    //objects.truncate(300);
 
-    let mut res = Vec::with_capacity(objects.len() - 2);
-    {
-        let mut push_poly = |window: [&Object; 3]| {
-            let mut stars = window
-                .iter()
-                .take(3)
-                .map(|obj| Point { x: obj.x, y: obj.y })
-                .collect::<Vec<_>>();
+    fn make_poly(window: [&Object; 3]) -> Polygon {
+        let mut stars = window
+            .iter()
+            .take(3)
+            .map(|obj| Point { x: obj.x, y: obj.y })
+            .collect::<Vec<_>>();
 
-            // make sure all triangles are clockwise
-            let poly_angle = angle(&stars[..]);
-            //println!("angle: {}", poly_angle);
-            if poly_angle < 0.0 {
-                stars.reverse();
-            }
+        // make sure all triangles are clockwise
+        let poly_angle = angle(&stars[..]);
+        //println!("angle: {}", poly_angle);
+        if poly_angle < 0.0 {
+            stars.reverse();
+        }
 
-            res.push(Polygon {
-                sides: f32x4::new(
-                    (stars[1] - stars[0]).length(),
-                    (stars[2] - stars[1]).length(),
-                    (stars[0] - stars[2]).length(),
-                    0.0),
-                stars: [stars[0], stars[1], stars[2]],
-            });
-        };
-
-        sliding_window(&objects[..], 3, |window| {
-            push_poly([&window[0], &window[1], &window[2]]);
-        });
-        sliding_window(&objects[..], 4, |window| {
-            push_poly([&window[0], &window[1], &window[3]]);
-            push_poly([&window[0], &window[2], &window[3]]);
-        });
-        sliding_window(&objects[..], 5, |window| {
-            push_poly([&window[0], &window[1], &window[4]]);
-            push_poly([&window[0], &window[2], &window[4]]);
-            push_poly([&window[0], &window[3], &window[4]]);
-        });
+        Polygon {
+            sides: f32x4::new(
+                (stars[1] - stars[0]).length(),
+                (stars[2] - stars[1]).length(),
+                (stars[0] - stars[2]).length(),
+                0.0),
+            stars: [stars[0], stars[1], stars[2]],
+        }
     }
-    res
+
+    let n = 300;
+
+    //objects.windows(3).take(n).map(|window| {
+        //make_poly([&window[0], &window[1], &window[2]])
+    //}).chain(
+    objects.windows(4).take(n).flat_map(|window| {
+        [
+        make_poly([&window[0], &window[1], &window[3]]),
+        make_poly([&window[0], &window[2], &window[3]])
+        ].into_iter()
+    })
+    //sliding_window(&objects[..], 5, |window| {
+        //push_poly([&window[0], &window[1], &window[4]]);
+        //push_poly([&window[0], &window[2], &window[4]]);
+        //push_poly([&window[0], &window[3], &window[4]]);
+    //});
 }
 
 #[cfg(test)]
