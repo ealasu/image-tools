@@ -5,6 +5,7 @@ dependencies = [
  "astrometry 0.1.0",
  "docopt 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "mount_service_api 0.1.0",
+ "regex 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-serialize 0.3.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "tempfile 2.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
