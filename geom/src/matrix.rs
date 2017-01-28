@@ -1,7 +1,8 @@
 use std::ops::*;
+use std::fmt::Display;
 use num::Float;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Matrix3x1<T: Float> {
     pub v11: T,
     pub v21: T,
@@ -18,7 +19,7 @@ impl<T: Float> Matrix3x1<T> {
     }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Matrix3x3<T: Float> {
     pub v11: T,
     pub v12: T,
@@ -31,7 +32,7 @@ pub struct Matrix3x3<T: Float> {
     pub v33: T,
 }
 
-impl<T: Float> Matrix3x3<T> {
+impl<T: Float+Display> Matrix3x3<T> {
     pub fn to_f64(&self) -> Matrix3x3<f64> {
         Matrix3x3 {
             v11: self.v11.to_f64().unwrap(),
@@ -69,6 +70,37 @@ impl<T: Float> Matrix3x3<T> {
             v11: cos, v12: -sin, v13: T::zero(),
             v21: sin, v22: cos,  v23: T::zero(),
             v31: T::zero(), v32: T::zero(),  v33: T::one(),
+        }
+    }
+
+    pub fn has_nan(&self) -> bool {
+        self.v11.is_nan() ||
+        self.v12.is_nan() ||
+        self.v13.is_nan() ||
+        self.v21.is_nan() ||
+        self.v22.is_nan() ||
+        self.v23.is_nan() ||
+        self.v31.is_nan() ||
+        self.v32.is_nan() ||
+        self.v33.is_nan()
+    }
+
+    pub fn inverse(&self) -> Self {
+        let A=(self.v22 * self.v33-self.v23 * self.v32);
+        let D=-(self.v12 * self.v33-self.v13 * self.v32);
+        let G=(self.v12 * self.v23-self.v13 * self.v22);
+        let B=-(self.v21 * self.v33-self.v23 * self.v31);
+        let E=(self.v11 * self.v33-self.v13 * self.v31);
+        let H=-(self.v11 * self.v23-self.v13 * self.v21); 
+        let C=(self.v21 * self.v32-self.v22 * self.v31);
+        let F=-(self.v11 * self.v32-self.v12 * self.v31);
+        let I=(self.v11 * self.v22-self.v12 * self.v21);
+        let det = self.v11 * A + self.v12 * B + self.v13 * C;
+        let m = T::one() / det;
+        Matrix3x3 {
+            v11: m*A, v12: m*D, v13: m*G,
+            v21: m*B, v22: m*E, v23: m*H,
+            v31: m*C, v32: m*F, v33: m*I,
         }
     }
 }
@@ -121,4 +153,16 @@ mod tests {
         let res = m * p;
         println!("res: {:?}", res);
     }
+
+    //#[test]
+    //fn invert() {
+        //let m = Matrix3x3 {
+            //v11: 1.0, v12: 2.0, v13: 4.0,
+            //v21: 4.0, v22: 5.0, v23: 6.0,
+            //v31: 7.0, v32: 8.0, v33: 9.0,
+        //};
+        //let inv = m.inverse();
+        //let inv_inv = inv.inverse();
+        //assert_eq!(inv_inv, m);
+    //}
 }
