@@ -34,7 +34,7 @@ pub fn align(ref_image: &str, sample_image: &str) -> Matrix3x3<f64> {
 
     let mut matches = vec![];
 
-    let threshold = 1.0;
+    let threshold = 0.5;
     let threshold_lower = f32x4::splat(-threshold);
     let threshold_upper = f32x4::splat(threshold);
     for sam_p in sample_polys.iter() {
@@ -42,10 +42,6 @@ pub fn align(ref_image: &str, sample_image: &str) -> Matrix3x3<f64> {
             sam_p.sides,
             f32x4::new(sam_p.sides.extract(1), sam_p.sides.extract(2), sam_p.sides.extract(0), 0.0),
             f32x4::new(sam_p.sides.extract(2), sam_p.sides.extract(0), sam_p.sides.extract(1), 0.0),
-
-            //f32x4::new(sam_p.sides.extract(2), sam_p.sides.extract(1), sam_p.sides.extract(0), 0.0),
-            //f32x4::new(sam_p.sides.extract(1), sam_p.sides.extract(0), sam_p.sides.extract(2), 0.0),
-            //f32x4::new(sam_p.sides.extract(0), sam_p.sides.extract(2), sam_p.sides.extract(1), 0.0),
         ].iter() {
             for ref_p in ref_polys.iter() {
                 let diff = sam_p_sides - ref_p.sides;
@@ -103,20 +99,24 @@ fn polys<'a>(objects: &'a mut [Object]) -> impl Iterator<Item=Polygon> + 'a {
 
     let n = 300;
 
-    //objects.windows(3).take(n).map(|window| {
-        //make_poly([&window[0], &window[1], &window[2]])
-    //}).chain(
-    objects.windows(4).take(n).flat_map(|window| {
-        [
-        make_poly([&window[0], &window[1], &window[3]]),
+    objects.windows(3).take(n).map(|window| {
+        make_poly([&window[0], &window[1], &window[2]])
+    }).chain(
+    objects.windows(4).take(n).map(|window| {
+        make_poly([&window[0], &window[1], &window[3]])
+    })).chain(
+    objects.windows(4).take(n).map(|window| {
         make_poly([&window[0], &window[2], &window[3]])
-        ].into_iter()
-    })
-    //sliding_window(&objects[..], 5, |window| {
-        //push_poly([&window[0], &window[1], &window[4]]);
-        //push_poly([&window[0], &window[2], &window[4]]);
-        //push_poly([&window[0], &window[3], &window[4]]);
-    //});
+    })).chain(
+    objects.windows(5).take(n).map(|window| {
+        make_poly([&window[0], &window[1], &window[4]])
+    })).chain(
+    objects.windows(5).take(n).map(|window| {
+        make_poly([&window[0], &window[2], &window[4]])
+    })).chain(
+    objects.windows(5).take(n).map(|window| {
+        make_poly([&window[0], &window[3], &window[4]])
+    }))
 }
 
 #[cfg(test)]

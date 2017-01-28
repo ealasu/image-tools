@@ -22,11 +22,11 @@ pub fn extract(path: &str) -> Vec<Object> {
 
     {
         let mut f = File::create(temp_dir.path().join("default.sex")).unwrap();
-        f.write_all(include_str!("config/default.sex").as_bytes()).unwrap();
+        f.write_all(include_bytes!("config/default.sex")).unwrap();
     }
     {
         let mut f = File::create(temp_dir.path().join("default.param")).unwrap();
-        f.write_all(include_str!("config/default.param").as_bytes()).unwrap();
+        f.write_all(include_bytes!("config/default.param")).unwrap();
     }
 
     let mut status = Command::new("sex")
