@@ -39,86 +39,36 @@ impl Polygon {
     }
 }
 
+const N_OBJECTS: usize = 300;
+const N_PROOF: usize = 150;
+
 pub fn extract(path: &str) -> Vec<Point<f32>> {
     let mut objects = sextractor::extract(path);
     // sort by flux, descending
     objects.sort_by(|a,b| b.flux.partial_cmp(&a.flux).unwrap());
     objects
         .into_iter()
-        .take(300)
+        .take(N_OBJECTS)
         .map(|o| Point { x: o.x, y: o.y })
         .collect()
 }
 
 fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f64> {
-    println!("ref_p: {:?} sam_p: {:?}", ref_p, sam_p);
     fn poly_to_matrix(p: &Polygon) -> Matrix3x3<f64> {
         Matrix3x3 {
-            //v11: p.stars[0].x,
-            //v12: p.stars[0].y,
-            //v13: 1.0,
-            //v21: p.stars[1].x,
-            //v22: p.stars[1].y,
-            //v23: 1.0,
-            //v31: p.stars[2].x,
-            //v32: p.stars[2].y,
-            //v33: 1.0,
-
             v11: p.stars[0].x,
             v21: p.stars[0].y,
-            v31: 0.0,
+            v31: 1.0,
             v12: p.stars[1].x,
             v22: p.stars[1].y,
-            v32: 0.0,
+            v32: 1.0,
             v13: p.stars[2].x,
             v23: p.stars[2].y,
             v33: 1.0,
         }.to_f64()
     }
-    //let res = poly_to_matrix(sam_p).inverse() * poly_to_matrix(ref_p);
     let res = poly_to_matrix(ref_p) * poly_to_matrix(sam_p).inverse();
-    if res.has_nan() {
-        panic!("matrix has nan: {:?}", res);
-    }
-
-    //println!("sam_p:    {:?}", poly_to_matrix(sam_p));
-    //println!("sam_p tx: {:?}", poly_to_matrix(sam_p) * res);
-    //println!("ref_p:    {:?}", poly_to_matrix(ref_p));
-    let sam_star = Matrix3x3 {
-        //v11: sam_p.stars[1].x as f64,
-        //v12: sam_p.stars[1].y as f64,
-        //v13: 1.0,
-
-        //v21: 0.0,
-        //v22: 1.0,
-        //v23: 0.0,
-
-        //v31: 0.0,
-        //v32: 0.0,
-        //v33: 1.0,
-
-        v11: sam_p.stars[1].x as f64,
-        v21: sam_p.stars[1].y as f64,
-        v31: 0.0,
-
-        v12: 0.0,
-        v22: 1.0,
-        v32: 0.0,
-
-        v13: 0.0,
-        v23: 0.0,
-        v33: 1.0,
-    };
-    //println!("sam star:    {:?}", Matrix3x1::from_point(&sam_p.stars[1]).to_f64());
-    println!();
-    println!("sam star:    {:?}", sam_star);
-    //println!("ref star:    {:?}", Matrix3x1::from_point(&ref_p.stars[1]).to_f64());
-    println!("ref star:    {:?}", ref_p.stars[1].to_f64());
-    println!("sam star tx: {:?}", res * sam_star);
-    println!("sam star tx: {:?}", (res *
-                                      Matrix3x1::from_point(&sam_p.stars[1].to_f64())));
-    println!();
-
+    assert!(!res.has_nan(), "matrix has nan: {:?}", res);
     res
 }
 
@@ -137,9 +87,8 @@ pub fn align_stars(ref_objects: Vec<Point<f32>>, sample_objects: Vec<Point<f32>>
         //println!(" ");
     //}
 
-    let mut matches = vec![];
-
     let threshold = 0.3;
+
     let threshold_lower = f32x4::splat(-threshold);
     let threshold_upper = f32x4::splat(threshold);
     for sam_p in polys(&sample_objects[..]) {
@@ -151,33 +100,34 @@ pub fn align_stars(ref_objects: Vec<Point<f32>>, sample_objects: Vec<Point<f32>>
             for ref_p in ref_polys.iter() {
                 let diff = sam_p.sides - ref_p.sides;
                 if diff.gt(threshold_lower).all() && diff.lt(threshold_upper).all() {
-                    //let d = (diff.extract(0) + diff.extract(1) + diff.extract(2)) / 3.0;
-                    matches.push((ref_p.clone(), sam_p.clone()));
-
-                    let m = get_transform_matrix(ref_p, &sam_p);
-                    println!("m: {:?}", m);
-
+                    let tx = get_transform_matrix(ref_p, &sam_p);
                     let proof = sample_objects
                         .iter()
                         .filter_map(|&s_o| {
-                            let tx = (m * Matrix3x1::from_point(&s_o.to_f64())).to_point().to_f32();
-                            println!("src: {:?}  tx: {:?}", s_o, tx);
+                            let s_o_tx = (tx * Matrix3x1::from_point(&s_o.to_f64())).to_point().to_f32();
                             ref_objects
                                 .iter()
-                                .find(|&r_o| r_o.is_close_to(s_o, 1.0))
+                                .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
+                                .map(|&r_o| (r_o, s_o))
                         })
-                        .take(100)
+                        .take(N_PROOF)
                         .collect::<Vec<_>>();
-                    println!("proof: {}", proof.len());
+                    //println!("proof: {}", proof.len());
+                    if proof.len() >= N_PROOF {
+                        println!("found match");
+                        //for p in proof.iter() {
+                            //println!("  {:?}", p);
+                        //}
+                    }
                 }
             }
         }
     }
 
-    println!("matches: {}", matches.len());
-    for v in matches[..4].iter() {
-        println!("match: {:?}", v);
-    }
+    //println!("matches: {}", matches.len());
+    //for v in matches[..4].iter() {
+        //println!("match: {:?}", v);
+    //}
     unimplemented!();
 }
 

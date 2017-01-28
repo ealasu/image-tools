@@ -11,6 +11,7 @@ pub struct Matrix3x1<T: Float> {
 }
 
 impl<T: Float> Matrix3x1<T> {
+    #[inline]
     pub fn from_point(point: &Point<T>) -> Self {
         Matrix3x1 {
             v11: point.x,
@@ -19,6 +20,7 @@ impl<T: Float> Matrix3x1<T> {
         }
     }
 
+    #[inline]
     pub fn to_point(&self) -> Point<T> {
         Point {
             x: self.v11,
@@ -26,6 +28,7 @@ impl<T: Float> Matrix3x1<T> {
         }
     }
 
+    #[inline]
     pub fn to_f64(&self) -> Matrix3x1<f64> {
         Matrix3x1 {
             v11: self.v11.to_f64().unwrap(),
@@ -35,12 +38,12 @@ impl<T: Float> Matrix3x1<T> {
     }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct Matrix1x3<T: Float> {
-    pub v11: T,
-    pub v12: T,
-    pub v13: T,
-}
+//#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+//pub struct Matrix1x3<T: Float> {
+    //pub v11: T,
+    //pub v12: T,
+    //pub v13: T,
+//}
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Matrix3x3<T: Float> {
