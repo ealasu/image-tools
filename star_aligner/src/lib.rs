@@ -54,53 +54,70 @@ fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f64> {
     println!("ref_p: {:?} sam_p: {:?}", ref_p, sam_p);
     fn poly_to_matrix(p: &Polygon) -> Matrix3x3<f64> {
         Matrix3x3 {
-            v11: p.stars[0].x,
-            v12: p.stars[0].y,
-            v13: 1.0,
-            v21: p.stars[1].x,
-            v22: p.stars[1].y,
-            v23: 1.0,
-            v31: p.stars[2].x,
-            v32: p.stars[2].y,
-            v33: 1.0,
-
             //v11: p.stars[0].x,
-            //v21: p.stars[0].y,
-            //v31: 1.0,
-            //v12: p.stars[1].x,
+            //v12: p.stars[0].y,
+            //v13: 1.0,
+            //v21: p.stars[1].x,
             //v22: p.stars[1].y,
-            //v32: 1.0,
-            //v13: p.stars[2].x,
-            //v23: p.stars[2].y,
+            //v23: 1.0,
+            //v31: p.stars[2].x,
+            //v32: p.stars[2].y,
             //v33: 1.0,
+
+            v11: p.stars[0].x,
+            v21: p.stars[0].y,
+            v31: 0.0,
+            v12: p.stars[1].x,
+            v22: p.stars[1].y,
+            v32: 0.0,
+            v13: p.stars[2].x,
+            v23: p.stars[2].y,
+            v33: 1.0,
         }.to_f64()
     }
-    let res = poly_to_matrix(sam_p).inverse() * poly_to_matrix(ref_p);
+    //let res = poly_to_matrix(sam_p).inverse() * poly_to_matrix(ref_p);
+    let res = poly_to_matrix(ref_p) * poly_to_matrix(sam_p).inverse();
     if res.has_nan() {
         panic!("matrix has nan: {:?}", res);
     }
 
-    println!("sam_p:    {:?}", poly_to_matrix(sam_p));
-    println!("sam_p tx: {:?}", poly_to_matrix(sam_p) * res);
-    println!("ref_p:    {:?}", poly_to_matrix(ref_p));
+    //println!("sam_p:    {:?}", poly_to_matrix(sam_p));
+    //println!("sam_p tx: {:?}", poly_to_matrix(sam_p) * res);
+    //println!("ref_p:    {:?}", poly_to_matrix(ref_p));
     let sam_star = Matrix3x3 {
+        //v11: sam_p.stars[1].x as f64,
+        //v12: sam_p.stars[1].y as f64,
+        //v13: 1.0,
+
+        //v21: 0.0,
+        //v22: 1.0,
+        //v23: 0.0,
+
+        //v31: 0.0,
+        //v32: 0.0,
+        //v33: 1.0,
+
         v11: sam_p.stars[1].x as f64,
-        v12: sam_p.stars[1].y as f64,
-        v13: 1.0,
-
-        v21: 0.0,
-        v22: 1.0,
-        v23: 0.0,
-
+        v21: sam_p.stars[1].y as f64,
         v31: 0.0,
+
+        v12: 0.0,
+        v22: 1.0,
         v32: 0.0,
+
+        v13: 0.0,
+        v23: 0.0,
         v33: 1.0,
     };
     //println!("sam star:    {:?}", Matrix3x1::from_point(&sam_p.stars[1]).to_f64());
+    println!();
     println!("sam star:    {:?}", sam_star);
     //println!("ref star:    {:?}", Matrix3x1::from_point(&ref_p.stars[1]).to_f64());
     println!("ref star:    {:?}", ref_p.stars[1].to_f64());
-    println!("sam star tx: {:?}", sam_star * res);
+    println!("sam star tx: {:?}", res * sam_star);
+    println!("sam star tx: {:?}", (res *
+                                      Matrix3x1::from_point(&sam_p.stars[1].to_f64())));
+    println!();
 
     res
 }
