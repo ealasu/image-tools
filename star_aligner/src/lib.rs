@@ -53,17 +53,17 @@ pub fn extract(path: &str) -> Vec<Point<f32>> {
         .collect()
 }
 
-fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f64> {
-    fn poly_to_matrix(p: &Polygon) -> Matrix3x3<f64> {
+fn get_transform_matrix(ref_p: [Point<f32>; 3], sam_p: [Point<f32>; 3]) -> Matrix3x3<f64> {
+    fn poly_to_matrix(stars: [Point<f32>; 3]) -> Matrix3x3<f64> {
         Matrix3x3 {
-            v11: p.stars[0].x,
-            v21: p.stars[0].y,
+            v11: stars[0].x,
+            v21: stars[0].y,
             v31: 1.0,
-            v12: p.stars[1].x,
-            v22: p.stars[1].y,
+            v12: stars[1].x,
+            v22: stars[1].y,
             v32: 1.0,
-            v13: p.stars[2].x,
-            v23: p.stars[2].y,
+            v13: stars[2].x,
+            v23: stars[2].y,
             v33: 1.0,
         }.to_f64()
     }
@@ -73,10 +73,10 @@ fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f64> {
 }
 
 pub fn align_images(ref_image: &str, sample_image: &str) -> Matrix3x3<f64> {
-    align_stars(extract(ref_image), extract(sample_image))
+    align_stars(&extract(ref_image), &extract(sample_image))
 }
 
-pub fn align_stars(ref_objects: Vec<Point<f32>>, sample_objects: Vec<Point<f32>>) -> Matrix3x3<f64> {
+pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) -> Matrix3x3<f64> {
     let ref_polys = polys(&ref_objects[..]).collect::<Vec<_>>();
     //for v in ref_polys[..12].iter() {
         //println!("ref: {:?}", v.sides);
@@ -100,7 +100,7 @@ pub fn align_stars(ref_objects: Vec<Point<f32>>, sample_objects: Vec<Point<f32>>
             for ref_p in ref_polys.iter() {
                 let diff = sam_p.sides - ref_p.sides;
                 if diff.gt(threshold_lower).all() && diff.lt(threshold_upper).all() {
-                    let tx = get_transform_matrix(ref_p, &sam_p);
+                    let tx = get_transform_matrix(ref_p.stars, sam_p.stars);
                     let proof = sample_objects
                         .iter()
                         .filter_map(|&s_o| {
@@ -118,6 +118,14 @@ pub fn align_stars(ref_objects: Vec<Point<f32>>, sample_objects: Vec<Point<f32>>
                         //for p in proof.iter() {
                             //println!("  {:?}", p);
                         //}
+                        let mut tx = Default::default();
+                        for w in proof.windows(3) {
+                            tx += get_transform_matrix(
+                                [w[0].0, w[1].0, w[2].0],
+                                [w[0].1, w[1].1, w[2].1]);
+                        }
+                        tx /= (proof.len() - 2) as f64;
+                        return tx;
                     }
                 }
             }
@@ -128,7 +136,7 @@ pub fn align_stars(ref_objects: Vec<Point<f32>>, sample_objects: Vec<Point<f32>>
     //for v in matches[..4].iter() {
         //println!("match: {:?}", v);
     //}
-    unimplemented!();
+    panic!("transform not found");
 }
 
 pub fn angle(stars: &[Point<f32>]) -> f32 {
@@ -208,9 +216,13 @@ mod tests {
 
     #[test]
     fn test_align() {
+        let ref_stars = read_stars("test/a.stars.json");
+        let sam_stars = read_stars("test/b.stars.json");
         let res = align_stars(
-            read_stars("test/a.stars.json"),
-            read_stars("test/b.stars.json"));
+            &ref_stars[..],
+            &sam_stars[..]);
+        //assert_eq!((res * Matrix3x1::from_point(&sam_stars[0].to_f64())).to_point().to_f32(), ref_stars[0]);
+        assert_eq!((res * Matrix3x1::from_point(&sam_stars[1].to_f64())).to_point().to_f32(), ref_stars[1]);
     }
 
 }

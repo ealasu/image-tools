@@ -45,7 +45,7 @@ impl<T: Float> Matrix3x1<T> {
     //pub v13: T,
 //}
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct Matrix3x3<T: Float> {
     pub v11: T,
     pub v12: T,
@@ -158,6 +158,33 @@ impl<T: Float> Mul<Matrix3x1<T>> for Matrix3x3<T> {
             v21: self.v21 * rhs.v11 + self.v22 * rhs.v21 + self.v23 * rhs.v31,
             v31: self.v31 * rhs.v11 + self.v32 * rhs.v21 + self.v33 * rhs.v31,
         }
+    }
+}
+impl<T: Float> AddAssign for Matrix3x3<T> {
+    fn add_assign(&mut self, other: Self) {
+        self.v11 = self.v11 + other.v11;
+        self.v12 = self.v12 + other.v12;
+        self.v13 = self.v13 + other.v13;
+        self.v21 = self.v21 + other.v21;
+        self.v22 = self.v22 + other.v22;
+        self.v23 = self.v23 + other.v23;
+        self.v31 = self.v31 + other.v31;
+        self.v32 = self.v32 + other.v32;
+        self.v33 = self.v33 + other.v33;
+    }
+}
+
+impl<T: Float> DivAssign<T> for Matrix3x3<T> {
+    fn div_assign(&mut self, other: T) {
+        self.v11 = self.v11 / other;
+        self.v12 = self.v12 / other;
+        self.v13 = self.v13 / other;
+        self.v21 = self.v21 / other;
+        self.v22 = self.v22 / other;
+        self.v23 = self.v23 / other;
+        self.v31 = self.v31 / other;
+        self.v32 = self.v32 / other;
+        self.v33 = self.v33 / other;
     }
 }
 
