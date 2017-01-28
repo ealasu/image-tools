@@ -22,9 +22,24 @@ impl<T: Float> Matrix3x1<T> {
     pub fn to_point(&self) -> Point<T> {
         Point {
             x: self.v11,
-            y: self.v11,
+            y: self.v21,
         }
     }
+
+    pub fn to_f64(&self) -> Matrix3x1<f64> {
+        Matrix3x1 {
+            v11: self.v11.to_f64().unwrap(),
+            v21: self.v21.to_f64().unwrap(),
+            v31: self.v31.to_f64().unwrap(),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Matrix1x3<T: Float> {
+    pub v11: T,
+    pub v12: T,
+    pub v13: T,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]

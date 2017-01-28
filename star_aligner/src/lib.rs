@@ -14,6 +14,31 @@ pub struct Polygon {
     stars: [Point<f32>; 3],
 }
 
+impl Polygon {
+    pub fn shift(&self, amount: usize) -> Self {
+        match amount {
+            0 => self.clone(), 
+            1 => Polygon {
+                sides: f32x4::new(
+                           self.sides.extract(1),
+                           self.sides.extract(2),
+                           self.sides.extract(0),
+                           0.0),
+                stars: [self.stars[1], self.stars[2], self.stars[0]],
+            },
+            2 => Polygon {
+                sides: f32x4::new(
+                           self.sides.extract(1),
+                           self.sides.extract(2),
+                           self.sides.extract(0),
+                           0.0),
+                stars: [self.stars[1], self.stars[2], self.stars[0]],
+            },
+            _ => unimplemented!()
+        }
+    }
+}
+
 pub fn extract(path: &str) -> Vec<Point<f32>> {
     let mut objects = sextractor::extract(path);
     // sort by flux, descending
@@ -25,8 +50,9 @@ pub fn extract(path: &str) -> Vec<Point<f32>> {
         .collect()
 }
 
-fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f32> {
-    fn poly_to_matrix(p: &Polygon) -> Matrix3x3<f32> {
+fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f64> {
+    println!("ref_p: {:?} sam_p: {:?}", ref_p, sam_p);
+    fn poly_to_matrix(p: &Polygon) -> Matrix3x3<f64> {
         Matrix3x3 {
             v11: p.stars[0].x,
             v12: p.stars[0].y,
@@ -37,12 +63,45 @@ fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f32> {
             v31: p.stars[2].x,
             v32: p.stars[2].y,
             v33: 1.0,
-        }
+
+            //v11: p.stars[0].x,
+            //v21: p.stars[0].y,
+            //v31: 1.0,
+            //v12: p.stars[1].x,
+            //v22: p.stars[1].y,
+            //v32: 1.0,
+            //v13: p.stars[2].x,
+            //v23: p.stars[2].y,
+            //v33: 1.0,
+        }.to_f64()
     }
     let res = poly_to_matrix(sam_p).inverse() * poly_to_matrix(ref_p);
     if res.has_nan() {
         panic!("matrix has nan: {:?}", res);
     }
+
+    println!("sam_p:    {:?}", poly_to_matrix(sam_p));
+    println!("sam_p tx: {:?}", poly_to_matrix(sam_p) * res);
+    println!("ref_p:    {:?}", poly_to_matrix(ref_p));
+    let sam_star = Matrix3x3 {
+        v11: sam_p.stars[1].x as f64,
+        v12: sam_p.stars[1].y as f64,
+        v13: 1.0,
+
+        v21: 0.0,
+        v22: 1.0,
+        v23: 0.0,
+
+        v31: 0.0,
+        v32: 0.0,
+        v33: 1.0,
+    };
+    //println!("sam star:    {:?}", Matrix3x1::from_point(&sam_p.stars[1]).to_f64());
+    println!("sam star:    {:?}", sam_star);
+    //println!("ref star:    {:?}", Matrix3x1::from_point(&ref_p.stars[1]).to_f64());
+    println!("ref star:    {:?}", ref_p.stars[1].to_f64());
+    println!("sam star tx: {:?}", sam_star * res);
+
     res
 }
 
@@ -55,7 +114,6 @@ pub fn align_stars(ref_objects: Vec<Point<f32>>, sample_objects: Vec<Point<f32>>
     //for v in ref_polys[..12].iter() {
         //println!("ref: {:?}", v.sides);
     //}
-
     //for (a,b) in ref_polys.iter().zip(sample_polys.iter()).take(20) {
         //println!("ref: {:?}", a.sides);
         //println!("sam: {:?}", b.sides);
@@ -64,27 +122,29 @@ pub fn align_stars(ref_objects: Vec<Point<f32>>, sample_objects: Vec<Point<f32>>
 
     let mut matches = vec![];
 
-    let threshold = 0.1;
+    let threshold = 0.3;
     let threshold_lower = f32x4::splat(-threshold);
     let threshold_upper = f32x4::splat(threshold);
     for sam_p in polys(&sample_objects[..]) {
-        for &sam_p_sides in [
-            sam_p.sides,
-            f32x4::new(sam_p.sides.extract(1), sam_p.sides.extract(2), sam_p.sides.extract(0), 0.0),
-            f32x4::new(sam_p.sides.extract(2), sam_p.sides.extract(0), sam_p.sides.extract(1), 0.0),
+        for sam_p in [
+            sam_p.shift(0),
+            sam_p.shift(1),
+            sam_p.shift(2),
         ].iter() {
             for ref_p in ref_polys.iter() {
-                let diff = sam_p_sides - ref_p.sides;
+                let diff = sam_p.sides - ref_p.sides;
                 if diff.gt(threshold_lower).all() && diff.lt(threshold_upper).all() {
                     //let d = (diff.extract(0) + diff.extract(1) + diff.extract(2)) / 3.0;
                     matches.push((ref_p.clone(), sam_p.clone()));
 
                     let m = get_transform_matrix(ref_p, &sam_p);
+                    println!("m: {:?}", m);
 
                     let proof = sample_objects
                         .iter()
                         .filter_map(|&s_o| {
-                            let tx = (m * Matrix3x1::from_point(&s_o)).to_point();
+                            let tx = (m * Matrix3x1::from_point(&s_o.to_f64())).to_point().to_f32();
+                            println!("src: {:?}  tx: {:?}", s_o, tx);
                             ref_objects
                                 .iter()
                                 .find(|&r_o| r_o.is_close_to(s_o, 1.0))

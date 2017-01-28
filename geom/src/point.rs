@@ -10,6 +10,20 @@ pub struct Point<T> {
 }
 
 impl<T: Float> Point<T> {
+    pub fn to_f64(&self) -> Point<f64> {
+        Point {
+            x: self.x.to_f64().unwrap(),
+            y: self.y.to_f64().unwrap(),
+        }
+    }
+
+    pub fn to_f32(&self) -> Point<f32> {
+        Point {
+            x: self.x.to_f32().unwrap(),
+            y: self.y.to_f32().unwrap(),
+        }
+    }
+
     pub fn is_close_to(self, other: Self, threshold: T) -> bool {
         let are_close = |a: T, b: T| {
             let d = a - b;
