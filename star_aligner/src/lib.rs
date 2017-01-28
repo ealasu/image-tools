@@ -72,11 +72,11 @@ fn get_transform_matrix(ref_p: [Point<f32>; 3], sam_p: [Point<f32>; 3]) -> Matri
     res
 }
 
-pub fn align_images(ref_image: &str, sample_image: &str) -> Matrix3x3<f64> {
+pub fn align_images(ref_image: &str, sample_image: &str) -> Option<Matrix3x3<f64>> {
     align_stars(&extract(ref_image), &extract(sample_image))
 }
 
-pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) -> Matrix3x3<f64> {
+pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) -> Option<Matrix3x3<f64>> {
     let ref_polys = polys(&ref_objects[..]).collect::<Vec<_>>();
     //for v in ref_polys[..12].iter() {
         //println!("ref: {:?}", v.sides);
@@ -87,7 +87,7 @@ pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) ->
         //println!(" ");
     //}
 
-    let threshold = 0.3;
+    let threshold = 0.2;
 
     let threshold_lower = f32x4::splat(-threshold);
     let threshold_upper = f32x4::splat(threshold);
@@ -110,14 +110,10 @@ pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) ->
                                 .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
                                 .map(|&r_o| (r_o, s_o))
                         })
-                        .take(N_PROOF)
                         .collect::<Vec<_>>();
-                    //println!("proof: {}", proof.len());
+                    println!("proofs: {}", proof.len());
                     if proof.len() >= N_PROOF {
                         println!("found match");
-                        //for p in proof.iter() {
-                            //println!("  {:?}", p);
-                        //}
                         let mut tx = Default::default();
                         for w in proof.windows(3) {
                             tx += get_transform_matrix(
@@ -125,18 +121,13 @@ pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) ->
                                 [w[0].1, w[1].1, w[2].1]);
                         }
                         tx /= (proof.len() - 2) as f64;
-                        return tx;
+                        return Some(tx);
                     }
                 }
             }
         }
     }
-
-    //println!("matches: {}", matches.len());
-    //for v in matches[..4].iter() {
-        //println!("match: {:?}", v);
-    //}
-    panic!("transform not found");
+    None
 }
 
 pub fn angle(stars: &[Point<f32>]) -> f32 {
@@ -157,7 +148,6 @@ fn polys<'a>(objects: &'a [Point<f32>]) -> impl Iterator<Item=Polygon> + 'a {
 
         // make sure all triangles are clockwise
         let poly_angle = angle(&stars[..]);
-        //println!("angle: {}", poly_angle);
         if poly_angle < 0.0 {
             stars.reverse();
         }
@@ -220,9 +210,10 @@ mod tests {
         let sam_stars = read_stars("test/b.stars.json");
         let res = align_stars(
             &ref_stars[..],
-            &sam_stars[..]);
-        //assert_eq!((res * Matrix3x1::from_point(&sam_stars[0].to_f64())).to_point().to_f32(), ref_stars[0]);
-        assert_eq!((res * Matrix3x1::from_point(&sam_stars[1].to_f64())).to_point().to_f32(), ref_stars[1]);
+            &sam_stars[..]).unwrap();
+        let i = 2;
+        assert_eq!(
+            (res * Matrix3x1::from_point(&sam_stars[i].to_f64())).to_point().to_f32(),
+            ref_stars[i]);
     }
-
 }
