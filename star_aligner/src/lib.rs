@@ -3,8 +3,9 @@
 extern crate sextractor;
 extern crate geom;
 extern crate simd;
+#[cfg(test)] extern crate serde_json;
 
-use geom::{Point, Matrix3x3};
+use geom::{Point, Matrix3x3, Matrix3x1};
 use simd::f32x4;
 
 #[derive(Debug, Clone)]
@@ -13,8 +14,9 @@ pub struct Polygon {
     stars: [Point<f32>; 3],
 }
 
-fn extract(path: &str) -> Vec<Point<f32>> {
+pub fn extract(path: &str) -> Vec<Point<f32>> {
     let mut objects = sextractor::extract(path);
+    // sort by flux, descending
     objects.sort_by(|a,b| b.flux.partial_cmp(&a.flux).unwrap());
     objects
         .into_iter()
@@ -23,8 +25,8 @@ fn extract(path: &str) -> Vec<Point<f32>> {
         .collect()
 }
 
-fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f64> {
-    fn poly_to_matrix(p: &Polygon) -> Matrix3x3<f64> {
+fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f32> {
+    fn poly_to_matrix(p: &Polygon) -> Matrix3x3<f32> {
         Matrix3x3 {
             v11: p.stars[0].x,
             v12: p.stars[0].y,
@@ -35,7 +37,7 @@ fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f64> {
             v31: p.stars[2].x,
             v32: p.stars[2].y,
             v33: 1.0,
-        }.to_f64()
+        }
     }
     let res = poly_to_matrix(sam_p).inverse() * poly_to_matrix(ref_p);
     if res.has_nan() {
@@ -44,13 +46,15 @@ fn get_transform_matrix(ref_p: &Polygon, sam_p: &Polygon) -> Matrix3x3<f64> {
     res
 }
 
-pub fn align(ref_image: &str, sample_image: &str) -> Matrix3x3<f64> {
-    let ref_objects = extract(ref_image);
+pub fn align_images(ref_image: &str, sample_image: &str) -> Matrix3x3<f64> {
+    align_stars(extract(ref_image), extract(sample_image))
+}
+
+pub fn align_stars(ref_objects: Vec<Point<f32>>, sample_objects: Vec<Point<f32>>) -> Matrix3x3<f64> {
     let ref_polys = polys(&ref_objects[..]).collect::<Vec<_>>();
     //for v in ref_polys[..12].iter() {
         //println!("ref: {:?}", v.sides);
     //}
-    let sample_objects = extract(sample_image);
 
     //for (a,b) in ref_polys.iter().zip(sample_polys.iter()).take(20) {
         //println!("ref: {:?}", a.sides);
@@ -60,7 +64,7 @@ pub fn align(ref_image: &str, sample_image: &str) -> Matrix3x3<f64> {
 
     let mut matches = vec![];
 
-    let threshold = 0.4;
+    let threshold = 0.1;
     let threshold_lower = f32x4::splat(-threshold);
     let threshold_upper = f32x4::splat(threshold);
     for sam_p in polys(&sample_objects[..]) {
@@ -77,6 +81,17 @@ pub fn align(ref_image: &str, sample_image: &str) -> Matrix3x3<f64> {
 
                     let m = get_transform_matrix(ref_p, &sam_p);
 
+                    let proof = sample_objects
+                        .iter()
+                        .filter_map(|&s_o| {
+                            let tx = (m * Matrix3x1::from_point(&s_o)).to_point();
+                            ref_objects
+                                .iter()
+                                .find(|&r_o| r_o.is_close_to(s_o, 1.0))
+                        })
+                        .take(100)
+                        .collect::<Vec<_>>();
+                    println!("proof: {}", proof.len());
                 }
             }
         }
@@ -145,9 +160,30 @@ fn polys<'a>(objects: &'a [Point<f32>]) -> impl Iterator<Item=Polygon> + 'a {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json;
+    use std::fs::File;
+
+    fn read_stars(filename: &str) -> Vec<Point<f32>> {
+        let mut f = File::open(filename).unwrap();
+        serde_json::from_reader(&mut f).unwrap()
+    }
+
+    fn write_stars(src: &str, dst: &str) {
+        let mut f = File::create(dst).unwrap();
+        serde_json::to_writer(&mut f, &extract(src)).unwrap();
+    }
+
+    //#[test]
+    fn gen_data() {
+        write_stars("test/a.fits", "test/a.stars.json");
+        write_stars("test/b.fits", "test/b.stars.json");
+    }
 
     #[test]
-    fn it_works() {
-        let res = align("test/a.fits", "test/b.fits");
+    fn test_align() {
+        let res = align_stars(
+            read_stars("test/a.stars.json"),
+            read_stars("test/b.stars.json"));
     }
+
 }

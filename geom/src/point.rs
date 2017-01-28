@@ -3,18 +3,22 @@ use std::ops::*;
 use vector::Vector;
 use num::Float;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Default, Serialize, Deserialize)]
 pub struct Point<T> {
     pub x: T,
     pub y: T,
 }
 
-//impl Point<T> {
-    //pub fn is_close_to(self, other: Self, epsilon: f32) -> bool {
-        //are_close(self.x, other.x, epsilon) &&
-        //are_close(self.y, other.y, epsilon)
-    //}
-//}
+impl<T: Float> Point<T> {
+    pub fn is_close_to(self, other: Self, threshold: T) -> bool {
+        let are_close = |a: T, b: T| {
+            let d = a - b;
+            d < threshold && d > -threshold
+        };
+        are_close(self.x, other.x) &&
+        are_close(self.y, other.y)
+    }
+}
 
 impl<T: Float> Sub for Point<T> {
     type Output = Vector<T>;

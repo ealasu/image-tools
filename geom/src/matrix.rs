@@ -1,6 +1,7 @@
 use std::ops::*;
 use std::fmt::Display;
 use num::Float;
+use point::Point;
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Matrix3x1<T: Float> {
@@ -10,11 +11,18 @@ pub struct Matrix3x1<T: Float> {
 }
 
 impl<T: Float> Matrix3x1<T> {
-    pub fn point(x: T, y: T) -> Self {
+    pub fn from_point(point: &Point<T>) -> Self {
         Matrix3x1 {
-            v11: x,
-            v21: y,
+            v11: point.x,
+            v21: point.y,
             v31: T::one(),
+        }
+    }
+
+    pub fn to_point(&self) -> Point<T> {
+        Point {
+            x: self.v11,
+            y: self.v11,
         }
     }
 }

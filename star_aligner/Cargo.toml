@@ -6,3 +6,7 @@ version = "0.1.0"
 sextractor = { path = "../sextractor" }
 geom = { path = "../geom" }
 simd = "*"
+
+[dev-dependencies]
+serde = "*"
+serde_json = "*"
