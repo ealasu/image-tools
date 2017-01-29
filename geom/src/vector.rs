@@ -8,18 +8,22 @@ pub struct Vector<T: Float> {
 }
 
 impl<T: Float> Vector<T> {
+    #[inline]
     pub fn cross_product(self, other: Self) -> T {
         self.x * other.y - self.y * other.x
     }
 
+    #[inline]
     pub fn length(&self) -> T {
         (self.x * self.x + self.y * self.y).sqrt()
     }
 
+    #[inline]
     pub fn angle(&self) -> T {
         self.y.atan2(self.x)
     }
 
+    #[inline]
     pub fn floor(&self) -> Self {
         Vector {
             x: self.x.floor(),
@@ -35,6 +39,8 @@ impl<T: Float> Vector<T> {
 
 impl<T: Float> Add for Vector<T> {
     type Output = Self;
+
+    #[inline]
     fn add(self, rhs: Self) -> Self::Output {
         Vector {
             x: self.x + rhs.x,
@@ -45,6 +51,8 @@ impl<T: Float> Add for Vector<T> {
 
 impl<T: Float> Sub for Vector<T> {
     type Output = Self;
+
+    #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
         Vector {
             x: self.x - rhs.x,
@@ -55,6 +63,8 @@ impl<T: Float> Sub for Vector<T> {
 
 impl<T: Float> Div<T> for Vector<T> {
     type Output = Self;
+
+    #[inline]
     fn div(self, rhs: T) -> Self::Output {
         Vector {
             x: self.x / rhs,
@@ -65,6 +75,8 @@ impl<T: Float> Div<T> for Vector<T> {
 
 impl<T: Float> Mul<T> for Vector<T> {
     type Output = Self;
+
+    #[inline]
     fn mul(self, rhs: T) -> Self::Output {
         Vector {
             x: self.x * rhs,

@@ -111,22 +111,23 @@ impl<T: Float+Display> Matrix3x3<T> {
         self.v33.is_nan()
     }
 
+    #[allow(unused_parens)]
     pub fn inverse(&self) -> Self {
-        let A=(self.v22 * self.v33-self.v23 * self.v32);
-        let D=-(self.v12 * self.v33-self.v13 * self.v32);
-        let G=(self.v12 * self.v23-self.v13 * self.v22);
-        let B=-(self.v21 * self.v33-self.v23 * self.v31);
-        let E=(self.v11 * self.v33-self.v13 * self.v31);
-        let H=-(self.v11 * self.v23-self.v13 * self.v21); 
-        let C=(self.v21 * self.v32-self.v22 * self.v31);
-        let F=-(self.v11 * self.v32-self.v12 * self.v31);
-        let I=(self.v11 * self.v22-self.v12 * self.v21);
-        let det = self.v11 * A + self.v12 * B + self.v13 * C;
+        let a=(self.v22 * self.v33-self.v23 * self.v32);
+        let d=-(self.v12 * self.v33-self.v13 * self.v32);
+        let g=(self.v12 * self.v23-self.v13 * self.v22);
+        let b=-(self.v21 * self.v33-self.v23 * self.v31);
+        let e=(self.v11 * self.v33-self.v13 * self.v31);
+        let h=-(self.v11 * self.v23-self.v13 * self.v21); 
+        let c=(self.v21 * self.v32-self.v22 * self.v31);
+        let f=-(self.v11 * self.v32-self.v12 * self.v31);
+        let i=(self.v11 * self.v22-self.v12 * self.v21);
+        let det = self.v11 * a + self.v12 * b + self.v13 * c;
         let m = T::one() / det;
         Matrix3x3 {
-            v11: m*A, v12: m*D, v13: m*G,
-            v21: m*B, v22: m*E, v23: m*H,
-            v31: m*C, v32: m*F, v33: m*I,
+            v11: m*a, v12: m*d, v13: m*g,
+            v21: m*b, v22: m*e, v23: m*h,
+            v31: m*c, v32: m*f, v33: m*i,
         }
     }
 }

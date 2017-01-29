@@ -1,9 +1,11 @@
 #![feature(conservative_impl_trait)]
+#![feature(test)]
 
 extern crate sextractor;
 extern crate geom;
 extern crate simd;
 #[cfg(test)] extern crate serde_json;
+#[cfg(test)] extern crate test;
 
 use geom::{Point, Matrix3x3, Matrix3x1};
 use simd::f32x4;
@@ -39,8 +41,8 @@ impl Polygon {
     }
 }
 
-const N_OBJECTS: usize = 300;
-const N_PROOF: usize = 150;
+const N_OBJECTS: usize = 400;
+const N_PROOF: usize = 300;
 
 pub fn extract(path: &str) -> Vec<Point<f32>> {
     let mut objects = sextractor::extract(path);
@@ -53,21 +55,22 @@ pub fn extract(path: &str) -> Vec<Point<f32>> {
         .collect()
 }
 
-fn get_transform_matrix(ref_p: [Point<f32>; 3], sam_p: [Point<f32>; 3]) -> Matrix3x3<f64> {
-    fn poly_to_matrix(stars: [Point<f32>; 3]) -> Matrix3x3<f64> {
+/// Returns the matrix that transforms the triangle `src` to `dst`.
+fn get_transform_matrix(dst: [Point<f32>; 3], src: [Point<f32>; 3]) -> Matrix3x3<f64> {
+    fn poly_to_matrix(points: [Point<f32>; 3]) -> Matrix3x3<f64> {
         Matrix3x3 {
-            v11: stars[0].x,
-            v21: stars[0].y,
+            v11: points[0].x,
+            v21: points[0].y,
             v31: 1.0,
-            v12: stars[1].x,
-            v22: stars[1].y,
+            v12: points[1].x,
+            v22: points[1].y,
             v32: 1.0,
-            v13: stars[2].x,
-            v23: stars[2].y,
+            v13: points[2].x,
+            v23: points[2].y,
             v33: 1.0,
         }.to_f64()
     }
-    let res = poly_to_matrix(ref_p) * poly_to_matrix(sam_p).inverse();
+    let res = poly_to_matrix(dst) * poly_to_matrix(src).inverse();
     assert!(!res.has_nan(), "matrix has nan: {:?}", res);
     res
 }
@@ -87,7 +90,7 @@ pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) ->
         //println!(" ");
     //}
 
-    let threshold = 0.2;
+    let threshold = 0.4;
 
     let threshold_lower = f32x4::splat(-threshold);
     let threshold_upper = f32x4::splat(threshold);
@@ -111,14 +114,14 @@ pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) ->
                                 .map(|&r_o| (r_o, s_o))
                         })
                         .collect::<Vec<_>>();
-                    println!("proofs: {}", proof.len());
+                    //println!("proofs: {}", proof.len());
                     if proof.len() >= N_PROOF {
-                        println!("found match");
+                        //println!("found match");
                         let mut tx = Default::default();
                         for w in proof.windows(3) {
                             tx += get_transform_matrix(
-                                [w[0].0, w[1].0, w[2].0],
-                                [w[0].1, w[1].1, w[2].1]);
+                                [w[0].1, w[1].1, w[2].1],
+                                [w[0].0, w[1].0, w[2].0]);
                         }
                         tx /= (proof.len() - 2) as f64;
                         return Some(tx);
@@ -130,24 +133,20 @@ pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) ->
     None
 }
 
-pub fn angle(stars: &[Point<f32>]) -> f32 {
-    assert_eq!(stars.len(), 3);
+#[inline]
+fn angle(stars: [Point<f32>; 3]) -> f32 {
     (stars[2] - stars[0]).angle() - (stars[1] - stars[0]).angle()
 }
 
 fn polys<'a>(objects: &'a [Point<f32>]) -> impl Iterator<Item=Polygon> + 'a {
-    println!("stars detected: {}", objects.len());
+    //println!("stars detected: {}", objects.len());
     assert!(objects.len() > 2);
 
     fn make_poly(window: [&Point<f32>; 3]) -> Polygon {
-        let mut stars = window
-            .iter()
-            .take(3)
-            .map(|x| **x)
-            .collect::<Vec<_>>();
+        let mut stars = [*window[0], *window[1], *window[2]];
 
         // make sure all triangles are clockwise
-        let poly_angle = angle(&stars[..]);
+        let poly_angle = angle(stars);
         if poly_angle < 0.0 {
             stars.reverse();
         }
@@ -158,7 +157,7 @@ fn polys<'a>(objects: &'a [Point<f32>]) -> impl Iterator<Item=Polygon> + 'a {
                 (stars[2] - stars[1]).length(),
                 (stars[0] - stars[2]).length(),
                 0.0),
-            stars: [stars[0], stars[1], stars[2]],
+            stars: stars,
         }
     }
 
@@ -185,6 +184,7 @@ fn polys<'a>(objects: &'a [Point<f32>]) -> impl Iterator<Item=Polygon> + 'a {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use test::Bencher;
     use serde_json;
     use std::fs::File;
 
@@ -198,7 +198,7 @@ mod tests {
         serde_json::to_writer(&mut f, &extract(src)).unwrap();
     }
 
-    //#[test]
+    #[test]
     fn gen_data() {
         write_stars("test/a.fits", "test/a.stars.json");
         write_stars("test/b.fits", "test/b.stars.json");
@@ -213,7 +213,18 @@ mod tests {
             &sam_stars[..]).unwrap();
         let i = 2;
         assert_eq!(
-            (res * Matrix3x1::from_point(&sam_stars[i].to_f64())).to_point().to_f32(),
-            ref_stars[i]);
+            (res * Matrix3x1::from_point(&ref_stars[i].to_f64())).to_point().to_f32(),
+            sam_stars[i]);
+    }
+
+    #[bench]
+    fn bench_align(b: &mut Bencher) {
+        let ref_stars = read_stars("test/a.stars.json");
+        let sam_stars = read_stars("test/b.stars.json");
+        b.iter(|| {
+            align_stars(
+                &ref_stars[..],
+                &sam_stars[..]).unwrap()
+        });
     }
 }
