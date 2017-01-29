@@ -5,6 +5,7 @@ version = "0.1.0"
 [dependencies]
 sextractor = { path = "../sextractor" }
 geom = { path = "../geom" }
+imagemagick = { path = "../imagemagick" }
 simd = "*"
 
 [dev-dependencies]

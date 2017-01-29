@@ -3,6 +3,7 @@
 
 extern crate sextractor;
 extern crate geom;
+extern crate imagemagick;
 extern crate simd;
 #[cfg(test)] extern crate serde_json;
 #[cfg(test)] extern crate test;
@@ -132,13 +133,14 @@ impl Reference {
 }
 
 pub fn extract<P: AsRef<Path>>(path: P) -> Vec<Point<f32>> {
+    let image_info = imagemagick::identify(path.as_ref());
     let mut objects = sextractor::extract(path);
     // sort by flux, descending
     objects.sort_by(|a,b| b.flux.partial_cmp(&a.flux).unwrap());
     objects
         .into_iter()
         .take(N_OBJECTS)
-        .map(|o| Point { x: o.x, y: o.y })
+        .map(|o| Point { x: o.x, y: image_info.height as f32 - o.y })
         .collect()
 }
 
@@ -237,8 +239,8 @@ mod tests {
 
     #[test]
     fn test_align() {
-        let ref_stars = read_stars("test/c_r.stars.json");
-        let sam_stars = read_stars("test/c_s.stars.json");
+        let ref_stars = read_stars("test/a.stars.json");
+        let sam_stars = read_stars("test/b.stars.json");
         let r = Reference::from_stars(ref_stars.clone());
         let tx = r.align_stars(&sam_stars[..]).unwrap();
         let i = 0;

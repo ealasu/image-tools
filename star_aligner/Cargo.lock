@@ -3,6 +3,7 @@ name = "star_aligner"
 version = "0.1.0"
 dependencies = [
  "geom 0.1.0",
+ "imagemagick 0.1.0",
  "serde 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sextractor 0.1.0",
@@ -29,6 +30,13 @@ dependencies = [
  "num 0.1.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "imagemagick"
+version = "0.1.0"
+dependencies = [
+ "regex 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

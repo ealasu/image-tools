@@ -105,6 +105,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "imagemagick"
+version = "0.1.0"
+dependencies = [
+ "regex 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "itoa"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -357,6 +364,7 @@ name = "star_aligner"
 version = "0.1.0"
 dependencies = [
  "geom 0.1.0",
+ "imagemagick 0.1.0",
  "sextractor 0.1.0",
  "simd 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
