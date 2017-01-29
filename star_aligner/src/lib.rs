@@ -12,7 +12,7 @@ use geom::{Point, Matrix3x3, Matrix3x1};
 use simd::f32x4;
 
 const N_OBJECTS: usize = 400;
-const N_PROOF: usize = 300;
+const N_PROOF: usize = 250;
 
 #[derive(Debug, Clone)]
 pub struct Polygon {
@@ -68,7 +68,7 @@ impl Reference {
     }
 
     pub fn align_stars(&self, sample_objects: &[Point<f32>]) -> Option<Matrix3x3<f64>> {
-        let threshold = 0.4;
+        let threshold = 0.5;
 
         let threshold_lower = f32x4::splat(-threshold);
         let threshold_upper = f32x4::splat(threshold);
@@ -212,12 +212,14 @@ mod tests {
     fn gen_data() {
         write_stars("test/a.fits", "test/a.stars.json");
         write_stars("test/b.fits", "test/b.stars.json");
+        write_stars("test/c_r.fits", "test/c_r.stars.json");
+        write_stars("test/c_s.fits", "test/c_s.stars.json");
     }
 
     #[test]
     fn test_align() {
-        let ref_stars = read_stars("test/a.stars.json");
-        let sam_stars = read_stars("test/b.stars.json");
+        let ref_stars = read_stars("test/c_r.stars.json");
+        let sam_stars = read_stars("test/c_s.stars.json");
         let r = Reference::from_stars(ref_stars.clone());
         let res = r.align_stars(&sam_stars[..]).unwrap();
         let i = 2;
@@ -239,7 +241,8 @@ mod tests {
         let r = Reference::from_stars(read_stars("test/a.stars.json"));
         let sam_stars = read_stars("test/b.stars.json");
         b.iter(|| {
-            r.align_stars(&sam_stars[..]).unwrap()
+            r.align_stars(&sam_stars[..])
+            //r.align_stars(&sam_stars[..]).unwrap()
         });
     }
 }

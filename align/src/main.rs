@@ -33,6 +33,8 @@ where P: AsRef<Path>, F: FnMut(&Path) -> R {
     let out = tempfile::NamedTempFileOptions::new().suffix(".fits").create().unwrap();
     let status = Command::new("convert")
         .arg(src.as_ref())
+        .arg("-colorspace")
+        .arg("gray")
         .arg(out.path())
         .status()
         .expect("failed to run convert");
@@ -58,8 +60,12 @@ fn main() {
             println!("aligning {:?}", filename);
             //let sample_image = Image::<f32>::open(&filename);
             //let transform = three_axis.align(&sample_image);
-            let transform = with_fits(&filename, |filename| {
-                reference.align_image(filename).unwrap().to_f32()
+            let transform = with_fits(&filename, |fits_filename| {
+                reference
+                .align_image(fits_filename)
+                .ok_or_else(|| format!("failed to align {}", filename.to_str().unwrap()))
+                .unwrap()
+                .to_f32()
             });
             println!("offset: {:?}", transform);
             AlignedImage {
