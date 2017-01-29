@@ -8,6 +8,8 @@ extern crate simd;
 #[cfg(test)] extern crate test;
 
 use std::path::Path;
+use std::f64;
+use std::f32;
 use geom::{Point, Matrix3x3, Matrix3x1};
 use simd::f32x4;
 
@@ -85,7 +87,7 @@ impl Reference {
                         let proof = sample_objects
                             .iter()
                             .filter_map(|&s_o| {
-                                let s_o_tx = (tx * Matrix3x1::from_point(&s_o.to_f64())).to_point().to_f32();
+                                let s_o_tx = (tx * Matrix3x1::from_point(s_o.to_f64())).to_point().to_f32();
                                 self.stars
                                     .iter()
                                     .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
@@ -95,14 +97,31 @@ impl Reference {
                         //println!("proofs: {}", proof.len());
                         if proof.len() >= N_PROOF {
                             //println!("found match");
-                            let mut tx = Default::default();
+                            let mut best_tx = Default::default();
+                            let mut best_err = f32::MAX;
+                            //let mut best_points = None;
                             for w in proof.windows(3) {
-                                tx += get_transform_matrix(
+                                let tx = get_transform_matrix(
                                     [w[0].1, w[1].1, w[2].1],
                                     [w[0].0, w[1].0, w[2].0]);
+                                let err: f32 = proof.iter()
+                                    .map(|&(r_o, s_o)| {
+                                        let tx_r = (tx * r_o.to_f64()).to_f32();
+                                        (tx_r.x - s_o.x).powi(2) + (tx_r.y - s_o.y).powi(2)
+                                    })
+                                    .sum();
+                                //println!("err: {}", err);
+                                if err < best_err {
+                                    best_tx = tx;
+                                    best_err = err;
+                                    //best_points = Some((
+                                    //[w[0].1, w[1].1, w[2].1],
+                                    //[w[0].0, w[1].0, w[2].0]));
+                                }
                             }
-                            tx /= (proof.len() - 2) as f64;
-                            return Some(tx);
+                            println!("best err: {}", best_err);
+                            //println!("best points: {:?}", best_points);
+                            return Some(best_tx);
                         }
                     }
                 }
@@ -221,10 +240,10 @@ mod tests {
         let ref_stars = read_stars("test/c_r.stars.json");
         let sam_stars = read_stars("test/c_s.stars.json");
         let r = Reference::from_stars(ref_stars.clone());
-        let res = r.align_stars(&sam_stars[..]).unwrap();
-        let i = 2;
+        let tx = r.align_stars(&sam_stars[..]).unwrap();
+        let i = 0;
         assert_eq!(
-            (res * Matrix3x1::from_point(&ref_stars[i].to_f64())).to_point().to_f32(),
+            (tx.to_f32() * ref_stars[i]),
             sam_stars[i]);
     }
 

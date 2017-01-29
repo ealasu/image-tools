@@ -12,7 +12,7 @@ pub struct Matrix3x1<T: Float> {
 
 impl<T: Float> Matrix3x1<T> {
     #[inline]
-    pub fn from_point(point: &Point<T>) -> Self {
+    pub fn from_point(point: Point<T>) -> Self {
         Matrix3x1 {
             v11: point.x,
             v21: point.y,
@@ -175,6 +175,14 @@ impl<T: Float> Mul<Matrix3x1<T>> for Matrix3x3<T> {
         }
     }
 }
+
+impl<T: Float> Mul<Point<T>> for Matrix3x3<T> {
+    type Output = Point<T>;
+    fn mul(self, rhs: Point<T>) -> Self::Output {
+        (self * Matrix3x1::from_point(rhs)).to_point()
+    }
+}
+
 impl<T: Float> AddAssign for Matrix3x3<T> {
     fn add_assign(&mut self, other: Self) {
         self.v11 = self.v11 + other.v11;

@@ -53,11 +53,12 @@ pub fn add<P,F>(
 where P: Copy + Clone + AddAssign + DivAssign<F> + Mul<F, Output=P> + Default, F: Float + FromPrimitive {
     for y in 0..stack.height {
         for x in 0..stack.width {
-            let src_pos = transform * Matrix3x1::point(
-                F::from_usize(x).unwrap() / factor,
-                F::from_usize(y).unwrap() / factor);
+            let src_pos = transform * Point {
+                x: F::from_usize(x).unwrap() / factor,
+                y: F::from_usize(y).unwrap() / factor
+            };
             let pixel = stack.pixel_at_mut(x, y);
-            *pixel += resample(image, src_pos.v11, src_pos.v21, factor,
+            *pixel += resample(image, src_pos.x, src_pos.y, factor,
                                                        pixel_aperture);
         }
     }
