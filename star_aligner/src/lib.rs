@@ -10,6 +10,9 @@ extern crate simd;
 use geom::{Point, Matrix3x3, Matrix3x1};
 use simd::f32x4;
 
+const N_OBJECTS: usize = 400;
+const N_PROOF: usize = 300;
+
 #[derive(Debug, Clone)]
 pub struct Polygon {
     sides: f32x4,
@@ -41,8 +44,72 @@ impl Polygon {
     }
 }
 
-const N_OBJECTS: usize = 400;
-const N_PROOF: usize = 300;
+pub struct Reference {
+    stars: Vec<Point<f32>>,
+    polys: Vec<Polygon>,
+}
+
+impl Reference {
+    pub fn from_image(path: &str) -> Self {
+        Self::from_stars(extract(path))
+    }
+
+    pub fn from_stars(stars: Vec<Point<f32>>) -> Self {
+        let polys = polys(&stars).collect();
+        Reference {
+            polys: polys,
+            stars: stars,
+        }
+    }
+
+    pub fn align_image(&self, sample: &str) -> Option<Matrix3x3<f64>> {
+        self.align_stars(&extract(sample))
+    }
+
+    pub fn align_stars(&self, sample_objects: &[Point<f32>]) -> Option<Matrix3x3<f64>> {
+        let threshold = 0.4;
+
+        let threshold_lower = f32x4::splat(-threshold);
+        let threshold_upper = f32x4::splat(threshold);
+        for sam_p in polys(sample_objects) {
+            for sam_p in [
+                sam_p.shift(0),
+                sam_p.shift(1),
+                sam_p.shift(2),
+            ].iter() {
+                for ref_p in self.polys.iter() {
+                    let diff = sam_p.sides - ref_p.sides;
+                    if diff.gt(threshold_lower).all() && diff.lt(threshold_upper).all() {
+                        let tx = get_transform_matrix(ref_p.stars, sam_p.stars);
+                        let proof = sample_objects
+                            .iter()
+                            .filter_map(|&s_o| {
+                                let s_o_tx = (tx * Matrix3x1::from_point(&s_o.to_f64())).to_point().to_f32();
+                                self.stars
+                                    .iter()
+                                    .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
+                                    .map(|&r_o| (r_o, s_o))
+                            })
+                            .collect::<Vec<_>>();
+                        //println!("proofs: {}", proof.len());
+                        if proof.len() >= N_PROOF {
+                            //println!("found match");
+                            let mut tx = Default::default();
+                            for w in proof.windows(3) {
+                                tx += get_transform_matrix(
+                                    [w[0].1, w[1].1, w[2].1],
+                                    [w[0].0, w[1].0, w[2].0]);
+                            }
+                            tx /= (proof.len() - 2) as f64;
+                            return Some(tx);
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+}
 
 pub fn extract(path: &str) -> Vec<Point<f32>> {
     let mut objects = sextractor::extract(path);
@@ -73,64 +140,6 @@ fn get_transform_matrix(dst: [Point<f32>; 3], src: [Point<f32>; 3]) -> Matrix3x3
     let res = poly_to_matrix(dst) * poly_to_matrix(src).inverse();
     assert!(!res.has_nan(), "matrix has nan: {:?}", res);
     res
-}
-
-pub fn align_images(ref_image: &str, sample_image: &str) -> Option<Matrix3x3<f64>> {
-    align_stars(&extract(ref_image), &extract(sample_image))
-}
-
-pub fn align_stars(ref_objects: &[Point<f32>], sample_objects: &[Point<f32>]) -> Option<Matrix3x3<f64>> {
-    let ref_polys = polys(&ref_objects[..]).collect::<Vec<_>>();
-    //for v in ref_polys[..12].iter() {
-        //println!("ref: {:?}", v.sides);
-    //}
-    //for (a,b) in ref_polys.iter().zip(sample_polys.iter()).take(20) {
-        //println!("ref: {:?}", a.sides);
-        //println!("sam: {:?}", b.sides);
-        //println!(" ");
-    //}
-
-    let threshold = 0.4;
-
-    let threshold_lower = f32x4::splat(-threshold);
-    let threshold_upper = f32x4::splat(threshold);
-    for sam_p in polys(&sample_objects[..]) {
-        for sam_p in [
-            sam_p.shift(0),
-            sam_p.shift(1),
-            sam_p.shift(2),
-        ].iter() {
-            for ref_p in ref_polys.iter() {
-                let diff = sam_p.sides - ref_p.sides;
-                if diff.gt(threshold_lower).all() && diff.lt(threshold_upper).all() {
-                    let tx = get_transform_matrix(ref_p.stars, sam_p.stars);
-                    let proof = sample_objects
-                        .iter()
-                        .filter_map(|&s_o| {
-                            let s_o_tx = (tx * Matrix3x1::from_point(&s_o.to_f64())).to_point().to_f32();
-                            ref_objects
-                                .iter()
-                                .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
-                                .map(|&r_o| (r_o, s_o))
-                        })
-                        .collect::<Vec<_>>();
-                    //println!("proofs: {}", proof.len());
-                    if proof.len() >= N_PROOF {
-                        //println!("found match");
-                        let mut tx = Default::default();
-                        for w in proof.windows(3) {
-                            tx += get_transform_matrix(
-                                [w[0].1, w[1].1, w[2].1],
-                                [w[0].0, w[1].0, w[2].0]);
-                        }
-                        tx /= (proof.len() - 2) as f64;
-                        return Some(tx);
-                    }
-                }
-            }
-        }
-    }
-    None
 }
 
 #[inline]
@@ -208,9 +217,8 @@ mod tests {
     fn test_align() {
         let ref_stars = read_stars("test/a.stars.json");
         let sam_stars = read_stars("test/b.stars.json");
-        let res = align_stars(
-            &ref_stars[..],
-            &sam_stars[..]).unwrap();
+        let r = Reference::from_stars(ref_stars.clone());
+        let res = r.align_stars(&sam_stars[..]).unwrap();
         let i = 2;
         assert_eq!(
             (res * Matrix3x1::from_point(&ref_stars[i].to_f64())).to_point().to_f32(),
@@ -218,13 +226,19 @@ mod tests {
     }
 
     #[bench]
-    fn bench_align(b: &mut Bencher) {
+    fn bench_new(b: &mut Bencher) {
         let ref_stars = read_stars("test/a.stars.json");
+        b.iter(|| {
+            Reference::from_stars(ref_stars.clone())
+        });
+    }
+
+    #[bench]
+    fn bench_align(b: &mut Bencher) {
+        let r = Reference::from_stars(read_stars("test/a.stars.json"));
         let sam_stars = read_stars("test/b.stars.json");
         b.iter(|| {
-            align_stars(
-                &ref_stars[..],
-                &sam_stars[..]).unwrap()
+            r.align_stars(&sam_stars[..]).unwrap()
         });
     }
 }
