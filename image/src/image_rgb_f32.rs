@@ -5,14 +5,14 @@ use std::fs::File;
 use image::Image;
 use rgb::Rgb;
 use convert::convert_vec;
-use magick::*;
+use imagemagick::{convert_open, convert_save};
 use fits;
 use quickersort::sort_floats;
 use num::Float;
 
 impl Image<Rgb<f32>> {
     pub fn open(path: &str) -> Self {
-        let (width, height, data) = magick_stream(path, "rgb");
+        let (width, height, data) = convert_open(path, "rgb");
         let pixels = convert_vec(data);
         assert_eq!(pixels.len(), width * height);
         Image {
@@ -24,7 +24,7 @@ impl Image<Rgb<f32>> {
 
     pub fn save(&self, path: &str) {
         let data = convert_vec(self.pixels.clone());
-        magick_convert(&data, self.width, self.height, "rgb", "truecolor", path);
+        convert_save(&data, self.width, self.height, "rgb", "truecolor", path);
     }
 
     pub fn open_fits(path: &str) -> Self {

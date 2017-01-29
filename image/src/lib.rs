@@ -8,9 +8,9 @@ extern crate byteorder;
 extern crate quickersort;
 extern crate num;
 extern crate fits;
+extern crate imagemagick;
 #[cfg(test)] extern crate test;
 
-mod magick;
 mod rgb;
 mod rgb_bayer;
 mod image;
@@ -23,11 +23,9 @@ mod image_rgb_bayer;
 mod util;
 mod pgm;
 mod dcraw;
-mod identify;
 mod image_kind;
 
 pub use image::*;
 pub use rgb::*;
 pub use rgb_bayer::*;
-pub use identify::*;
 pub use image_kind::*;

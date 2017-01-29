@@ -6,11 +6,11 @@ use std::u16;
 use std::io::{BufReader, BufWriter};
 use image::Image;
 use fits;
-use magick::*;
 use rgb::Rgb;
 use rgb_bayer::RgbBayer;
 use num::Float;
 use num::cast::NumCast;
+use imagemagick::{convert_open, convert_save};
 
 impl<P: Float + Default> Image<P> {
     pub fn average(&self) -> P {
@@ -90,7 +90,7 @@ impl<P: Float + Default> Image<P> {
 
 impl Image<f32> {
     pub fn open<P: AsRef<Path>>(path: P) -> Self {
-        let (width, height, data) = magick_stream(path, "gray");
+        let (width, height, data) = convert_open(path, "gray");
         Image {
             width: width,
             height: height,
@@ -120,7 +120,7 @@ impl Image<f32> {
     }
 
     pub fn save(&self, path: &str) {
-        magick_convert(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
+        convert_save(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
     }
 
     pub fn save_fits(&self, filename: &str) {

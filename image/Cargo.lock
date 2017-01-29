@@ -4,6 +4,8 @@ version = "0.0.0"
 dependencies = [
  "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "convert 0.0.0",
+ "fits 0.1.0",
+ "imagemagick 0.1.0",
  "num 0.1.36 (registry+https://github.com/rust-lang/crates.io-index)",
  "quickersort 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -27,6 +29,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "convert"
 version = "0.0.0"
+
+[[package]]
+name = "fits"
+version = "0.1.0"
+dependencies = [
+ "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "imagemagick"
+version = "0.1.0"
+dependencies = [
+ "regex 0.1.44 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "libc"
