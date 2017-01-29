@@ -7,6 +7,7 @@ extern crate simd;
 #[cfg(test)] extern crate serde_json;
 #[cfg(test)] extern crate test;
 
+use std::path::Path;
 use geom::{Point, Matrix3x3, Matrix3x1};
 use simd::f32x4;
 
@@ -50,7 +51,7 @@ pub struct Reference {
 }
 
 impl Reference {
-    pub fn from_image(path: &str) -> Self {
+    pub fn from_image<P: AsRef<Path>>(path: P) -> Self {
         Self::from_stars(extract(path))
     }
 
@@ -62,7 +63,7 @@ impl Reference {
         }
     }
 
-    pub fn align_image(&self, sample: &str) -> Option<Matrix3x3<f64>> {
+    pub fn align_image<P: AsRef<Path>>(&self, sample: P) -> Option<Matrix3x3<f64>> {
         self.align_stars(&extract(sample))
     }
 
@@ -111,7 +112,7 @@ impl Reference {
     }
 }
 
-pub fn extract(path: &str) -> Vec<Point<f32>> {
+pub fn extract<P: AsRef<Path>>(path: P) -> Vec<Point<f32>> {
     let mut objects = sextractor::extract(path);
     // sort by flux, descending
     objects.sort_by(|a,b| b.flux.partial_cmp(&a.flux).unwrap());

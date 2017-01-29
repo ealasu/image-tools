@@ -17,7 +17,7 @@ pub struct Object {
     pub y: f32,
 }
 
-pub fn extract(path: &str) -> Vec<Object> {
+pub fn extract<P: AsRef<Path>>(path: P) -> Vec<Object> {
     let temp_dir = TempDir::new("sextractor").expect("create temp dir");
 
     {

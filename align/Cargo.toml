@@ -7,5 +7,7 @@ docopt = "*"
 rustc-serialize = "*"
 image = { path = "../image" }
 donuts = { path = "../donuts" }
+star_aligner = { path = "../star_aligner" }
 align_api = { path = "../align-api" }
 rayon = "*"
+tempfile = "*"

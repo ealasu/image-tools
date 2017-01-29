@@ -73,6 +73,20 @@ impl<T: Float+Display> Matrix3x3<T> {
         }
     }
 
+    pub fn to_f32(&self) -> Matrix3x3<f32> {
+        Matrix3x3 {
+            v11: self.v11.to_f32().unwrap(),
+            v12: self.v12.to_f32().unwrap(),
+            v13: self.v13.to_f32().unwrap(),
+            v21: self.v21.to_f32().unwrap(),
+            v22: self.v22.to_f32().unwrap(),
+            v23: self.v23.to_f32().unwrap(),
+            v31: self.v31.to_f32().unwrap(),
+            v32: self.v32.to_f32().unwrap(),
+            v33: self.v33.to_f32().unwrap(),
+        }
+    }
+
     pub fn identity() -> Self {
         Matrix3x3 {
             v11: T::one(), v12: T::zero(), v13: T::zero(),
