@@ -2,14 +2,20 @@ use tempfile::NamedTempFile;
 use std::process::Command;
 use std::fs;
 use std::path::Path;
+use std::thread;
+use std::time::Duration;
 
 pub fn shoot() -> NamedTempFile {
     let keep_raw = false;
 
-    Command::new("pkill")
+    let res = Command::new("pkill")
         .arg("PTPCamera")
         .status()
         .expect("failed to execute pkill");
+
+    if res.success() {
+        thread::sleep(Duration::from_secs(1));
+    }
 
     let tmpdir = Path::new("/mnt/ramdisk");
 

@@ -41,6 +41,7 @@ fn main() {
                             .unwrap_or_else(|e| e.exit());
 
     let client = Client::new("ubuntu:1234").unwrap();
+    client.start().unwrap().unwrap();
 
     let desired_ra = read_ra(&args.flag_ra).expect("failed to parse ra");
     let desired_dec = read_ra(&args.flag_dec).expect("failed to parse dec");
@@ -57,7 +58,9 @@ fn main() {
       client.slew_by(Pos { ra: d_ra, dec: d_dec });
       // TODO: either change slew_by to wait for slew to finish, or estimate how long it takes and
       // sleep
-      thread::sleep(Duration::from_secs(5));
+      let sleep_secs = ((d_ra.abs().max(d_dec.abs()) * 0.5).max(1.0) + 3.0) as u64;
+      println!("sleeping for {} secs", sleep_secs);
+      thread::sleep(Duration::from_secs(sleep_secs));
     }
 }
 

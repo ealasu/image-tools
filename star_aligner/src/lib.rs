@@ -88,7 +88,7 @@ impl Reference {
                         let proof = sample_objects
                             .iter()
                             .filter_map(|&s_o| {
-                                let s_o_tx = (tx * Matrix3x1::from_point(s_o.to_f64())).to_point().to_f32();
+                                let s_o_tx = (tx * s_o.to_f64()).to_f32();
                                 self.stars
                                     .iter()
                                     .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
