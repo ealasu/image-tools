@@ -8,11 +8,10 @@ extern crate regex;
 mod gphoto;
 
 use std::fs;
-use std::fs::File;
 use std::thread;
 use std::time::Duration;
 use docopt::Docopt;
-use mount_service_api::{Client, Msg, Pos};
+use mount_service_api::{Client, Pos};
 use regex::Regex;
 
 const USAGE: &'static str = "
@@ -26,8 +25,6 @@ struct Args {
     flag_dec: String,
     flag_threshold: f64,
 }
-
-const ERROR_THRESHOLD: i32 = 10;
 
 fn shoot_and_solve() -> (f64, f64) {
   println!("shooting...");
@@ -57,26 +54,23 @@ fn main() {
         break;
       }
       println!("slewing...");
-      client.slew_by(Pos { ra: d_ra, dec: d_dec });
+      client.slew_by(Pos { ra: d_ra, dec: d_dec }).unwrap().unwrap();
 
-      println!("waiting for slew");
+      println!("waiting for slew to end...");
       thread::sleep(Duration::from_secs(1));
-      loop {
-        let status = client.status().unwrap().unwrap();
-        if status.ra_last_error.abs() < ERROR_THRESHOLD &&
-           status.dec_last_error.abs() < ERROR_THRESHOLD {
-          break;
-        }
+      while client.is_slewing().unwrap().unwrap() {
         thread::sleep(Duration::from_secs(1));
       }
       thread::sleep(Duration::from_secs(2));
-
-      // TODO: either change slew_by to wait for slew to finish, or estimate how long it takes and
-      // sleep
-      //let sleep_secs = ((d_ra.abs().max(d_dec.abs()) * 0.5).max(1.0) + 3.0) as u64;
-      //println!("sleeping for {} secs", sleep_secs);
-      //thread::sleep(Duration::from_secs(sleep_secs));
     }
+
+    println!("resetting position...");
+    client.reset_position(Pos {
+      ra: desired_ra,
+      dec: desired_dec,
+    }).unwrap();
+
+    println!("done.");
 }
 
 /// Convert RA to degrees

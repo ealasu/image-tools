@@ -1,6 +1,5 @@
 use tempfile::NamedTempFile;
 use std::process::Command;
-use std::fs;
 use std::path::Path;
 use std::thread;
 use std::time::Duration;
