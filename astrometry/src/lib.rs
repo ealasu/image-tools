@@ -36,7 +36,8 @@ pub fn solve(path: &str) -> (f64, f64) {
     println!("stdout: {}", stdout);
     assert!(output.status.success());
 
-    let cap = Regex::new(r"Field center: \(RA,Dec\) = \((.+), (.+)\) deg").unwrap().captures_iter(&stdout).next().unwrap();
+    let pattern = r"RA,Dec = \((.+),(.+)\), ";
+    let cap = Regex::new(pattern).unwrap().captures_iter(&stdout).next().unwrap();
     let ra = cap[1].parse::<f64>().unwrap();
     let dec = cap[2].parse::<f64>().unwrap();
     println!("ra: {} dec: {}", ra, dec);
