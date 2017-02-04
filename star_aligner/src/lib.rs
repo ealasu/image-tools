@@ -11,7 +11,7 @@ extern crate simd;
 use std::path::Path;
 use std::f64;
 use std::f32;
-use geom::{Point, Matrix3x3, Matrix3x1};
+use geom::{Point, Matrix3x3};
 use simd::f32x4;
 
 const N_OBJECTS: usize = 400;
@@ -97,32 +97,7 @@ impl Reference {
                             .collect::<Vec<_>>();
                         //println!("proofs: {}", proof.len());
                         if proof.len() >= N_PROOF {
-                            //println!("found match");
-                            let mut best_tx = Default::default();
-                            let mut best_err = f32::MAX;
-                            //let mut best_points = None;
-                            for w in proof.windows(3) {
-                                let tx = get_transform_matrix(
-                                    [w[0].1, w[1].1, w[2].1],
-                                    [w[0].0, w[1].0, w[2].0]);
-                                let err: f32 = proof.iter()
-                                    .map(|&(r_o, s_o)| {
-                                        let tx_r = (tx * r_o.to_f64()).to_f32();
-                                        (tx_r.x - s_o.x).powi(2) + (tx_r.y - s_o.y).powi(2)
-                                    })
-                                    .sum();
-                                //println!("err: {}", err);
-                                if err < best_err {
-                                    best_tx = tx;
-                                    best_err = err;
-                                    //best_points = Some((
-                                    //[w[0].1, w[1].1, w[2].1],
-                                    //[w[0].0, w[1].0, w[2].0]));
-                                }
-                            }
-                            println!("best err: {}", best_err);
-                            //println!("best points: {:?}", best_points);
-                            return Some(best_tx);
+                            return Some(rigid_body_alignment(&proof));
                         }
                     }
                 }
@@ -130,6 +105,35 @@ impl Reference {
         }
         None
     }
+}
+
+fn rigid_body_alignment(matching_stars: &[(Point<f32>, Point<f32>)]) -> Matrix3x3<f64> {
+    //println!("found match");
+    let mut best_tx = Default::default();
+    let mut best_err = f32::MAX;
+    //let mut best_points = None;
+    for w in matching_stars.windows(3) {
+        let tx = get_transform_matrix(
+            [w[0].1, w[1].1, w[2].1],
+            [w[0].0, w[1].0, w[2].0]);
+        let err: f32 = matching_stars.iter()
+            .map(|&(r_o, s_o)| {
+                let tx_r = (tx * r_o.to_f64()).to_f32();
+                (tx_r.x - s_o.x).powi(2) + (tx_r.y - s_o.y).powi(2)
+            })
+            .sum();
+        //println!("err: {}", err);
+        if err < best_err {
+            best_tx = tx;
+            best_err = err;
+            //best_points = Some((
+            //[w[0].1, w[1].1, w[2].1],
+            //[w[0].0, w[1].0, w[2].0]));
+        }
+    }
+    println!("best err: {}", best_err);
+    //println!("best points: {:?}", best_points);
+    best_tx
 }
 
 pub fn extract<P: AsRef<Path>>(path: P) -> Vec<Point<f32>> {
@@ -229,7 +233,7 @@ mod tests {
         serde_json::to_writer(&mut f, &extract(src)).unwrap();
     }
 
-    #[test]
+    //#[test]
     fn gen_data() {
         write_stars("test/a.fits", "test/a.stars.json");
         write_stars("test/b.fits", "test/b.stars.json");
@@ -241,12 +245,15 @@ mod tests {
     fn test_align() {
         let ref_stars = read_stars("test/a.stars.json");
         let sam_stars = read_stars("test/b.stars.json");
-        let r = Reference::from_stars(ref_stars.clone());
-        let tx = r.align_stars(&sam_stars[..]).unwrap();
         let i = 0;
         assert_eq!(
+            sam_stars[i],
+            Point { x: 321.422, y: 2659.7307 });
+        let r = Reference::from_stars(ref_stars.clone());
+        let tx = r.align_stars(&sam_stars[..]).unwrap();
+        assert_eq!(
             (tx.to_f32() * ref_stars[i]),
-            sam_stars[i]);
+            Point { x: 321.32025, y: 2659.6943 });
     }
 
     #[bench]
