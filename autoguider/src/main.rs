@@ -51,7 +51,7 @@ fn main() {
     let mut aligner = Aligner::new();
     let mut mount = Mount::new();
     let shot_duration = Duration::from_secs(5 + 30);
-    let mut ra_controller = PIDController::new(0.3, 0.04, 0.0);
+    let mut ra_controller = PIDController::new(0.3, 0.03, 0.0);
     let mut dec_controller = PIDController::new(0.10, 0.015, 0.0);
 
     mount.start();
