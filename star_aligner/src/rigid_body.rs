@@ -1,9 +1,9 @@
-use std::f32;
+use std::f64;
 use geom::{Point, Matrix3x3};
 
 /// Returns the matrix that transforms the triangle `src` to `dst`.
-pub fn get_transform_matrix(dst: [Point<f32>; 3], src: [Point<f32>; 3]) -> Matrix3x3<f64> {
-    fn poly_to_matrix(points: [Point<f32>; 3]) -> Matrix3x3<f64> {
+pub fn get_transform_matrix(dst: [Point<f64>; 3], src: [Point<f64>; 3]) -> Matrix3x3<f64> {
+    fn poly_to_matrix(points: [Point<f64>; 3]) -> Matrix3x3<f64> {
         Matrix3x3 {
             v11: points[0].x,
             v21: points[0].y,
@@ -23,18 +23,18 @@ pub fn get_transform_matrix(dst: [Point<f32>; 3], src: [Point<f32>; 3]) -> Matri
 
 /// Iterates through a number of corresponding triangle pairs, calculates transform for
 /// each pair, then returns the best transform.
-pub fn align_simple(matching_stars: &[(Point<f32>, Point<f32>)]) -> Matrix3x3<f64> {
+pub fn align_simple(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f64> {
     //println!("found match");
     let mut best_tx = Default::default();
-    let mut best_err = f32::MAX;
+    let mut best_err = f64::MAX;
     //let mut best_points = None;
     for w in matching_stars.windows(3) {
         let tx = get_transform_matrix(
             [w[0].1, w[1].1, w[2].1],
             [w[0].0, w[1].0, w[2].0]);
-        let err: f32 = matching_stars.iter()
+        let err: f64 = matching_stars.iter()
             .map(|&(r_o, s_o)| {
-                let tx_r = (tx * r_o.to_f64()).to_f32();
+                let tx_r = (tx * r_o.to_f64()).to_f64();
                 (tx_r.x - s_o.x).powi(2) + (tx_r.y - s_o.y).powi(2)
             })
             .sum();
@@ -53,9 +53,9 @@ pub fn align_simple(matching_stars: &[(Point<f32>, Point<f32>)]) -> Matrix3x3<f6
 }
 
 /// From https://igl.ethz.ch/projects/ARAP/svd_rot.pdf
-pub fn align_all(matching_stars: &[(Point<f32>, Point<f32>)]) -> Matrix3x3<f64> {
+pub fn align_all(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f64> {
     unimplemented!()
 }
 
-//fn centroid(points: &[Point<f32>]) -> Point<f32> {
+//fn centroid(points: &[Point<f64>]) -> Point<f64> {
 //}

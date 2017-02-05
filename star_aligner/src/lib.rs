@@ -14,7 +14,6 @@ mod rigid_body;
 
 use std::path::Path;
 use std::f64;
-use std::f32;
 use geom::{Point, Matrix3x3};
 use simd::f32x4;
 
@@ -24,7 +23,7 @@ const N_PROOF: usize = 250;
 #[derive(Debug, Clone)]
 pub struct Polygon {
     sides: f32x4,
-    stars: [Point<f32>; 3],
+    stars: [Point<f64>; 3],
 }
 
 impl Polygon {
@@ -53,7 +52,7 @@ impl Polygon {
 }
 
 pub struct Reference {
-    stars: Vec<Point<f32>>,
+    stars: Vec<Point<f64>>,
     polys: Vec<Polygon>,
 }
 
@@ -62,7 +61,7 @@ impl Reference {
         Self::from_stars(extract(path))
     }
 
-    pub fn from_stars(stars: Vec<Point<f32>>) -> Self {
+    pub fn from_stars(stars: Vec<Point<f64>>) -> Self {
         let polys = polys(&stars).collect();
         Reference {
             polys: polys,
@@ -74,11 +73,11 @@ impl Reference {
         self.align_stars(&extract(sample))
     }
 
-    pub fn align_stars(&self, sample_objects: &[Point<f32>]) -> Option<Matrix3x3<f64>> {
-        let threshold = 0.5;
+    pub fn align_stars(&self, sample_objects: &[Point<f64>]) -> Option<Matrix3x3<f64>> {
+        let threshold: f64 = 0.5;
 
-        let threshold_lower = f32x4::splat(-threshold);
-        let threshold_upper = f32x4::splat(threshold);
+        let threshold_lower = f32x4::splat(-threshold as f32);
+        let threshold_upper = f32x4::splat(threshold as f32);
         for sam_p in polys(sample_objects) {
             for sam_p in [
                 sam_p.shift(0),
@@ -92,7 +91,7 @@ impl Reference {
                         let matching_stars = sample_objects
                             .iter()
                             .filter_map(|&s_o| {
-                                let s_o_tx = (tx * s_o.to_f64()).to_f32();
+                                let s_o_tx = (tx * s_o.to_f64()).to_f64();
                                 self.stars
                                     .iter()
                                     .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
@@ -111,7 +110,7 @@ impl Reference {
     }
 }
 
-pub fn extract<P: AsRef<Path>>(path: P) -> Vec<Point<f32>> {
+pub fn extract<P: AsRef<Path>>(path: P) -> Vec<Point<f64>> {
     let image_info = imagemagick::identify(path.as_ref());
     let mut objects = sextractor::extract(path);
     // sort by flux, descending
@@ -119,21 +118,21 @@ pub fn extract<P: AsRef<Path>>(path: P) -> Vec<Point<f32>> {
     objects
         .into_iter()
         .take(N_OBJECTS)
-        .map(|o| Point { x: o.x, y: image_info.height as f32 - o.y })
+        .map(|o| Point { x: o.x as f64, y: image_info.height as f64 - o.y as f64 })
         .collect()
 }
 
 
 #[inline]
-fn angle(stars: [Point<f32>; 3]) -> f32 {
+fn angle(stars: [Point<f64>; 3]) -> f64 {
     (stars[2] - stars[0]).angle() - (stars[1] - stars[0]).angle()
 }
 
-fn polys<'a>(objects: &'a [Point<f32>]) -> impl Iterator<Item=Polygon> + 'a {
+fn polys<'a>(objects: &'a [Point<f64>]) -> impl Iterator<Item=Polygon> + 'a {
     //println!("stars detected: {}", objects.len());
     assert!(objects.len() > 2);
 
-    fn make_poly(window: [&Point<f32>; 3]) -> Polygon {
+    fn make_poly(window: [&Point<f64>; 3]) -> Polygon {
         let mut stars = [*window[0], *window[1], *window[2]];
 
         // make sure all triangles are clockwise
@@ -144,9 +143,9 @@ fn polys<'a>(objects: &'a [Point<f32>]) -> impl Iterator<Item=Polygon> + 'a {
 
         Polygon {
             sides: f32x4::new(
-                (stars[1] - stars[0]).length(),
-                (stars[2] - stars[1]).length(),
-                (stars[0] - stars[2]).length(),
+                (stars[1] - stars[0]).length() as f32,
+                (stars[2] - stars[1]).length() as f32,
+                (stars[0] - stars[2]).length() as f32,
                 0.0),
             stars: stars,
         }
@@ -179,7 +178,7 @@ mod tests {
     use serde_json;
     use std::fs::File;
 
-    fn read_stars(filename: &str) -> Vec<Point<f32>> {
+    fn read_stars(filename: &str) -> Vec<Point<f64>> {
         let mut f = File::open(filename).unwrap();
         serde_json::from_reader(&mut f).unwrap()
     }
@@ -208,8 +207,8 @@ mod tests {
         let r = Reference::from_stars(ref_stars.clone());
         let tx = r.align_stars(&sam_stars[..]).unwrap();
         assert_eq!(
-            (tx.to_f32() * ref_stars[i]),
-            Point { x: 321.32025, y: 2659.6943 });
+            (tx * ref_stars[i]),
+            Point { x: 321.3203286980832, y: 2659.694397022174 });
     }
 
     #[bench]
