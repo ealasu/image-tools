@@ -9313,17 +9313,62 @@ var _user$project$Main$view = function (model) {
 										});
 								case 'HasList':
 									return A2(
-										_elm_lang$html$Html$img,
+										_elm_lang$html$Html$div,
+										{ctor: '[]'},
 										{
 											ctor: '::',
-											_0: _elm_lang$html$Html_Attributes$src(
-												A2(
-													_elm_lang$core$Basics_ops['++'],
-													_user$project$Main$baseUrl,
-													A2(_elm_lang$core$Basics_ops['++'], 'api/image/', _p1._0.head))),
-											_1: {ctor: '[]'}
-										},
-										{ctor: '[]'});
+											_0: function () {
+												var _p2 = _elm_lang$core$List$head(_p1._0.tail);
+												if (_p2.ctor === 'Just') {
+													return A2(
+														_elm_lang$html$Html$img,
+														{
+															ctor: '::',
+															_0: _elm_lang$html$Html_Attributes$src(
+																A2(
+																	_elm_lang$core$Basics_ops['++'],
+																	_user$project$Main$baseUrl,
+																	A2(_elm_lang$core$Basics_ops['++'], 'api/image/', _p2._0))),
+															_1: {
+																ctor: '::',
+																_0: _elm_lang$html$Html_Attributes$style(
+																	{
+																		ctor: '::',
+																		_0: {ctor: '_Tuple2', _0: 'width', _1: '1px'},
+																		_1: {
+																			ctor: '::',
+																			_0: {ctor: '_Tuple2', _0: 'height', _1: '1px'},
+																			_1: {ctor: '[]'}
+																		}
+																	}),
+																_1: {ctor: '[]'}
+															}
+														},
+														{ctor: '[]'});
+												} else {
+													return A2(
+														_elm_lang$html$Html$div,
+														{ctor: '[]'},
+														{ctor: '[]'});
+												}
+											}(),
+											_1: {
+												ctor: '::',
+												_0: A2(
+													_elm_lang$html$Html$img,
+													{
+														ctor: '::',
+														_0: _elm_lang$html$Html_Attributes$src(
+															A2(
+																_elm_lang$core$Basics_ops['++'],
+																_user$project$Main$baseUrl,
+																A2(_elm_lang$core$Basics_ops['++'], 'api/image/', _p1._0.head))),
+														_1: {ctor: '[]'}
+													},
+													{ctor: '[]'}),
+												_1: {ctor: '[]'}
+											}
+										});
 								case 'HasListLoading':
 									return A2(
 										_elm_lang$html$Html$div,
@@ -9369,11 +9414,11 @@ var _user$project$Main$HasList = function (a) {
 	return {ctor: 'HasList', _0: a};
 };
 var _user$project$Main$next = function (list) {
-	var _p2 = _elm_lang$core$List$head(list);
-	if (_p2.ctor === 'Just') {
+	var _p3 = _elm_lang$core$List$head(list);
+	if (_p3.ctor === 'Just') {
 		return _user$project$Main$HasList(
 			{
-				head: _p2._0,
+				head: _p3._0,
 				tail: A2(_elm_lang$core$List$drop, 1, list)
 			});
 	} else {
@@ -9418,28 +9463,28 @@ var _user$project$Main$sendYes = function (id) {
 };
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p3 = msg;
-		switch (_p3.ctor) {
+		var _p4 = msg;
+		switch (_p4.ctor) {
 			case 'GotList':
-				if (_p3._0.ctor === 'Ok') {
+				if (_p4._0.ctor === 'Ok') {
 					return {
 						ctor: '_Tuple2',
-						_0: _user$project$Main$next(_p3._0._0),
+						_0: _user$project$Main$next(_p4._0._0),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				} else {
 					return {
 						ctor: '_Tuple2',
 						_0: _user$project$Main$HasError(
-							_elm_lang$core$Basics$toString(_p3._0._0)),
+							_elm_lang$core$Basics$toString(_p4._0._0)),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				}
 			case 'GotRes':
-				if (_p3._0.ctor === 'Ok') {
-					var _p4 = model;
-					if (_p4.ctor === 'HasListLoading') {
-						return {ctor: '_Tuple2', _0: _p4._0, _1: _elm_lang$core$Platform_Cmd$none};
+				if (_p4._0.ctor === 'Ok') {
+					var _p5 = model;
+					if (_p5.ctor === 'HasListLoading') {
+						return {ctor: '_Tuple2', _0: _p5._0, _1: _elm_lang$core$Platform_Cmd$none};
 					} else {
 						return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 					}
@@ -9447,30 +9492,30 @@ var _user$project$Main$update = F2(
 					return {
 						ctor: '_Tuple2',
 						_0: _user$project$Main$HasError(
-							_elm_lang$core$Basics$toString(_p3._0._0)),
+							_elm_lang$core$Basics$toString(_p4._0._0)),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				}
 			default:
-				var _p5 = model;
-				if (_p5.ctor === 'HasList') {
-					var _p8 = _p5._0.tail;
-					var _p7 = _p5._0.head;
-					var _p6 = _elm_lang$core$Char$fromCode(_p3._0);
-					switch (_p6.valueOf()) {
+				var _p6 = model;
+				if (_p6.ctor === 'HasList') {
+					var _p9 = _p6._0.tail;
+					var _p8 = _p6._0.head;
+					var _p7 = _elm_lang$core$Char$fromCode(_p4._0);
+					switch (_p7.valueOf()) {
 						case 'y':
 							return {
 								ctor: '_Tuple2',
 								_0: _user$project$Main$HasListLoading(
-									_user$project$Main$next(_p8)),
-								_1: _user$project$Main$sendYes(_p7)
+									_user$project$Main$next(_p9)),
+								_1: _user$project$Main$sendYes(_p8)
 							};
 						case 'n':
 							return {
 								ctor: '_Tuple2',
 								_0: _user$project$Main$HasListLoading(
-									_user$project$Main$next(_p8)),
-								_1: _user$project$Main$sendNo(_p7)
+									_user$project$Main$next(_p9)),
+								_1: _user$project$Main$sendNo(_p8)
 							};
 						default:
 							return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};

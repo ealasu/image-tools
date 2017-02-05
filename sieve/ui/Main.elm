@@ -72,8 +72,16 @@ view model =
           div [class "info"] [text "loading..."]
         HasError err ->
           div [class "info error"] [text err]
-        HasList { head } ->
-          img [src (baseUrl ++ "api/image/" ++ head)] []
+        HasList { head, tail } ->
+          div [] [
+            (case (List.head tail) of
+              Just next ->
+                --node "link" [rel "prefetch", href (baseUrl ++ "api/image/" ++ next)] []
+                img [src (baseUrl ++ "api/image/" ++ next), style [("width", "1px"),("height", "1px")]] []
+              Nothing ->
+                div [] []),
+            img [src (baseUrl ++ "api/image/" ++ head)] []
+          ]
         HasListLoading _ ->
           div [class "info"] [text "loading image..."]
         AllDone ->
