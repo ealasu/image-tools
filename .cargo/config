@@ -1,4 +1,5 @@
 [build]
 rustflags = [
-    "-C", "target-feature=+avx"
+    "-C", "target-feature=+avx",
+    "-L", "/usr/local/Cellar/gcc/6.3.0_1/lib/gcc/6/"
 ]

@@ -7,6 +7,8 @@ sextractor = { path = "../sextractor" }
 geom = { path = "../geom" }
 imagemagick = { path = "../imagemagick" }
 simd = "*"
+ndarray = "*"
+ndarray-linalg = "*"
 
 [dev-dependencies]
 serde = "*"
