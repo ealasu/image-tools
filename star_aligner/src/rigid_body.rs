@@ -21,6 +21,8 @@ pub fn get_transform_matrix(dst: [Point<f32>; 3], src: [Point<f32>; 3]) -> Matri
     res
 }
 
+/// Iterates through a number of corresponding triangle pairs, calculates transform for
+/// each pair, then returns the best transform.
 pub fn align_simple(matching_stars: &[(Point<f32>, Point<f32>)]) -> Matrix3x3<f64> {
     //println!("found match");
     let mut best_tx = Default::default();
@@ -49,3 +51,11 @@ pub fn align_simple(matching_stars: &[(Point<f32>, Point<f32>)]) -> Matrix3x3<f6
     //println!("best points: {:?}", best_points);
     best_tx
 }
+
+/// From https://igl.ethz.ch/projects/ARAP/svd_rot.pdf
+pub fn align_all(matching_stars: &[(Point<f32>, Point<f32>)]) -> Matrix3x3<f64> {
+    unimplemented!()
+}
+
+//fn centroid(points: &[Point<f32>]) -> Point<f32> {
+//}
