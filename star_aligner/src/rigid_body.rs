@@ -54,7 +54,7 @@ pub fn align_simple(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f6
             //[w[0].0, w[1].0, w[2].0]));
         }
     }
-    println!("best err: {}", best_err);
+    //println!("best err: {}", best_err);
     //println!("best points: {:?}", best_points);
     best_tx
 }
@@ -101,7 +101,7 @@ pub fn align_all(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f64> 
         v31: 0.0, v32: 0.0, v33: 1.0,
     };
     let err = calc_err(matching_stars, tx);
-    println!("err: {}", err);
+    //println!("err: {}", err);
 
     tx
 }

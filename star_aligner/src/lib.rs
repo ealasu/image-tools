@@ -15,6 +15,7 @@ mod rigid_body;
 
 use std::path::Path;
 use std::f64;
+use std::iter;
 use geom::{Point, Matrix3x3};
 use simd::f32x4;
 
@@ -79,36 +80,39 @@ impl Reference {
 
         let threshold_lower = f32x4::splat(-threshold as f32);
         let threshold_upper = f32x4::splat(threshold as f32);
-        for sam_p in polys(sample_objects) {
-            for sam_p in [
+        polys(sample_objects).flat_map(|sam_p| {
+            vec![
                 sam_p.shift(0),
                 sam_p.shift(1),
                 sam_p.shift(2),
-            ].iter() {
-                for ref_p in self.polys.iter() {
-                    let diff = sam_p.sides - ref_p.sides;
-                    if diff.gt(threshold_lower).all() && diff.lt(threshold_upper).all() {
-                        let tx = rigid_body::get_transform_matrix(ref_p.stars, sam_p.stars);
-                        let matching_stars = sample_objects
-                            .iter()
-                            .filter_map(|&s_o| {
-                                let s_o_tx = (tx * s_o.to_f64()).to_f64();
-                                self.stars
-                                    .iter()
-                                    .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
-                                    .map(|&r_o| (r_o, s_o))
-                            })
-                            .collect::<Vec<_>>();
-                        //println!("proofs: {}", proof.len());
-                        if matching_stars.len() >= N_PROOF {
-                            return Some(rigid_body::align_simple(&matching_stars));
-                            //return Some(rigid_body::align_all(&matching_stars));
-                        }
-                    }
-                }
+            ].into_iter()
+        }).flat_map(|sam_p| {
+            iter::repeat(sam_p).zip(self.polys.iter())
+        }).filter(|&(ref sam_p, ref ref_p)| {
+            let diff = sam_p.sides - ref_p.sides;
+            diff.gt(threshold_lower).all() && diff.lt(threshold_upper).all()
+        }).map(|(sam_p, ref_p)| {
+            let tx = rigid_body::get_transform_matrix(ref_p.stars, sam_p.stars);
+            sample_objects
+                .iter()
+                .filter_map(|&s_o| {
+                    let s_o_tx = (tx * s_o.to_f64()).to_f64();
+                    self.stars
+                        .iter()
+                        .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
+                        .map(|&r_o| (r_o, s_o))
+                })
+                .collect::<Vec<_>>()
+        }).max_by(|a, b| a.len().cmp(&b.len()))
+        .and_then(|matching_stars| {
+            //println!("proofs: {}", matching_stars.len());
+            if matching_stars.len() >= N_PROOF {
+                Some(rigid_body::align_simple(&matching_stars))
+                //Some(rigid_body::align_all(&matching_stars))
+            } else {
+                None
             }
-        }
-        None
+        })
     }
 }
 
@@ -202,10 +206,10 @@ mod tests {
     fn test_align() {
         let ref_stars = read_stars("test/a.stars.json");
         let sam_stars = read_stars("test/b.stars.json");
-        let i = 3;
-        //assert_eq!(
-            //sam_stars[i],
-            //Point { x: 321.422, y: 2659.7307 });
+        let i = 0;
+        assert_eq!(
+            sam_stars[i],
+            Point { x: 321.422, y: 2659.7307 });
         //println!("d: {:?}", sam_stars[i] - ref_stars[i]);
         let r = Reference::from_stars(ref_stars.clone());
         let tx = r.align_stars(&sam_stars[..]).unwrap();
