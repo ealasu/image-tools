@@ -5,8 +5,9 @@ extern crate sextractor;
 extern crate geom;
 extern crate imagemagick;
 extern crate simd;
-extern crate ndarray;
-extern crate ndarray_linalg;
+//extern crate ndarray;
+//extern crate ndarray_linalg;
+extern crate rulinalg;
 #[cfg(test)] extern crate serde_json;
 #[cfg(test)] extern crate test;
 
@@ -101,6 +102,7 @@ impl Reference {
                         //println!("proofs: {}", proof.len());
                         if matching_stars.len() >= N_PROOF {
                             return Some(rigid_body::align_simple(&matching_stars));
+                            //return Some(rigid_body::align_all(&matching_stars));
                         }
                     }
                 }
@@ -200,12 +202,16 @@ mod tests {
     fn test_align() {
         let ref_stars = read_stars("test/a.stars.json");
         let sam_stars = read_stars("test/b.stars.json");
-        let i = 0;
-        assert_eq!(
-            sam_stars[i],
-            Point { x: 321.422, y: 2659.7307 });
+        let i = 3;
+        //assert_eq!(
+            //sam_stars[i],
+            //Point { x: 321.422, y: 2659.7307 });
+        //println!("d: {:?}", sam_stars[i] - ref_stars[i]);
         let r = Reference::from_stars(ref_stars.clone());
         let tx = r.align_stars(&sam_stars[..]).unwrap();
+        println!("sample: {:?}", sam_stars[i]);
+        println!("ref:    {:?}", ref_stars[i]);
+        println!("d: {:?}", sam_stars[i] - (tx * ref_stars[i]));
         assert_eq!(
             (tx * ref_stars[i]),
             Point { x: 321.3203286980832, y: 2659.694397022174 });

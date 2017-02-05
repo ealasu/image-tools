@@ -15,7 +15,12 @@ impl<T: Float> Vector<T> {
 
     #[inline]
     pub fn length(&self) -> T {
-        (self.x * self.x + self.y * self.y).sqrt()
+        self.length2().sqrt()
+    }
+
+    #[inline]
+    pub fn length2(&self) -> T {
+        self.x * self.x + self.y * self.y
     }
 
     #[inline]

@@ -55,6 +55,14 @@ impl<T: Float> Div<T> for Point<T> {
     }
 }
 
+impl<T: Float> AddAssign for Point<T> {
+    #[inline]
+    fn add_assign(&mut self, rhs: Self) {
+        self.x = self.x + rhs.x;
+        self.y = self.y + rhs.y;
+    }
+}
+
 impl<T: Float> Add<Vector<T>> for Point<T> {
     type Output = Self;
 
