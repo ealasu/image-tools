@@ -126,7 +126,6 @@ fn handle_image(req: &mut Request) -> IronResult<Response> {
                 status::Ok,
                 output.stdout,
                 Header(ContentType::jpeg()),
-                //Header(CacheControl(vec![CacheDirective::NoStore, CacheDirective::MustRevalidate]))
                 Header(CacheControl(vec![CacheDirective::Public, CacheDirective::MaxAge(99999999)]))
                 )))
 }
