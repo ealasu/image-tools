@@ -29,6 +29,8 @@ fn calc_err(matching_stars: &[(Point<f64>, Point<f64>)], tx: Matrix3x3<f64>) -> 
     matching_stars.iter()
         .map(|&(r_o, s_o)| {
             ((tx * r_o) - s_o).length2()
+            //let d = ((tx * r_o) - s_o);
+            //d.x.abs() + d.y.abs()
         })
         .sum()
 }
@@ -54,19 +56,16 @@ pub fn align_simple(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f6
             //[w[0].0, w[1].0, w[2].0]));
         }
     }
-    //println!("best err: {}", best_err);
+    println!("best err: {}", best_err);
     //println!("best points: {:?}", best_points);
     best_tx
 }
 
 /// From https://igl.ethz.ch/projects/ARAP/svd_rot.pdf
 pub fn align_all(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f64> {
-    let ref_points = matching_stars.iter().map(|&(r,_)| r).collect::<Vec<_>>();
-    let sam_points = matching_stars.iter().map(|&(_,s)| s).collect::<Vec<_>>();
-    let ref_centroid = centroid(&ref_points);
-    let sam_centroid = centroid(&sam_points);
+    let ref_centroid = centroid(matching_stars.iter().map(|&(r,_)| r));
+    let sam_centroid = centroid(matching_stars.iter().map(|&(_,s)| s));
 
-    //let mut m = Array::from_elem((2, 2), 0.0f64);
     let mut m = Matrix::<f64>::zeros(2, 2);
     for &(r, s) in matching_stars.iter() {
         let r = r - ref_centroid;
@@ -75,24 +74,23 @@ pub fn align_all(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f64> 
         m[[0, 1]] += r.x * s.y;
         m[[1, 0]] += r.y * s.x;
         m[[1, 1]] += r.y * s.y;
-        //*m.get_mut((0, 0)).unwrap() += r.x * s.x;
-        //*m.get_mut((0, 1)).unwrap() += r.x * s.y;
-        //*m.get_mut((1, 0)).unwrap() += r.y * s.x;
-        //*m.get_mut((1, 1)).unwrap() += r.y * s.y;
     }
-    println!("m:    {:?}", m);
+    //println!("m: {:?}", m);
     let (s, u, v) = m.svd().expect("failed to calculate SVD");
-    println!("s: {:?}", s);
-    println!("u: {:?}", u);
-    println!("v: {:?}", v);
-    println!("usvt: {:?}", &u * &s * &v.transpose());
+    //println!();
+    //println!("s: {:?}", s);
+    //println!("u: {:?}", u);
+    //println!("v: {:?}", v);
+    //println!();
+    //println!("usvt: {:?}", &u * &s * &v.transpose());
+
     let d = Matrix::from_diag(&vec![1.0, (&v * u.transpose()).det()]);
     let r = v * d * u.transpose();
+    //let r = u.transpose() * d * v;
     //println!("r: {:?}", r);
     let t =
-        Vector::new(vec![sam_centroid.x, sam_centroid.y])
-        - &r *
-        Vector::new(vec![ref_centroid.x, ref_centroid.y]);
+        Vector::new(vec![sam_centroid.x, sam_centroid.y]) -
+        &r * Vector::new(vec![ref_centroid.x, ref_centroid.y]);
     //println!("t: {:?}", t);
 
     let tx = Matrix3x3 {
@@ -100,16 +98,18 @@ pub fn align_all(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f64> 
         v21: r[[1, 0]], v22: r[[1, 1]], v23: t[1],
         v31: 0.0, v32: 0.0, v33: 1.0,
     };
-    let err = calc_err(matching_stars, tx);
-    //println!("err: {}", err);
+    println!("err: {}", calc_err(matching_stars, tx));
 
     tx
 }
 
-fn centroid(points: &[Point<f64>]) -> Point<f64> {
+fn centroid<I>(points: I) -> Point<f64>
+where I: Iterator<Item=Point<f64>> {
     let mut sum: Point<f64> = Default::default();
-    for &p in points.iter() {
+    let mut count: usize = 0;
+    for p in points {
         sum += p;
+        count += 1;
     }
-    sum / points.len() as f64
+    sum / count as f64
 }
