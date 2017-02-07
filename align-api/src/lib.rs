@@ -9,7 +9,7 @@ use geom::Matrix3x3;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AlignedImage {
     pub filename: String,
-    pub transform: Matrix3x3<f32>,
+    pub transform: Matrix3x3<f64>,
 }
 
 pub fn write(alignment: &[AlignedImage], filename: &str) {

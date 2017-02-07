@@ -12,7 +12,6 @@ use std::path::Path;
 use std::process::Command;
 use docopt::Docopt;
 use rayon::prelude::*;
-use image::Image;
 use align_api::AlignedImage;
 
 const USAGE: &'static str = "
@@ -55,22 +54,22 @@ fn main() {
 
     let res: Vec<_> = args.arg_input
         .into_par_iter()
-        .map(|filename| {
+        .filter_map(|filename| {
             let filename = fs::canonicalize(filename).unwrap();
             println!("aligning {:?}", filename);
             //let sample_image = Image::<f32>::open(&filename);
             //let transform = three_axis.align(&sample_image);
             let transform = with_fits(&filename, |fits_filename| {
-                reference
-                .align_image(fits_filename)
-                .ok_or_else(|| format!("failed to align {}", filename.to_str().unwrap()))
-                .unwrap()
-                .to_f32()
+                reference.align_image(fits_filename)
             });
-            println!("offset: {:?}", transform);
-            AlignedImage {
-                filename: filename.to_string_lossy().into_owned(),
-                transform: transform,
+            if let Some(transform) = transform {
+                Some(AlignedImage {
+                    filename: filename.to_string_lossy().into_owned(),
+                    transform: transform
+                })
+            } else {
+                println!("failed to align {}", filename.to_str().unwrap());
+                None
             }
         })
         .collect();

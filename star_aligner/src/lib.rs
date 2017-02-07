@@ -20,7 +20,7 @@ use geom::{Point, Matrix3x3};
 use simd::f32x4;
 
 const N_OBJECTS: usize = 400;
-const N_PROOF: usize = 250;
+const N_PROOF: usize = 200;
 
 #[derive(Debug, Clone)]
 pub struct Polygon {
@@ -76,7 +76,7 @@ impl Reference {
     }
 
     pub fn align_stars(&self, sample_objects: &[Point<f64>]) -> Option<Matrix3x3<f64>> {
-        let threshold: f64 = 0.5;
+        let threshold: f64 = 0.6;
 
         let threshold_lower = f32x4::splat(-threshold as f32);
         let threshold_upper = f32x4::splat(threshold as f32);
@@ -105,7 +105,7 @@ impl Reference {
                 .collect::<Vec<_>>()
         }).max_by(|a, b| a.len().cmp(&b.len()))
         .and_then(|matching_stars| {
-            //println!("proofs: {}", matching_stars.len());
+            println!("proofs: {}", matching_stars.len());
             if matching_stars.len() >= N_PROOF {
                 //Some(rigid_body::align_simple(&matching_stars))
                 Some(rigid_body::align_all(&matching_stars))
@@ -196,16 +196,16 @@ mod tests {
 
     //#[test]
     fn gen_data() {
-        write_stars("test/a.fits", "test/a.stars.json");
-        write_stars("test/b.fits", "test/b.stars.json");
-        write_stars("test/c_r.fits", "test/c_r.stars.json");
-        write_stars("test/c_s.fits", "test/c_s.stars.json");
+        write_stars("test/bug/a.fits", "test/bug/a.stars.json");
+        write_stars("test/bug/b.fits", "test/bug/b.stars.json");
+        //write_stars("test/c_r.fits", "test/c_r.stars.json");
+        //write_stars("test/c_s.fits", "test/c_s.stars.json");
     }
 
     #[test]
     fn test_align() {
-        let ref_stars = read_stars("test/a.stars.json");
-        let sam_stars = read_stars("test/b.stars.json");
+        let ref_stars = read_stars("test/bug/a.stars.json");
+        let sam_stars = read_stars("test/bug/b.stars.json");
         let i = 0;
         //assert_eq!(
             //sam_stars[i],
