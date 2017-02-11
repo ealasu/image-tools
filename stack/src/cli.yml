@@ -1,0 +1,46 @@
+name: stack
+about: write a nice description here
+subcommands:
+    - average:
+        about: averages images
+        args:
+            - output:
+                long: output
+                help: filename of output file
+                takes_value: true
+                required: true
+            - alignment:
+                long: alignment
+                help: alignment json file
+                takes_value: true
+                required: true
+            - flat:
+                long: flat
+                help: FITS file of flat field
+                takes_value: true
+                required: true
+    - 'sigma-kappa':
+        args:
+            - output:
+                long: output
+                help: filename of output file
+                takes_value: true
+                required: true
+            - alignment:
+                long: alignment
+                help: alignment json file
+                takes_value: true
+                required: true
+            - flat:
+                long: flat
+                help: FITS file of flat field
+                takes_value: true
+                required: true
+            - average:
+                long: average 
+                takes_value: true
+                required: true
+            - kappa:
+                long: kappa
+                takes_value: true
+                required: true

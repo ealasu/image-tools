@@ -29,7 +29,7 @@ impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default
     }
 
     pub fn add(&mut self, image: &Image<P>, transform: Matrix3x3<f32>) {
-        add(&mut self.image, image, transform, self.factor, self.pixel_aperture);
+        add(&mut self.image, image, transform, self.factor, self.pixel_aperture, |_,_,_| true);
         self.count += 1;
     }
 
@@ -43,23 +43,31 @@ impl<P: Copy + Clone + AddAssign + DivAssign<f32> + Mul<f32, Output=P> + Default
 
 }
 
-pub fn add<P,F>(
+pub fn add<P,F,FilterFn>(
     stack: &mut Image<P>,
     image: &Image<P>,
     transform: Matrix3x3<F>,
     factor: F,
-    pixel_aperture: F
+    pixel_aperture: F,
+    filter: FilterFn
 )
-where P: Copy + Clone + AddAssign + DivAssign<F> + Mul<F, Output=P> + Default, F: Float + FromPrimitive {
+where
+    P: Copy + Clone + AddAssign + DivAssign<F> + Mul<F, Output=P> + Default,
+    F: Float + FromPrimitive,
+    FilterFn: Fn(usize, usize, P) -> bool
+{
     for y in 0..stack.height {
         for x in 0..stack.width {
             let src_pos = transform * Point {
                 x: F::from_usize(x).unwrap() / factor,
                 y: F::from_usize(y).unwrap() / factor
             };
-            let pixel = stack.pixel_at_mut(x, y);
-            *pixel += resample(image, src_pos.x, src_pos.y, factor,
+            let dst_pixel = stack.pixel_at_mut(x, y);
+            let src_pixel = resample(image, src_pos.x, src_pos.y, factor,
                                                        pixel_aperture);
+            if filter(x, y, src_pixel) {
+                *dst_pixel += src_pixel;
+            }
         }
     }
 }

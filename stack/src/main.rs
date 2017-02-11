@@ -1,29 +1,32 @@
-extern crate docopt;
-extern crate rustc_serialize;
 extern crate star_stuff;
-extern crate donuts;
+//extern crate donuts;
 extern crate image;
 extern crate align_api;
 extern crate crossbeam;
+#[macro_use] extern crate clap;
 
 use std::thread;
 use std::sync::Mutex;
 use std::sync::mpsc::sync_channel;
-use docopt::Docopt;
 use star_stuff::drizzle::{self, ImageStack};
 use image::{Image, Rgb, RgbBayer, ImageKind};
 use crossbeam::sync::chase_lev;
+use clap::{App, ArgMatches};
 
 
-const USAGE: &'static str = "
-Stacker.
+//const USAGE: &'static str = "
+//Stacker.
+//
+//Usage:
+//    stack average [options] --output=<filename> 
+//    stack median [options] --output=<filename>  --average=<filename>
+//Options:
+//    --alignment=<filename>  Alignment
+//    --flat=<filename>       Flat field
+//    --aperture=<ratio>      Pixel aperture [default: 0.8]
+//";
 
-Usage:
-    stack average --output=<filename> --flat=<filename> --alignment=<filename>
-    stack median --output=<filename> --flat=<filename> --alignment=<filename> --average=<filename>
-";
-
-#[derive(Debug, RustcDecodable)]
+//#[derive(Debug, RustcDecodable)]
 struct Args {
     cmd_average: bool,
     cmd_median: bool,
@@ -31,16 +34,28 @@ struct Args {
     flag_flat: String,
     flag_alignment: String,
     flag_average: String,
+    flag_aperture: String,
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
-    if args.cmd_average {
-        stack_average(args);
-    } else if args.cmd_median {
-        stack_median(args);
+    //let args: Args = Docopt::new(USAGE)
+        //.and_then(|d| d.decode())
+        //.unwrap_or_else(|e| e.exit());
+    //println!("{:?}", args);
+
+    //if args.cmd_average {
+        //stack_average(args);
+    //} else if args.cmd_median {
+        //stack_median(args);
+    //}
+    let cli_yml = load_yaml!("cli.yml");
+    let matches = App::from_yaml(cli_yml).get_matches();
+    println!("{:?}", matches);
+    println!("{:?}", matches.subcommand());
+    match matches.subcommand() {
+        ("average", Some(matches)) => stack_average(matches),
+        ("sigma-kappa",  Some(matches)) => stack_sigma_kappa(matches),
+        _ => {}
     }
 }
 
@@ -83,9 +98,13 @@ fn main() {
     ////}
 //}
 
-fn stack_average(args: Args) {
-    let flat = open_fits(&args.flag_flat);
-    let alignment = align_api::read(&args.flag_alignment);
+fn stack_average(args: &ArgMatches) {
+    let flag_flat = args.value_of("flat").unwrap();
+    let flag_alignment = args.value_of("alignment").unwrap();
+    let flag_output = args.value_of("output").unwrap();
+
+    let flat = open_fits_gray(flag_flat);
+    let alignment = align_api::read(flag_alignment);
     let img = for_each_image(
         alignment,
         || |file| {
@@ -96,7 +115,7 @@ fn stack_average(args: Args) {
              img /= &flat;
              let img = img.to_rggb();
              if let Some(mut stack) = stack {
-                 drizzle::add(&mut stack, &img, transform, 1.0, 0.80);
+                 drizzle::add(&mut stack, &img, transform, 1.0, 0.80, |_,_,_| true);
                  Some(stack)
              } else {
                  Some(img)
@@ -104,16 +123,22 @@ fn stack_average(args: Args) {
         }
     ).unwrap();
 
-    img.to_rgb().save_fits(&args.flag_output);
+    img.to_rgb().save_fits(flag_output);
     //let holes = img.center_crop(900, 900).holes();
     //println!("holes min/max: {:?}", holes.min_max());
     //holes.to_u8().save_jpeg_file("holes.jpg");
 }
 
-fn stack_median(args: Args) {
-    let flat = open_fits(&args.flag_flat);
-    let average = open_fits(&args.flag_average);
-    let alignment = align_api::read(&args.flag_alignment);
+fn stack_sigma_kappa(args: &ArgMatches) {
+    let flag_flat = args.value_of("flat").unwrap();
+    let flag_average = args.value_of("average").unwrap();
+    let flag_alignment = args.value_of("alignment").unwrap();
+    let flag_output = args.value_of("output").unwrap();
+    let flag_kappa: f64 = args.value_of("kappa").unwrap().parse().expect("failed to parse kappa");
+
+    let flat = open_fits_gray(flag_flat);
+    let average = open_fits_rgb(flag_average);
+    let alignment = align_api::read(flag_alignment);
     let img = for_each_image(
         alignment,
         || |file| {
@@ -124,8 +149,12 @@ fn stack_median(args: Args) {
              img /= &flat;
              let img = img.to_rggb();
              if let Some(mut stack) = stack {
-                 // TODO
-                 drizzle::add(&mut stack, &img, transform, 1.0, 0.80);
+                 drizzle::add(&mut stack, &img, transform, 1.0, 0.80, |x, y, p| {
+                     let avg = average.pixel_at(x, y);
+                     (p.rc < 0.2 || (p.r / p.rc - avg.r).abs() < flag_kappa) &&
+                     (p.gc < 0.2 || (p.g / p.gc - avg.g).abs() < flag_kappa) &&
+                     (p.bc < 0.2 || (p.b / p.bc - avg.b).abs() < flag_kappa)
+                 });
                  Some(stack)
              } else {
                  Some(img)
@@ -133,7 +162,7 @@ fn stack_median(args: Args) {
         }
     ).unwrap();
 
-    img.to_rgb().save_fits(&args.flag_output);
+    img.to_rgb().save_fits(flag_output);
 }
 
 fn for_each_image<Item,MapFnFactory,MapFn,MappedItem,ReduceFn, ReducedItem>(
@@ -179,8 +208,16 @@ where
     })
 }
 
-fn open_fits(filename: &str) -> Image<f64> {
+fn open_fits_gray(filename: &str) -> Image<f64> {
     if let ImageKind::F64(v) = ImageKind::open_fits(filename) {
+        v
+    } else {
+        panic!("wrong fits type")
+    }
+}
+
+fn open_fits_rgb(filename: &str) -> Image<Rgb<f64>> {
+    if let ImageKind::RgbF64(v) = ImageKind::open_fits(filename) {
         v
     } else {
         panic!("wrong fits type")

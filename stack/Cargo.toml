@@ -3,10 +3,9 @@ name = "stack"
 version = "0.0.0"
 
 [dependencies]
-docopt = "*"
-rustc-serialize = "*"
 star_stuff = { path = "../star_stuff" }
-donuts = { path = "../donuts" }
+#donuts = { path = "../donuts" }
 image = { path = "../image" }
 crossbeam = "*"
 align_api = { path = "../align-api" }
+clap = { version = "*", features = ["yaml"] }
