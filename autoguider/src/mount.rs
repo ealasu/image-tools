@@ -20,8 +20,7 @@ pub struct Mount {
 //}
 
 impl Mount {
-    pub fn new() -> Self {
-        let client = Client::new("ubuntu:1234").unwrap();
+    pub fn new(client: Client) -> Self {
         Mount {
             client: client,
         }
@@ -40,8 +39,6 @@ impl Mount {
     }
 
     pub fn start(&mut self) {
-        self.client.start().unwrap();
-        thread::sleep(Duration::from_secs(2));
     }
 
     pub fn stop(&mut self) {

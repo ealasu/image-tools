@@ -9,7 +9,8 @@ extern crate mount_service_api;
 extern crate image;
 extern crate donuts;
 extern crate geom;
-extern crate gphoto;
+extern crate point;
+//extern crate gphoto;
 #[cfg(test)] extern crate env_logger;
 
 mod autoguider;
@@ -19,6 +20,7 @@ mod mount;
 mod pos;
 
 use std::time::Duration;
+use std::thread;
 use std::sync::Mutex;
 use camera::Camera;
 use aligner::Aligner;
@@ -26,6 +28,7 @@ use mount::Mount;
 use pos::*;
 use pid_control::{Controller, PIDController};
 use docopt::Docopt;
+use mount_service_api::Client;
 
 const MAX: f32 = 150.0;
 
@@ -33,12 +36,15 @@ const USAGE: &'static str = "
 Autoguider.
 
 Usage:
-    autoguider --count=<number of images to shoot>
+    autoguider --count=<number of images to shoot> [--ra=<ra> --dec=<dec> --threshold=<deg>]
 ";
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
     flag_count: usize,
+    flag_ra: Option<String>,
+    flag_dec: Option<String>,
+    flag_threshold: Option<f64>,
 }
 
 fn main() {
@@ -47,9 +53,17 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();
 
+    let client = Client::new("ubuntu:1234").unwrap();
+    client.start().unwrap();
+    thread::sleep(Duration::from_secs(1));
+
+    if let (Some(ra), Some(dec), Some(threshold)) = (args.flag_ra, args.flag_dec, args.flag_threshold) {
+        point::point(&client, &ra, &dec, threshold);
+    }
+
     let camera = Mutex::new(Camera::new());
     let mut aligner = Aligner::new();
-    let mut mount = Mount::new();
+    let mut mount = Mount::new(client);
     let shot_duration = Duration::from_secs(5 + 30);
     let mut ra_controller = PIDController::new(0.3, 0.03, 0.0);
     let mut dec_controller = PIDController::new(0.10, 0.015, 0.0);
