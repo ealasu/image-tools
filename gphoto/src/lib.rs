@@ -1,3 +1,5 @@
+extern crate tempfile;
+
 use tempfile::NamedTempFile;
 use std::process::Command;
 use std::path::Path;

@@ -1,10 +1,8 @@
 extern crate mount_service_api;
 extern crate astrometry;
-extern crate tempfile;
+extern crate gphoto;
 extern crate regex;
 #[macro_use] extern crate log;
-
-mod gphoto;
 
 use std::fs;
 use std::thread;
