@@ -19,6 +19,11 @@ subcommands:
                 help: FITS file of flat field
                 takes_value: true
                 required: true
+            - pixel_aperture:
+                long: pixel-aperture
+                help: Pixel aperture
+                takes_value: true
+                required: true
     - 'sigma-kappa':
         args:
             - output:
@@ -42,5 +47,10 @@ subcommands:
                 required: true
             - kappa:
                 long: kappa
+                takes_value: true
+                required: true
+            - pixel_aperture:
+                long: pixel-aperture
+                help: Pixel aperture
                 takes_value: true
                 required: true

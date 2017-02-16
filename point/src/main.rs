@@ -41,6 +41,7 @@ fn main() {
 
     let client = Client::new("ubuntu:1234").unwrap();
     client.start().unwrap().unwrap();
+    thread::sleep(Duration::from_secs(2));
 
     let desired_ra = read_ra(&args.flag_ra).expect("failed to parse ra");
     let desired_dec = read_ra(&args.flag_dec).expect("failed to parse dec");

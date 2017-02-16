@@ -1,5 +1,4 @@
 extern crate star_stuff;
-//extern crate donuts;
 extern crate image;
 extern crate align_api;
 extern crate crossbeam;
@@ -14,44 +13,10 @@ use crossbeam::sync::chase_lev;
 use clap::{App, ArgMatches};
 
 
-//const USAGE: &'static str = "
-//Stacker.
-//
-//Usage:
-//    stack average [options] --output=<filename> 
-//    stack median [options] --output=<filename>  --average=<filename>
-//Options:
-//    --alignment=<filename>  Alignment
-//    --flat=<filename>       Flat field
-//    --aperture=<ratio>      Pixel aperture [default: 0.8]
-//";
-
-//#[derive(Debug, RustcDecodable)]
-struct Args {
-    cmd_average: bool,
-    cmd_median: bool,
-    flag_output: String,
-    flag_flat: String,
-    flag_alignment: String,
-    flag_average: String,
-    flag_aperture: String,
-}
-
 fn main() {
-    //let args: Args = Docopt::new(USAGE)
-        //.and_then(|d| d.decode())
-        //.unwrap_or_else(|e| e.exit());
-    //println!("{:?}", args);
-
-    //if args.cmd_average {
-        //stack_average(args);
-    //} else if args.cmd_median {
-        //stack_median(args);
-    //}
     let cli_yml = load_yaml!("cli.yml");
     let matches = App::from_yaml(cli_yml).get_matches();
-    println!("{:?}", matches);
-    println!("{:?}", matches.subcommand());
+    //println!("{:?}", matches);
     match matches.subcommand() {
         ("average", Some(matches)) => stack_average(matches),
         ("sigma-kappa",  Some(matches)) => stack_sigma_kappa(matches),
@@ -102,6 +67,9 @@ fn stack_average(args: &ArgMatches) {
     let flag_flat = args.value_of("flat").unwrap();
     let flag_alignment = args.value_of("alignment").unwrap();
     let flag_output = args.value_of("output").unwrap();
+    let flag_pixel_aperture = args
+        .value_of("pixel_aperture").unwrap()
+        .parse().expect("failed to parse pixel_aperture");
 
     let flat = open_fits_gray(flag_flat);
     let alignment = align_api::read(flag_alignment);
@@ -115,7 +83,7 @@ fn stack_average(args: &ArgMatches) {
              img /= &flat;
              let img = img.to_rggb();
              if let Some(mut stack) = stack {
-                 drizzle::add(&mut stack, &img, transform, 1.0, 0.80, |_,_,_| true);
+                 drizzle::add(&mut stack, &img, transform, 1.0, flag_pixel_aperture, |_,_,_| true);
                  Some(stack)
              } else {
                  Some(img)
@@ -135,6 +103,9 @@ fn stack_sigma_kappa(args: &ArgMatches) {
     let flag_alignment = args.value_of("alignment").unwrap();
     let flag_output = args.value_of("output").unwrap();
     let flag_kappa: f64 = args.value_of("kappa").unwrap().parse().expect("failed to parse kappa");
+    let flag_pixel_aperture = args
+        .value_of("pixel_aperture").unwrap()
+        .parse().expect("failed to parse pixel_aperture");
 
     let flat = open_fits_gray(flag_flat);
     let average = open_fits_rgb(flag_average);
@@ -149,7 +120,7 @@ fn stack_sigma_kappa(args: &ArgMatches) {
              img /= &flat;
              let img = img.to_rggb();
              if let Some(mut stack) = stack {
-                 drizzle::add(&mut stack, &img, transform, 1.0, 0.80, |x, y, p| {
+                 drizzle::add(&mut stack, &img, transform, 1.0, flag_pixel_aperture, |x, y, p| {
                      let avg = average.pixel_at(x, y);
                      (p.rc < 0.2 || (p.r / p.rc - avg.r).abs() < flag_kappa) &&
                      (p.gc < 0.2 || (p.g / p.gc - avg.g).abs() < flag_kappa) &&
