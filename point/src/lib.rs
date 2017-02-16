@@ -2,6 +2,7 @@ extern crate mount_service_api;
 extern crate astrometry;
 extern crate tempfile;
 extern crate regex;
+#[macro_use] extern crate log;
 
 mod gphoto;
 
@@ -13,10 +14,10 @@ use regex::Regex;
 
 
 fn shoot_and_solve() -> (f64, f64) {
-  println!("shooting...");
+  info!("shooting...");
   let img = gphoto::shoot();
   fs::copy(img.path(), "/mnt/ramdisk/latest.jpg").unwrap();
-  println!("solving...");
+  info!("solving...");
   astrometry::solve(&img.path().to_str().unwrap())
 }
 
@@ -31,14 +32,14 @@ pub fn point(client: &Client, ra: &str, dec: &str, threshold: f64) {
     let (ra, dec) = shoot_and_solve();
     let d_ra = desired_ra - ra;
     let d_dec = desired_dec - dec;
-    println!("d_ra: {} d_dec: {}", d_ra, d_dec);
+    info!("d_ra: {} d_dec: {}", d_ra, d_dec);
     if d_ra.abs() < threshold && d_dec.abs() < threshold {
       break;
     }
-    println!("slewing...");
+    info!("slewing...");
     client.slew_by(Pos { ra: d_ra, dec: d_dec }).unwrap().unwrap();
 
-    println!("waiting for slew to end...");
+    info!("waiting for slew to end...");
     thread::sleep(Duration::from_secs(1));
     while client.is_slewing().unwrap().unwrap() {
       thread::sleep(Duration::from_secs(1));
@@ -46,7 +47,7 @@ pub fn point(client: &Client, ra: &str, dec: &str, threshold: f64) {
     thread::sleep(Duration::from_secs(2));
   }
 
-  println!("resetting position...");
+  info!("resetting position...");
   client.reset_position(Pos {
     ra: desired_ra,
     dec: desired_dec,

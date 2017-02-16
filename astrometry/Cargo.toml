@@ -6,3 +6,4 @@ version = "0.1.0"
 fits = { path = "../fits" }
 tempfile = "*"
 regex = "*"
+log = "*"
