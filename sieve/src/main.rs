@@ -75,7 +75,7 @@ fn main() {
 
     let mut mount = Mount::new();
     mount.mount("/api", router);
-    mount.mount("/", Static::new(Path::new("../ui/target")));
+    mount.mount("/", Static::new(Path::new("./ui/target")));
 
     let (logger_before, logger_after) = Logger::new(None);
     let mut chain = Chain::new(mount);
