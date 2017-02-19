@@ -3,3 +3,4 @@
 *.tiff
 *.pgm
 *.dat
+/test/

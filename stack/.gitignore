@@ -1,3 +1,4 @@
 *.fits
 *.tif
 *.jpg
+/test/
