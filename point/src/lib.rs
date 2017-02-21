@@ -13,7 +13,11 @@ use regex::Regex;
 
 fn shoot_and_solve() -> (f64, f64) {
   info!("shooting...");
-  let img = gphoto::shoot();
+  let img = gphoto::shoot(gphoto::Options {
+    keep_raw: false,
+    iso: "20".into(), // 6400
+    shutter_speed: "6".into(),
+  }).unwrap();
   fs::copy(img.path(), "/mnt/ramdisk/latest.jpg").unwrap();
   info!("solving...");
   astrometry::solve(&img.path().to_str().unwrap())

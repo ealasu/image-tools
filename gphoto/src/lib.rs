@@ -1,14 +1,24 @@
 extern crate tempfile;
+#[macro_use] extern crate error_chain;
+#[macro_use] extern crate log;
+
+mod errors;
 
 use tempfile::NamedTempFile;
 use std::process::Command;
 use std::path::Path;
 use std::thread;
 use std::time::Duration;
+use std::fs;
+pub use errors::*;
 
-pub fn shoot() -> NamedTempFile {
-    let keep_raw = false;
+pub struct Options {
+    pub keep_raw: bool,
+    pub shutter_speed: String,
+    pub iso: String,
+}
 
+pub fn shoot(options: Options) -> Result<NamedTempFile> {
     let res = Command::new("pkill")
         .arg("PTPCamera")
         .status()
@@ -25,7 +35,7 @@ pub fn shoot() -> NamedTempFile {
     command
         .arg("--filename").arg(jpeg_file.path())
         .arg("--force-overwrite");
-    if keep_raw {
+    if options.keep_raw {
         // Choice: 1 Memory card
         command
             .arg("--set-config").arg("capturetarget=1")
@@ -39,18 +49,26 @@ pub fn shoot() -> NamedTempFile {
             .arg("--set-config").arg("imageformat=0");
     }
     command
-        // 5?
-        .arg("--set-config").arg("shutterspeed=6")
+        // option 6
+        .arg("--set-config").arg(format!("shutterspeed={}", options.shutter_speed))
 
-        // 6400
-        .arg("--set-config").arg("iso=20")
+        // ISO 6400
+        // option 20
+        .arg("--set-config").arg(format!("iso={}", options.iso))
 
         .arg("--capture-image-and-download");
 
     let status = command
         .status()
         .expect("failed to execute gphoto2");
-    assert!(status.success());
+    if !status.success() {
+        return Err(ErrorKind::GphotoCommandFailed.into());
+    }
+    debug!("jpeg file len: {}", fs::metadata(jpeg_file.path()).unwrap().len());
+    if jpeg_file.metadata()?.len() == 0 {
+        return Err(ErrorKind::EmptyFile.into());
+    }
+    fs::copy(jpeg_file.path(), tmpdir.join(Path::new("latest.jpg"))).unwrap();
 
-    jpeg_file
+    Ok(jpeg_file)
 }

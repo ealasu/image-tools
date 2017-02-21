@@ -13,6 +13,7 @@ donuts = { path = "../donuts" }
 image = { path = "../image" }
 geom = { path = "../geom" }
 point = { path = "../point" }
+gphoto = { path = "../gphoto" }
 #gphoto2-sys = { path = "../../gphoto2-sys" }
 #gphoto = "*"
 docopt = "*"

@@ -10,7 +10,7 @@ extern crate image;
 extern crate donuts;
 extern crate geom;
 extern crate point;
-//extern crate gphoto;
+extern crate gphoto;
 #[cfg(test)] extern crate env_logger;
 
 mod autoguider;
@@ -54,7 +54,7 @@ fn main() {
     log4rs::init_file("log4rs.yml", Default::default()).unwrap();
 
     let client = Client::new("ubuntu:1234").unwrap();
-    client.start().unwrap();
+    client.start().unwrap().unwrap();
     thread::sleep(Duration::from_secs(1));
 
     if let (Some(ra), Some(dec), Some(threshold)) = (args.flag_ra, args.flag_dec, args.flag_threshold) {
@@ -76,7 +76,7 @@ fn main() {
         Default::default(),
         |id| {
             info!("shooting image {}", id);
-            let mut camera = camera.lock().unwrap();
+            let camera = camera.lock().unwrap();
             let image = camera.shoot();
             info!("finished shooting image {}", id);
             image

@@ -34,7 +34,7 @@ impl Mount {
 
         info!("slew_by ra: {}, dec: {}", ra, dec);
 
-        self.client.send(Msg::SlewBy { ra: ra, dec: dec }).unwrap();
+        self.client.send(Msg::SlewBy { ra: ra, dec: dec }).unwrap().unwrap();
         thread::sleep(Duration::from_secs(2));
     }
 
@@ -42,6 +42,6 @@ impl Mount {
     }
 
     pub fn stop(&mut self) {
-        self.client.stop().unwrap();
+        self.client.stop().unwrap().unwrap();
     }
 }
