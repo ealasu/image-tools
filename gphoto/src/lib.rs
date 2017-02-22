@@ -64,8 +64,7 @@ pub fn shoot(options: Options) -> Result<NamedTempFile> {
     if !status.success() {
         return Err(ErrorKind::GphotoCommandFailed.into());
     }
-    debug!("jpeg file len: {}", fs::metadata(jpeg_file.path()).unwrap().len());
-    if jpeg_file.metadata()?.len() == 0 {
+    if fs::metadata(jpeg_file.path())?.len() == 0 {
         return Err(ErrorKind::EmptyFile.into());
     }
     fs::copy(jpeg_file.path(), tmpdir.join(Path::new("latest.jpg"))).unwrap();

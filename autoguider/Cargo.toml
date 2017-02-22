@@ -18,6 +18,7 @@ gphoto = { path = "../gphoto" }
 #gphoto = "*"
 docopt = "*"
 rustc-serialize = "*"
+retry = "*"
 
 [dev-dependencies]
 env_logger = "*"

@@ -3,21 +3,34 @@ extern crate astrometry;
 extern crate gphoto;
 extern crate regex;
 #[macro_use] extern crate log;
+extern crate retry;
 
 use std::fs;
 use std::thread;
 use std::time::Duration;
 use mount_service_api::{Client, Pos};
 use regex::Regex;
+use retry::retry;
 
 
 fn shoot_and_solve() -> (f64, f64) {
   info!("shooting...");
-  let img = gphoto::shoot(gphoto::Options {
-    keep_raw: false,
-    iso: "20".into(), // 6400
-    shutter_speed: "6".into(),
-  }).unwrap();
+  let img = retry(
+    5, 2000,
+    || {
+      gphoto::shoot(gphoto::Options {
+        keep_raw: false,
+        iso: "20".into(), // 6400
+        shutter_speed: "6".into(),
+      })
+    },
+    |res| {
+      if res.is_err() {
+        error!("shoot failed, trying again: {:?}", res);
+      }
+      res.is_ok()
+    }
+  ).unwrap().unwrap();
   fs::copy(img.path(), "/mnt/ramdisk/latest.jpg").unwrap();
   info!("solving...");
   astrometry::solve(&img.path().to_str().unwrap())

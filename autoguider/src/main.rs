@@ -11,6 +11,7 @@ extern crate donuts;
 extern crate geom;
 extern crate point;
 extern crate gphoto;
+extern crate retry;
 #[cfg(test)] extern crate env_logger;
 
 mod autoguider;
@@ -29,6 +30,7 @@ use pos::*;
 use pid_control::{Controller, PIDController};
 use docopt::Docopt;
 use mount_service_api::Client;
+use retry::retry;
 
 const MAX: f32 = 150.0;
 
@@ -77,7 +79,18 @@ fn main() {
         |id| {
             info!("shooting image {}", id);
             let camera = camera.lock().unwrap();
-            let image = camera.shoot();
+            let image = retry(
+                4, 2000,
+                || {
+                    camera.shoot()
+                },
+                |res| {
+                    if res.is_err() {
+                        error!("shoot failed, trying again: {:?}", res);
+                    }
+                    res.is_ok()
+                }
+            ).unwrap().unwrap();
             info!("finished shooting image {}", id);
             image
         },

@@ -41,7 +41,7 @@ impl Camera {
             iso: "16".into(), // ISO 3200?
         })?;
         let image = Image::<Rgb<u8>>::open_jpeg_file(jpeg_file.path()).to_f32();
-        image.center_crop(900, 900).to_gray()
+        Ok(image.center_crop(900, 900).to_gray())
     }
 
     //pub fn shoot(&mut self) -> Image<f32> {
