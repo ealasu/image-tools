@@ -1,7 +1,3 @@
-use tempfile::NamedTempFile;
-use std::process::Command;
-use std::fs;
-use std::path::Path;
 use image::{Image, Rgb};
 use gphoto;
 

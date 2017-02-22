@@ -7,3 +7,4 @@ fits = { path = "../fits" }
 tempfile = "*"
 regex = "*"
 log = "*"
+error-chain = "*"

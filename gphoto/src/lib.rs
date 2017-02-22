@@ -2,7 +2,7 @@ extern crate tempfile;
 #[macro_use] extern crate error_chain;
 #[macro_use] extern crate log;
 
-mod errors;
+pub mod errors;
 
 use tempfile::NamedTempFile;
 use std::process::Command;

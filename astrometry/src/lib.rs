@@ -2,6 +2,9 @@ extern crate fits;
 extern crate regex;
 extern crate tempfile;
 #[macro_use] extern crate log;
+#[macro_use] extern crate error_chain;
+
+pub mod errors;
 
 use tempfile::NamedTempFile;
 use std::process::Command;
@@ -9,8 +12,9 @@ use std::fs;
 use std::fs::File;
 use std::path::Path;
 use regex::Regex;
+use errors::*;
 
-pub fn solve(path: &str) -> (f64, f64) {
+pub fn solve(path: &str) -> Result<(f64, f64)> {
     //let wcs_file = NamedTempFile::new().unwrap();
 
     let mut output = Command::new("solve-field")
@@ -38,12 +42,13 @@ pub fn solve(path: &str) -> (f64, f64) {
     assert!(output.status.success());
 
     let pattern = r"RA,Dec = \((.+),(.+)\), ";
-    let cap = Regex::new(pattern).unwrap().captures_iter(&stdout).next().unwrap();
+    let cap = Regex::new(pattern).unwrap()
+        .captures_iter(&stdout).next().ok_or_else(|| ErrorKind::NotSolved)?;
     let ra = cap[1].parse::<f64>().unwrap();
     let dec = cap[2].parse::<f64>().unwrap();
     info!("ra: {} dec: {}", ra, dec);
 
-    (ra, dec)
+    Ok((ra, dec))
 }
 
 #[cfg(test)]
@@ -54,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_s() {
-        solve("/mnt/ramdisk/capt0000.jpg");
+        solve("/mnt/ramdisk/capt0000.jpg").unwrap();
     }
 
     //#[test]

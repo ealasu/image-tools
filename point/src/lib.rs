@@ -4,6 +4,9 @@ extern crate gphoto;
 extern crate regex;
 #[macro_use] extern crate log;
 extern crate retry;
+#[macro_use] extern crate error_chain;
+
+pub mod errors;
 
 use std::fs;
 use std::thread;
@@ -11,29 +14,20 @@ use std::time::Duration;
 use mount_service_api::{Client, Pos};
 use regex::Regex;
 use retry::retry;
+use errors::*;
 
 
-fn shoot_and_solve() -> (f64, f64) {
+fn shoot_and_solve() -> Result<(f64, f64)> {
   info!("shooting...");
-  let img = retry(
-    5, 2000,
-    || {
-      gphoto::shoot(gphoto::Options {
-        keep_raw: false,
-        iso: "20".into(), // 6400
-        shutter_speed: "6".into(),
-      })
-    },
-    |res| {
-      if res.is_err() {
-        error!("shoot failed, trying again: {:?}", res);
-      }
-      res.is_ok()
-    }
-  ).unwrap().unwrap();
+  let img = gphoto::shoot(gphoto::Options {
+    keep_raw: false,
+    iso: "20".into(), // 6400
+    shutter_speed: "6".into(),
+  })?;
   fs::copy(img.path(), "/mnt/ramdisk/latest.jpg").unwrap();
   info!("solving...");
-  astrometry::solve(&img.path().to_str().unwrap())
+  let img_path = &img.path().to_str().unwrap();
+  Ok(astrometry::solve(img_path)?)
 }
 
 pub fn point(client: &Client, ra: &str, dec: &str, threshold: f64) {
@@ -44,7 +38,18 @@ pub fn point(client: &Client, ra: &str, dec: &str, threshold: f64) {
   let desired_dec = read_ra(dec).expect("failed to parse dec");
 
   loop {
-    let (ra, dec) = shoot_and_solve();
+    let (ra, dec) = retry(
+      5, 2000,
+      || {
+        shoot_and_solve()
+      },
+      |res| {
+        if res.is_err() {
+          error!("shoot_and_solve failed, trying again: {:?}", res);
+        }
+        res.is_ok()
+      }
+    ).unwrap().unwrap();
     let d_ra = desired_ra - ra;
     let d_dec = desired_dec - dec;
     info!("d_ra: {} d_dec: {}", d_ra, d_dec);
