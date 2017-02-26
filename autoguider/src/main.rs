@@ -62,6 +62,8 @@ fn main() {
     if let (Some(ra), Some(dec), Some(threshold)) = (args.flag_ra, args.flag_dec, args.flag_threshold) {
         point::point(&client, &ra, &dec, threshold);
     }
+    info!("waiting a bit...");
+    thread::sleep(Duration::from_secs(5));
 
     let camera = Mutex::new(Camera::new());
     let mut aligner = Aligner::new();

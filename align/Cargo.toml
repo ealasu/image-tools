@@ -3,6 +3,8 @@ name = "align"
 version = "0.1.0"
 
 [dependencies]
+log = "*"
+env_logger = "*"
 docopt = "*"
 rustc-serialize = "*"
 image = { path = "../image" }

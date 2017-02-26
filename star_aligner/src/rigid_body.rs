@@ -56,7 +56,7 @@ pub fn align_simple(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f6
             //[w[0].0, w[1].0, w[2].0]));
         }
     }
-    println!("best err: {}", best_err);
+    info!("best err: {}", best_err);
     //println!("best points: {:?}", best_points);
     best_tx
 }
@@ -98,7 +98,7 @@ pub fn align_all(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f64> 
         v21: r[[1, 0]], v22: r[[1, 1]], v23: t[1],
         v31: 0.0, v32: 0.0, v33: 1.0,
     };
-    println!("err: {}", calc_err(matching_stars, tx));
+    info!("err: {}", calc_err(matching_stars, tx));
 
     tx
 }

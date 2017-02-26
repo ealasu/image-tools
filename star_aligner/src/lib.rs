@@ -8,6 +8,7 @@ extern crate simd;
 //extern crate ndarray;
 //extern crate ndarray_linalg;
 extern crate rulinalg;
+#[macro_use] extern crate log;
 #[cfg(test)] extern crate serde_json;
 #[cfg(test)] extern crate test;
 
@@ -18,9 +19,6 @@ use std::f64;
 use std::iter;
 use geom::{Point, Matrix3x3};
 use simd::f32x4;
-
-const N_OBJECTS: usize = 400;
-const N_PROOF: usize = 200;
 
 #[derive(Debug, Clone)]
 pub struct Polygon {
@@ -53,33 +51,40 @@ impl Polygon {
     }
 }
 
+pub struct Options {
+    pub max_stars: usize,
+    pub min_matching_stars: usize,
+    pub threshold: f64,
+}
+
 pub struct Reference {
     stars: Vec<Point<f64>>,
     polys: Vec<Polygon>,
+    options: Options,
 }
 
 impl Reference {
-    pub fn from_image<P: AsRef<Path>>(path: P) -> Self {
-        Self::from_stars(extract(path))
+    pub fn from_image<P: AsRef<Path>>(path: P, options: Options) -> Self {
+        let stars = extract(path, options.max_stars);
+        Self::from_stars(stars, options)
     }
 
-    pub fn from_stars(stars: Vec<Point<f64>>) -> Self {
+    pub fn from_stars(stars: Vec<Point<f64>>, options: Options) -> Self {
         let polys = polys(&stars).collect();
         Reference {
             polys: polys,
             stars: stars,
+            options: options,
         }
     }
 
     pub fn align_image<P: AsRef<Path>>(&self, sample: P) -> Option<Matrix3x3<f64>> {
-        self.align_stars(&extract(sample))
+        self.align_stars(&extract(sample, self.options.max_stars))
     }
 
     pub fn align_stars(&self, sample_objects: &[Point<f64>]) -> Option<Matrix3x3<f64>> {
-        let threshold: f64 = 0.6;
-
-        let threshold_lower = f32x4::splat(-threshold as f32);
-        let threshold_upper = f32x4::splat(threshold as f32);
+        let threshold_lower = f32x4::splat(-self.options.threshold as f32);
+        let threshold_upper = f32x4::splat(self.options.threshold as f32);
         polys(sample_objects).flat_map(|sam_p| {
             vec![
                 sam_p.shift(0),
@@ -99,14 +104,14 @@ impl Reference {
                     let s_o_tx = (tx * s_o.to_f64()).to_f64();
                     self.stars
                         .iter()
-                        .find(|&r_o| r_o.is_close_to(s_o_tx, threshold))
+                        .find(|&r_o| r_o.is_close_to(s_o_tx, self.options.threshold))
                         .map(|&r_o| (r_o, s_o))
                 })
                 .collect::<Vec<_>>()
         }).max_by(|a, b| a.len().cmp(&b.len()))
         .and_then(|matching_stars| {
-            println!("proofs: {}", matching_stars.len());
-            if matching_stars.len() >= N_PROOF {
+            info!("proofs: {}", matching_stars.len());
+            if matching_stars.len() >= self.options.min_matching_stars {
                 //Some(rigid_body::align_simple(&matching_stars))
                 Some(rigid_body::align_all(&matching_stars))
             } else {
@@ -116,14 +121,14 @@ impl Reference {
     }
 }
 
-pub fn extract<P: AsRef<Path>>(path: P) -> Vec<Point<f64>> {
+pub fn extract<P: AsRef<Path>>(path: P, max_count: usize) -> Vec<Point<f64>> {
     let image_info = imagemagick::identify(path.as_ref());
     let mut objects = sextractor::extract(path);
     // sort by flux, descending
     objects.sort_by(|a,b| b.flux.partial_cmp(&a.flux).unwrap());
     objects
         .into_iter()
-        .take(N_OBJECTS)
+        .take(max_count)
         .map(|o| Point { x: o.x as f64, y: image_info.height as f64 - o.y as f64 })
         .collect()
 }
@@ -191,7 +196,7 @@ mod tests {
 
     fn write_stars(src: &str, dst: &str) {
         let mut f = File::create(dst).unwrap();
-        serde_json::to_writer(&mut f, &extract(src)).unwrap();
+        serde_json::to_writer(&mut f, &extract(src, 400)).unwrap();
     }
 
     //#[test]
@@ -211,7 +216,11 @@ mod tests {
             //sam_stars[i],
             //Point { x: 321.422, y: 2659.7307 });
         //println!("d: {:?}", sam_stars[i] - ref_stars[i]);
-        let r = Reference::from_stars(ref_stars.clone());
+        let r = Reference::from_stars(ref_stars.clone(), Options {
+            max_stars: 400,
+            min_matching_stars: 200,
+            threshold: 0.6,
+        });
         let tx = r.align_stars(&sam_stars[..]).unwrap();
         println!("sample: {:?}", sam_stars[i]);
         println!("ref:    {:?}", ref_stars[i]);
@@ -225,13 +234,21 @@ mod tests {
     fn bench_new(b: &mut Bencher) {
         let ref_stars = read_stars("test/a.stars.json");
         b.iter(|| {
-            Reference::from_stars(ref_stars.clone())
+            Reference::from_stars(ref_stars.clone(), Options {
+                max_stars: 400,
+                min_matching_stars: 200,
+                threshold: 0.6,
+            })
         });
     }
 
     #[bench]
     fn bench_align(b: &mut Bencher) {
-        let r = Reference::from_stars(read_stars("test/a.stars.json"));
+        let r = Reference::from_stars(read_stars("test/a.stars.json"), Options {
+            max_stars: 400,
+            min_matching_stars: 200,
+            threshold: 0.6,
+        });
         let sam_stars = read_stars("test/b.stars.json");
         b.iter(|| {
             r.align_stars(&sam_stars[..])
