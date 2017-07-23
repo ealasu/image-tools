@@ -16,9 +16,9 @@ pub mod projection;
 pub mod correlation;
 pub mod align;
 pub mod three_axis;
-pub mod three_axis_2d;
+//pub mod three_axis_2d;
 pub mod cross_range;
-pub mod correlation_2d;
+//pub mod correlation_2d;
 
 pub use align::align;
 

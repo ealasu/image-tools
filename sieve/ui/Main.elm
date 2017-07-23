@@ -39,7 +39,7 @@ update msg model =
     GotList (Ok list) ->
       (next list, Cmd.none)
     GotList (Err err) ->
-      (HasError (toString err), Cmd.none)
+      (HasError ("GotList " ++ (toString err)), Cmd.none)
     GotRes (Ok ()) ->
       case model of
         HasListLoading nextModel ->
@@ -47,7 +47,7 @@ update msg model =
         _ ->
           (model, Cmd.none)
     GotRes (Err err) ->
-      (HasError (toString err), Cmd.none)
+      (HasError ("GotRes " ++ (toString err)), Cmd.none)
     GotKeypress code ->
       case model of
         HasList { head, tail } ->

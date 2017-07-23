@@ -53,9 +53,9 @@ fn main() {
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
-    log4rs::init_file("log4rs.yml", Default::default()).unwrap();
+    log4rs::init_file("log4rs.yml", Default::default()).expect("failed to init log4rs");
 
-    let client = Client::new("ubuntu:1234").unwrap();
+    let client = Client::new("localhost:1234").expect("failed to create client");
     client.start().unwrap().unwrap();
     thread::sleep(Duration::from_secs(1));
 
@@ -68,7 +68,8 @@ fn main() {
     let camera = Mutex::new(Camera::new());
     let mut aligner = Aligner::new();
     let mut mount = Mount::new(client);
-    let shot_duration = Duration::from_secs(5 + 30);
+    //let shot_duration = Duration::from_secs(5 + 30);
+    let shot_duration = Duration::from_secs(3 + 30);
     let mut ra_controller = PIDController::new(0.3, 0.03, 0.0);
     let mut dec_controller = PIDController::new(0.10, 0.015, 0.0);
 

@@ -1,4 +1,15 @@
-[build]
+#[build]
+#rustflags = [
+    ##"-C", "target-feature=+avx"
+    #"-C", "target-feature=+neon"
+#]
+
+[target.armv7-unknown-linux-gnueabihf]
+rustflags = [
+    "-C", "target-feature=+neon"
+]
+
+[target.x86_64-apple-darwin]
 rustflags = [
     "-C", "target-feature=+avx"
 ]

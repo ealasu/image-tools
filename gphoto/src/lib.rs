@@ -38,23 +38,23 @@ pub fn shoot(options: Options) -> Result<NamedTempFile> {
     if options.keep_raw {
         // Choice: 1 Memory card
         command
-            .arg("--set-config").arg("capturetarget=1")
+            .arg("--set-config-index").arg("capturetarget=1")
             .arg("--keep-raw")
             // Choice: 8 RAW + Large Fine JPEG
-            .arg("--set-config").arg("imageformat=8");
+            .arg("--set-config-index").arg("imageformat=8");
     } else {
         command
-            .arg("--set-config").arg("capturetarget=0")
+            .arg("--set-config-index").arg("capturetarget=0")
             // Choice: 0 Large Fine JPEG
-            .arg("--set-config").arg("imageformat=0");
+            .arg("--set-config-index").arg("imageformat=0");
     }
     command
         // option 6
-        .arg("--set-config").arg(format!("shutterspeed={}", options.shutter_speed))
+        .arg("--set-config-index").arg(format!("shutterspeed={}", options.shutter_speed))
 
         // ISO 6400
         // option 20
-        .arg("--set-config").arg(format!("iso={}", options.iso))
+        .arg("--set-config-index").arg(format!("iso={}", options.iso))
 
         .arg("--capture-image-and-download");
 

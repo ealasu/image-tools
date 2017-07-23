@@ -34,6 +34,7 @@ impl Camera {
         let jpeg_file = gphoto::shoot(gphoto::Options {
             keep_raw: true,
             shutter_speed: "0".into(), // 30s
+            //shutter_speed: "1".into(), // 25s
             iso: "16".into(), // ISO 3200?
         })?;
         let image = Image::<Rgb<u8>>::open_jpeg_file(jpeg_file.path()).to_f32();
