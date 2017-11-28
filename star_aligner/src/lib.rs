@@ -1,5 +1,6 @@
 #![feature(conservative_impl_trait)]
 #![feature(test)]
+#![type_length_limit="2097152"]
 
 extern crate sextractor;
 extern crate geom;

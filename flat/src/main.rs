@@ -1,30 +1,24 @@
-extern crate docopt;
-extern crate rustc_serialize;
 extern crate image;
 extern crate star_stuff;
 extern crate rayon;
+extern crate structopt;
+#[macro_use] extern crate structopt_derive;
 
-use docopt::Docopt;
+use structopt::StructOpt;
 use image::Image;
 use rayon::prelude::*;
 
-
-const USAGE: &'static str = "
-Usage:
-    flat --output=<output> <input>...
-";
-
-#[derive(Debug, RustcDecodable)]
+#[derive(StructOpt, Debug)]
+#[structopt(name = "flat", about = "")]
 struct Args {
+    #[structopt(long = "output")]
     flag_output: String,
+    #[structopt(long = "input")]
     arg_input: Vec<String>,
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
-
+    let args = Args::from_args();
     let first = Image::<u16>::open_raw(&args.arg_input[0]);
     let (w, h) = (first.width, first.height);
     let count = args.arg_input.len() as f64;

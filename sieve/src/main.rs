@@ -8,8 +8,8 @@ extern crate router;
 extern crate logger;
 extern crate persistent;
 extern crate serde_json;
-extern crate docopt;
-extern crate rustc_serialize;
+extern crate structopt;
+#[macro_use] extern crate structopt_derive;
 
 use std::path::{Path, PathBuf};
 use std::fs;
@@ -26,17 +26,11 @@ use mount::Mount;
 use router::Router;
 use logger::Logger;
 use persistent::Read;
-use docopt::Docopt;
+use structopt::StructOpt;
 use rand::Rng;
 
-const USAGE: &'static str = "
-Sieve.
-
-Usage:
-    sieve <dir>
-";
-
-#[derive(Debug, RustcDecodable)]
+#[derive(StructOpt, Debug)]
+#[structopt(name = "sieve", about = "")]
 struct Args {
     arg_dir: String,
 }
@@ -63,9 +57,7 @@ impl Key for ConfigKey { type Value = Config; }
 
 
 fn main() {
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
+    let args = Args::from_args();
     env_logger::init().unwrap();
 
     let mut router = Router::new();

@@ -3,11 +3,11 @@ name = "point"
 version = "0.1.0"
 
 [dependencies]
+structopt = "*"
+structopt-derive = "*"
 mount_service_api = { path = "../../scope-mount/mount_service_api" }
 astrometry = { path = "../astrometry" }
 gphoto = { path = "../gphoto" }
-docopt = "*"
-rustc-serialize = "*"
 regex = "*"
 log = "*"
 env_logger = "*"

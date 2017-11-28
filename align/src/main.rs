@@ -1,5 +1,5 @@
-extern crate docopt;
-extern crate rustc_serialize;
+extern crate structopt;
+#[macro_use] extern crate structopt_derive;
 extern crate donuts;
 extern crate star_aligner;
 extern crate image;
@@ -13,22 +13,20 @@ use std::fs;
 use std::env;
 use std::path::Path;
 use std::process::Command;
-use docopt::Docopt;
+use structopt::StructOpt;
 use rayon::prelude::*;
 use align_api::AlignedImage;
 
-const USAGE: &'static str = "
-Align.
-
-Usage:
-    align --output=<filename> --max-stars=<n> --min-matching-stars=<n> --threshold=<px> <input>...
-";
-
-#[derive(Debug, RustcDecodable)]
+#[derive(StructOpt, Debug)]
+#[structopt(name = "align", about = "")]
 struct Args {
+    #[structopt(long = "output", help = "filename")]
     flag_output: String,
+    #[structopt(long = "max-stars")]
     flag_max_stars: usize,
+    #[structopt(long = "min-matching-stars")]
     flag_min_matching_stars: usize,
+    #[structopt(long = "threshold", help = "px")]
     flag_threshold: f64,
     arg_input: Vec<String>,
 }
@@ -48,9 +46,7 @@ where P: AsRef<Path>, F: FnMut(&Path) -> R {
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
+    let args = Args::from_args();
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", "info");
     }

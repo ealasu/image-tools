@@ -76,7 +76,7 @@ pub fn align_all(matching_stars: &[(Point<f64>, Point<f64>)]) -> Matrix3x3<f64> 
         m[[1, 1]] += r.y * s.y;
     }
     //println!("m: {:?}", m);
-    let (s, u, v) = m.svd().expect("failed to calculate SVD");
+    let (_s, u, v) = m.svd().expect("failed to calculate SVD");
     //println!();
     //println!("s: {:?}", s);
     //println!("u: {:?}", u);

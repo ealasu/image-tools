@@ -1,29 +1,22 @@
-extern crate docopt;
-extern crate rustc_serialize;
+extern crate structopt;
+#[macro_use] extern crate structopt_derive;
 extern crate donuts;
 extern crate image;
 
-use docopt::Docopt;
+use structopt::StructOpt;
 use image::{Image, Rgb, ImageKind};
 
-const USAGE: &'static str = "
-Post.
-
-Usage:
-    post --output=<filename> <input>
-";
-
-#[derive(Debug, RustcDecodable)]
+#[derive(StructOpt, Debug)]
+#[structopt(name = "post", about = "")]
 struct Args {
+    #[structopt(long = "output")]
     flag_output: String,
+    #[structopt(long = "input")]
     arg_input: String,
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
-
+    let args = Args::from_args();
     let img = ImageKind::open_fits(&args.arg_input);
     let img = if let ImageKind::RgbF64(v) = img {
         v

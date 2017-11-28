@@ -7,8 +7,8 @@ convert = { path = "../convert" }
 imagemagick = { path = "../imagemagick" }
 fits = { path = "../fits" }
 regex = "*"
-turbojpeg = { path = "../../turbojpeg-rs" }
+turbojpeg = { git = "https://github.com/ealasu/turbojpeg-rs" }
 rand = "*"
 byteorder = "*"
-quickersort = "*"
+quickersort = "2.x"
 num = "*"

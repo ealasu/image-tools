@@ -3,8 +3,8 @@ name = "flat_field"
 version = "0.0.0"
 
 [dependencies]
-docopt = "*"
-rustc-serialize = "*"
 image = { path = "../image" }
 star_stuff = { path = "../star_stuff" }
 rayon = "*"
+structopt = "*"
+structopt-derive = "*"

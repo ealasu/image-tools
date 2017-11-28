@@ -3,6 +3,8 @@ name = "autoguider"
 version = "0.1.0"
 
 [dependencies]
+structopt = "*"
+structopt-derive = "*"
 log = "*"
 crossbeam = "*"
 tempfile = "*"
@@ -16,8 +18,6 @@ point = { path = "../point" }
 gphoto = { path = "../gphoto" }
 #gphoto2-sys = { path = "../../gphoto2-sys" }
 #gphoto = "*"
-docopt = "*"
-rustc-serialize = "*"
 retry = "*"
 
 [dev-dependencies]

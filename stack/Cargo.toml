@@ -3,9 +3,11 @@ name = "stack"
 version = "0.0.0"
 
 [dependencies]
+structopt = "*"
+structopt-derive = "*"
 star_stuff = { path = "../star_stuff" }
 #donuts = { path = "../donuts" }
 image = { path = "../image" }
 crossbeam = "*"
 align_api = { path = "../align-api" }
-clap = { version = "*", features = ["yaml"] }
+geom = { path = "../geom" }

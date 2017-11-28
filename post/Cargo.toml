@@ -3,7 +3,7 @@ name = "post"
 version = "0.1.0"
 
 [dependencies]
-docopt = "*"
-rustc-serialize = "*"
+structopt = "*"
+structopt-derive = "*"
 donuts = { path = "../donuts" }
 image = { path = "../image" }

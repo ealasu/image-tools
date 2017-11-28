@@ -3,10 +3,10 @@ name = "align"
 version = "0.1.0"
 
 [dependencies]
+structopt = "*"
+structopt-derive = "*"
 log = "*"
 env_logger = "*"
-docopt = "*"
-rustc-serialize = "*"
 image = { path = "../image" }
 donuts = { path = "../donuts" }
 star_aligner = { path = "../star_aligner" }

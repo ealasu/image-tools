@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::collections::BTree;
+use std::collections::BTreeMap;
 use image::{Image, Rgb, ImageKind};
 use geom::Point;
 use byteorder::{ReadBytesExt, LittleEndian as LE};
@@ -75,7 +75,7 @@ fn read_catalog(path: &str) -> Vec<Coord> {
 }
 
 pub struct Index {
-    tree: BTree<u16, BTree<u16, BTree<u16, BTree<u16, Coord>>>>,
+    tree: BTreeMap<u16, BTreeMap<u16, BTreeMap<u16, BTreeMap<u16, Coord>>>>,
 }
 
 impl Index {
@@ -97,6 +97,6 @@ fn main() {
     }
     let catalog = read_catalog("tyc2.dat");
     println!("catalog has {} stars", catalog.len());
-    build_index(&catalog);
+    //build_index(&catalog);
 
 }

@@ -1,6 +1,6 @@
 #[macro_use] extern crate log;
-extern crate docopt;
-extern crate rustc_serialize;
+extern crate structopt;
+#[macro_use] extern crate structopt_derive;
 extern crate crossbeam;
 extern crate tempfile;
 extern crate pid_control;
@@ -28,31 +28,27 @@ use aligner::Aligner;
 use mount::Mount;
 use pos::*;
 use pid_control::{Controller, PIDController};
-use docopt::Docopt;
+use structopt::StructOpt;
 use mount_service_api::Client;
 use retry::retry;
 
 const MAX: f32 = 150.0;
 
-const USAGE: &'static str = "
-Autoguider.
-
-Usage:
-    autoguider --count=<number of images to shoot> [--ra=<ra> --dec=<dec> --threshold=<deg>]
-";
-
-#[derive(Debug, RustcDecodable)]
+#[derive(StructOpt, Debug)]
+#[structopt(name = "autoguider", about = "")]
 struct Args {
+    #[structopt(long = "count", help = "number of images to shoot")]
     flag_count: usize,
+    #[structopt(long = "ra")]
     flag_ra: Option<String>,
+    #[structopt(long = "dec")]
     flag_dec: Option<String>,
+    #[structopt(long = "threshold", help = "threshold in degrees")]
     flag_threshold: Option<f64>,
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
+    let args = Args::from_args();
     log4rs::init_file("log4rs.yml", Default::default()).expect("failed to init log4rs");
 
     let client = Client::new("localhost:1234").expect("failed to create client");
