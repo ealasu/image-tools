@@ -1,14 +1,12 @@
-#![feature(test)]
-
-#[macro_use] extern crate convert;
+extern crate convert;
 extern crate regex;
-extern crate turbojpeg;
+//extern crate turbojpeg;
 extern crate rand;
 extern crate byteorder;
 extern crate quickersort;
 extern crate num;
-extern crate fits;
-extern crate imagemagick;
+//extern crate fits;
+//extern crate imagemagick;
 #[cfg(test)] extern crate test;
 
 mod rgb;

@@ -5,62 +5,62 @@ use std::fs::File;
 use image::Image;
 use rgb::Rgb;
 use convert::convert_vec;
-use imagemagick::{convert_open, convert_save};
-use fits;
+//use imagemagick::{convert_open, convert_save};
+//use fits;
 use quickersort::sort_floats;
 use num::Float;
 
 impl Image<Rgb<f32>> {
-    pub fn open(path: &str) -> Self {
-        let (width, height, data) = convert_open(path, "rgb");
-        let pixels = convert_vec(data);
-        assert_eq!(pixels.len(), width * height);
-        Image {
-            width: width,
-            height: height,
-            pixels: pixels,
-        }
-    }
+    //pub fn open(path: &str) -> Self {
+        //let (width, height, data) = convert_open(path, "rgb");
+        //let pixels = convert_vec(data);
+        //assert_eq!(pixels.len(), width * height);
+        //Image {
+            //width: width,
+            //height: height,
+            //pixels: pixels,
+        //}
+    //}
 
-    pub fn save(&self, path: &str) {
-        let data = convert_vec(self.pixels.clone());
-        convert_save(&data, self.width, self.height, "rgb", "truecolor", path);
-    }
+    //pub fn save(&self, path: &str) {
+        //let data = convert_vec(self.pixels.clone());
+        //convert_save(&data, self.width, self.height, "rgb", "truecolor", path);
+    //}
 
-    pub fn open_fits(path: &str) -> Self {
-        let mut r = BufReader::new(File::open(path).unwrap());
-        let (shape, data) = fits::read_image(&mut r);
-        assert_eq!(shape.len(), 3);
-        assert_eq!(shape[0], 3);
-        let w = shape[1];
-        let h = shape[2];
-        let pixels = match data {
-            fits::Data::F32(v) => v,
-            _ => panic!()
-        };
-        let pixels = convert_vec(pixels);
-        Image {
-            width: w,
-            height: h,
-            pixels: pixels,
-        }
-    }
+    //pub fn open_fits(path: &str) -> Self {
+        //let mut r = BufReader::new(File::open(path).unwrap());
+        //let (shape, data) = fits::read_image(&mut r);
+        //assert_eq!(shape.len(), 3);
+        //assert_eq!(shape[0], 3);
+        //let w = shape[1];
+        //let h = shape[2];
+        //let pixels = match data {
+            //fits::Data::F32(v) => v,
+            //_ => panic!()
+        //};
+        //let pixels = convert_vec(pixels);
+        //Image {
+            //width: w,
+            //height: h,
+            //pixels: pixels,
+        //}
+    //}
 
-    pub fn save_fits(&self, filename: &str) {
-        let data = convert_vec(self.pixels.clone());
-        let mut f = BufWriter::new(File::create(filename).unwrap());
-        let shape = [3, self.width, self.height];
-        fits::write_image(&mut f, &shape[..], &fits::Data::F32(data));
-    }
+    //pub fn save_fits(&self, filename: &str) {
+        //let data = convert_vec(self.pixels.clone());
+        //let mut f = BufWriter::new(File::create(filename).unwrap());
+        //let shape = [3, self.width, self.height];
+        //fits::write_image(&mut f, &shape[..], &fits::Data::F32(data));
+    //}
 }
 
 impl Image<Rgb<f64>> {
-    pub fn save_fits(&self, filename: &str) {
-        let data = convert_vec(self.pixels.clone());
-        let mut f = BufWriter::new(File::create(filename).unwrap());
-        let shape = [3, self.width, self.height];
-        fits::write_image(&mut f, &shape[..], &fits::Data::F64(data));
-    }
+    //pub fn save_fits(&self, filename: &str) {
+        //let data = convert_vec(self.pixels.clone());
+        //let mut f = BufWriter::new(File::create(filename).unwrap());
+        //let shape = [3, self.width, self.height];
+        //fits::write_image(&mut f, &shape[..], &fits::Data::F64(data));
+    //}
 
     pub fn to_f32(&self) -> Image<Rgb<f32>> {
         self.map(|p| {
@@ -165,29 +165,5 @@ impl<P: Float> Image<Rgb<P>> {
                 b: f(p.b),
             }
         })
-    }
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test::Bencher;
-
-    #[bench]
-    fn bench_to_gray(b: &mut Bencher) {
-        let image = Image::<Rgb<f32>>::random(5000, 4000);
-        b.iter(|| {
-            image.to_gray()
-        });
-    }
-
-    #[bench]
-    fn bench_crop(b: &mut Bencher) {
-        let image = Image::<Rgb<f32>>::random(5000, 4000);
-        b.iter(|| {
-            image.center_crop(900, 900)
-        });
     }
 }

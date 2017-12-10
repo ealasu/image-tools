@@ -4,11 +4,14 @@ version = "0.0.0"
 
 [dependencies]
 convert = { path = "../convert" }
-imagemagick = { path = "../imagemagick" }
-fits = { path = "../fits" }
+#imagemagick = { path = "../imagemagick" }
+#fits = { path = "../fits" }
 regex = "*"
-turbojpeg = { git = "https://github.com/ealasu/turbojpeg-rs" }
+#turbojpeg = { git = "https://github.com/ealasu/turbojpeg-rs" }
 rand = "*"
 byteorder = "*"
 quickersort = "2.x"
 num = "*"
+
+[dev-dependencies]
+bencher = "0.1"

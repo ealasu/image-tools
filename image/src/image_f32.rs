@@ -5,12 +5,12 @@ use std::f32;
 use std::u16;
 use std::io::{BufReader, BufWriter};
 use image::Image;
-use fits;
+//use fits;
 use rgb::Rgb;
 use rgb_bayer::RgbBayer;
 use num::Float;
 use num::cast::NumCast;
-use imagemagick::{convert_open, convert_save};
+//use imagemagick::{convert_open, convert_save};
 
 impl<P: Float + Default> Image<P> {
     pub fn average(&self) -> P {
@@ -89,51 +89,51 @@ impl<P: Float + Default> Image<P> {
 }
 
 impl Image<f32> {
-    pub fn open<P: AsRef<Path>>(path: P) -> Self {
-        let (width, height, data) = convert_open(path, "gray");
-        Image {
-            width: width,
-            height: height,
-            pixels: data,
-        }
-    }
+    //pub fn open<P: AsRef<Path>>(path: P) -> Self {
+        //let (width, height, data) = convert_open(path, "gray");
+        //Image {
+            //width: width,
+            //height: height,
+            //pixels: data,
+        //}
+    //}
 
-    pub fn open_fits(path: &str) -> Self {
-        let mut r = BufReader::new(File::open(path).unwrap());
-        let (shape, data) = fits::read_image(&mut r);
-        assert_eq!(shape.len(), 2);
-        let w = shape[0];
-        let h = shape[1];
-        let pixels = match data {
-            fits::Data::F32(v) => v,
-            _ => panic!()
-        };
-        Image {
-            width: w,
-            height: h,
-            pixels: pixels,
-        }
-    }
+    //pub fn open_fits(path: &str) -> Self {
+        //let mut r = BufReader::new(File::open(path).unwrap());
+        //let (shape, data) = fits::read_image(&mut r);
+        //assert_eq!(shape.len(), 2);
+        //let w = shape[0];
+        //let h = shape[1];
+        //let pixels = match data {
+            //fits::Data::F32(v) => v,
+            //_ => panic!()
+        //};
+        //Image {
+            //width: w,
+            //height: h,
+            //pixels: pixels,
+        //}
+    //}
 
-    pub fn open_jpeg_file<P: AsRef<Path>>(path: P) -> Self {
-        Image::<Rgb<u8>>::open_jpeg_file(path).to_f32().to_gray()
-    }
+    //pub fn open_jpeg_file<P: AsRef<Path>>(path: P) -> Self {
+        //Image::<Rgb<u8>>::open_jpeg_file(path).to_f32().to_gray()
+    //}
 
-    pub fn save(&self, path: &str) {
-        convert_save(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
-    }
+    //pub fn save(&self, path: &str) {
+        //convert_save(&self.pixels[..], self.width, self.height, "gray", "grayscale", path);
+    //}
 
-    pub fn save_fits(&self, filename: &str) {
-        let mut f = BufWriter::new(File::create(filename).unwrap());
-        let shape = [self.width, self.height];
-        fits::write_image(&mut f, &shape[..], &fits::Data::F32(self.pixels.clone()));
-    }
+    //pub fn save_fits(&self, filename: &str) {
+        //let mut f = BufWriter::new(File::create(filename).unwrap());
+        //let shape = [self.width, self.height];
+        //fits::write_image(&mut f, &shape[..], &fits::Data::F32(self.pixels.clone()));
+    //}
 }
 
 impl Image<f64> {
-    pub fn save_fits(&self, filename: &str) {
-        let mut f = BufWriter::new(File::create(filename).unwrap());
-        let shape = [self.width, self.height];
-        fits::write_image(&mut f, &shape[..], &fits::Data::F64(self.pixels.clone()));
-    }
+    //pub fn save_fits(&self, filename: &str) {
+        //let mut f = BufWriter::new(File::create(filename).unwrap());
+        //let shape = [self.width, self.height];
+        //fits::write_image(&mut f, &shape[..], &fits::Data::F64(self.pixels.clone()));
+    //}
 }
