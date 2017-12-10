@@ -20,44 +20,98 @@ pub trait DimensionedImage {
     fn dimensions(&self) -> ImageDimensions;
 }
 
+impl<'a, T> DimensionedImage for &'a T where T: DimensionedImage + ?Sized {
+    #[inline(always)]
+    fn dimensions(&self) -> ImageDimensions { (**self).dimensions() }
+}
+
+impl<'a, T> DimensionedImage for &'a mut T where T: DimensionedImage + ?Sized {
+    #[inline(always)]
+    fn dimensions(&self) -> ImageDimensions { (**self).dimensions() }
+}
+
 pub trait ImageIter<'a>: DimensionedImage {
-    type Pixel;
-    type Iterator: Iterator<Item=Self::Pixel> + 'a;
-
-    fn pixels_iter(&'a self) -> Self::Iterator;
-}
-
-pub trait ImageIterMut<'a>: DimensionedImage {
     type Pixel: 'a;
-    type Iterator: Iterator<Item=&'a mut Self::Pixel> + 'a;
-
-    fn pixels_iter_mut(&'a self) -> Self::Iterator;
+    type Iterator: Iterator<Item=Self::Pixel> + 'a;
+    fn pixels_iter(self) -> Self::Iterator;
 }
 
-impl<'a, P> ImageIter<'a> for ImageIterMut<'a, Pixel=P> {
-    type Pixel = P;
-    type Iterator = // TODO
-    fn pixels_iter(&'a self) -> Self::Iterator {
-        self.pixels_iter().map(|p| *p)
-    }
-}
+//pub trait ImageIterMut<'a>: DimensionedImage {
+    //type Pixel: 'a;
+    //type Iterator: Iterator<Item=&'a mut Self::Pixel> + 'a;
+    //fn pixels_iter_mut(&'a mut self) -> Self::Iterator;
+//}
+
+//impl<'a, P> ImageIter<'a> for ImageIterMut<'a, Pixel=P> {
+    //type Pixel = P;
+    ////type Iterator = // TODO
+    //fn pixels_iter(&'a self) -> Self::Iterator {
+        //self.pixels_iter().map(|p| *p)
+    //}
+//}
 
 pub trait ImageSlice<'a>: DimensionedImage {
     type Pixel;
-
     fn pixels(&'a self) -> &[Self::Pixel];
+}
+
+pub trait ImageSliceMut<'a>: DimensionedImage + ImageSlice<'a> {
     fn pixels_mut(&'a mut self) -> &mut [Self::Pixel];
 }
 
-impl<'a, P> ImageIter<'a> for ImageSlice<'a, Pixel=P> where P: 'a {
+impl<'a, P: 'a> ImageIter<'a> for &'a ImageSlice<'a, Pixel=P> {
     type Pixel = &'a P;
     type Iterator = slice::Iter<'a, P>;
 
-    fn pixels_iter(&'a self) -> Self::Iterator {
+    #[inline(always)]
+    fn pixels_iter(self) -> Self::Iterator {
         self.pixels().iter()
     }
 }
 
+//impl<'a, P: 'a> ImageIterMut<'a> for ImageSliceMut<'a, Pixel=P> {
+    //type Pixel = P;
+    //type Iterator = slice::IterMut<'a, P>;
+    //fn pixels_iter_mut(&'a mut self) -> Self::Iterator {
+        //self.pixels_mut().iter_mut()
+    //}
+//}
+impl<'a, P: 'a> ImageIter<'a> for &'a mut ImageSliceMut<'a, Pixel=P> {
+    type Pixel = &'a mut P;
+    type Iterator = slice::IterMut<'a, P>;
+
+    #[inline(always)]
+    fn pixels_iter(self) -> Self::Iterator {
+        self.pixels_mut().iter_mut()
+    }
+}
+
+
+pub struct Image<P> {
+    dimensions: ImageDimensions,
+    pixels: Vec<P>,
+}
+
+impl <P> DimensionedImage for Image<P> {
+    #[inline(always)]
+    fn dimensions(&self) -> ImageDimensions { self.dimensions }
+}
+
+impl <'a, P> ImageSlice<'a> for Image<P> {
+    type Pixel = P;
+
+    #[inline(always)]
+    fn pixels(&'a self) -> &[Self::Pixel] {
+        &self.pixels
+    }
+}
+
+impl <'a, P> ImageSliceMut<'a> for Image<P> {
+    #[inline(always)]
+    fn pixels_mut(&'a mut self) -> &mut [Self::Pixel] {
+        &mut self.pixels
+    }
+}
 
 
 
