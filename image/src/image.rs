@@ -13,17 +13,6 @@ pub struct ImageDimensions {
     pub pitch: usize,
 }
 
-macro check_x($x:expr, $self:expr) {
-    let dim = $self.dimensions;
-    debug_assert!($x < dim.width, "{} ({}) >= width ({})", stringify!($x), $x, dim.width);
-}
-
-macro check_y($y:expr, $self:expr) {
-    let dim = $self.dimensions;
-    debug_assert!($y < dim.height, "{} ({}) >= height ({})", stringify!($y), $y, dim.height);
-}
-
-
 pub struct Image<P> {
     pub dimensions: ImageDimensions,
     pub pixels: Vec<P>,
@@ -79,6 +68,16 @@ impl<'a, P: 'a> AsMut<ImageSliceMut<'a, P>> for ImageSliceMut<'a, P> {
     fn as_mut(&mut self) -> &mut ImageSliceMut<'a, P> {
         self
     }
+}
+
+macro check_x($x:expr, $self:expr) {
+    let dim = $self.dimensions;
+    debug_assert!($x < dim.width, "{} ({}) >= width ({})", stringify!($x), $x, dim.width);
+}
+
+macro check_y($y:expr, $self:expr) {
+    let dim = $self.dimensions;
+    debug_assert!($y < dim.height, "{} ({}) >= height ({})", stringify!($y), $y, dim.height);
 }
 
 impl<'a, Pixel: 'a> ImageSlice<'a, Pixel> {
@@ -151,6 +150,7 @@ impl<'a, Pixel: 'a> ImageSliceMut<'a, Pixel> {
     }
 }
 
+// TODO when https://github.com/rust-lang/rust/issues/44265 is fixed
 //impl<'a, P> Deref for &'a Image<P>
 //where P: 'a {
     //type Target = ImageSlice<'a, P>;
