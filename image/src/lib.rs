@@ -25,6 +25,6 @@ mod util;
 //mod image_kind;
 
 pub use image::*;
-//pub use rgb::*;
-//pub use rgb_bayer::*;
+pub use rgb::*;
+pub use rgb_bayer::*;
 //pub use image_kind::*;
