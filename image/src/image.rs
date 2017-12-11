@@ -5,10 +5,6 @@ use std::ops::*;
 use std::slice;
 use rand::{self, Rng, Rand};
 
-// owned image : Vec<Pixel>
-// slice : &[Pixel]
-// view (pixel iter) : Iterator<Pixel>
-
 #[derive(Copy, Clone, Debug)]
 pub struct ImageDimensions {
     pub width: usize,
@@ -16,89 +12,73 @@ pub struct ImageDimensions {
     pub pitch: usize,
 }
 
-pub trait DimensionedImage {
-    fn dimensions(&self) -> ImageDimensions;
+macro_rules! check_x_y {
+    ($x:expr, $y:expr, $dim:expr) => {
+        {
+            debug_assert!($x < $dim.width, "x ({}) >= width ({})", $x, $dim.width);
+            debug_assert!($y < $dim.height, "y ({}) >= height ({})", $y, $dim.height);
+        }
+    }
 }
 
-impl<'a, T> DimensionedImage for &'a T where T: DimensionedImage + ?Sized {
-    #[inline(always)]
-    fn dimensions(&self) -> ImageDimensions { (**self).dimensions() }
-}
-
-impl<'a, T> DimensionedImage for &'a mut T where T: DimensionedImage + ?Sized {
-    #[inline(always)]
-    fn dimensions(&self) -> ImageDimensions { (**self).dimensions() }
-}
-
-pub trait ImageIter<'a>: DimensionedImage {
-    type Pixel: 'a;
-    type Iterator: Iterator<Item=Self::Pixel> + 'a;
-    fn pixels_iter(self) -> Self::Iterator;
-}
-
-//pub trait ImageIterMut<'a>: DimensionedImage {
-    //type Pixel: 'a;
-    //type Iterator: Iterator<Item=&'a mut Self::Pixel> + 'a;
-    //fn pixels_iter_mut(&'a mut self) -> Self::Iterator;
-//}
-
-//impl<'a, P> ImageIter<'a> for ImageIterMut<'a, Pixel=P> {
-    //type Pixel = P;
-    ////type Iterator = // TODO
-    //fn pixels_iter(&'a self) -> Self::Iterator {
-        //self.pixels_iter().map(|p| *p)
-    //}
-//}
-
-pub trait ImageSlice<'a>: DimensionedImage {
+pub trait ImageSlice<'a> {
     type Pixel;
     fn pixels(&'a self) -> &[Self::Pixel];
+    fn dimensions(&'a self) -> ImageDimensions;
+
+    #[inline(always)]
+    fn clone_map<F, P>(&'a self, mut f: F) -> Image<P>
+    where F: FnMut(slice::Iter<'a, Self::Pixel>) -> Vec<P> {
+        Image {
+            dimensions: self.dimensions(),
+            pixels: f(self.pixels().iter()),
+        }
+    }
+
+    #[inline(always)]
+    fn pixel_at(&'a self, x: usize, y: usize) -> &'a Self::Pixel {
+        check_x_y!(x, y, self.dimensions());
+        &self.pixels()[x + y * self.dimensions().pitch]
+    }
+
+    #[inline(always)]
+    fn row(&'a self, y: usize) -> &[Self::Pixel] {
+        let i = y * self.dimensions().pitch;
+        &self.pixels()[i..i + self.dimensions().width]
+    }
+
+    #[inline(always)]
+    fn row_slice(&'a self, y: usize, left: usize, right: usize) -> &[Self::Pixel] {
+        let w = self.dimensions().width;
+        let i = y * w;
+        &self.pixels()[i + left..i + w - right]
+    }
 }
 
-pub trait ImageSliceMut<'a>: DimensionedImage + ImageSlice<'a> {
+pub trait ImageSliceMut<'a>: ImageSlice<'a> {
     fn pixels_mut(&'a mut self) -> &mut [Self::Pixel];
-}
-
-impl<'a, P: 'a> ImageIter<'a> for &'a ImageSlice<'a, Pixel=P> {
-    type Pixel = &'a P;
-    type Iterator = slice::Iter<'a, P>;
 
     #[inline(always)]
-    fn pixels_iter(self) -> Self::Iterator {
-        self.pixels().iter()
+    fn pixel_at_mut(&mut self, x: usize, y: usize) -> &mut Self::Pixel {
+        //check_x_y!(x, y, self.dimensions());
+        let p = {
+            let v = self.dimensions().pitch;
+            v
+        };
+        &mut self.pixels_mut()[x + y * p]
     }
 }
-
-//impl<'a, P: 'a> ImageIterMut<'a> for ImageSliceMut<'a, Pixel=P> {
-    //type Pixel = P;
-    //type Iterator = slice::IterMut<'a, P>;
-    //fn pixels_iter_mut(&'a mut self) -> Self::Iterator {
-        //self.pixels_mut().iter_mut()
-    //}
-//}
-impl<'a, P: 'a> ImageIter<'a> for &'a mut ImageSliceMut<'a, Pixel=P> {
-    type Pixel = &'a mut P;
-    type Iterator = slice::IterMut<'a, P>;
-
-    #[inline(always)]
-    fn pixels_iter(self) -> Self::Iterator {
-        self.pixels_mut().iter_mut()
-    }
-}
-
 
 pub struct Image<P> {
     dimensions: ImageDimensions,
     pixels: Vec<P>,
 }
 
-impl <P> DimensionedImage for Image<P> {
-    #[inline(always)]
-    fn dimensions(&self) -> ImageDimensions { self.dimensions }
-}
-
 impl <'a, P> ImageSlice<'a> for Image<P> {
     type Pixel = P;
+
+    #[inline(always)]
+    fn dimensions(&self) -> ImageDimensions { self.dimensions }
 
     #[inline(always)]
     fn pixels(&'a self) -> &[Self::Pixel] {
@@ -123,31 +103,6 @@ impl <'a, P> ImageSliceMut<'a> for Image<P> {
     //fn pitch(&self) -> usize;
     //fn pixels(&self) -> &[Self::Pixel];
 
-    //#[inline(always)]
-    //fn pixel_at(&self, x: usize, y: usize) -> &Self::Pixel {
-        ////assert!(x < self.width);
-        ////assert!(y < self.height);
-        //&self.pixels()[x + y * self.pitch()]
-    //}
-
-    //#[inline(always)]
-    //fn pixel_at_mut(&mut self, x: usize, y: usize) -> &mut Self::Pixel {
-        ////assert!(x < self.width);
-        ////assert!(y < self.height);
-        //&mut self.pixels()[x + y * self.pitch()]
-    //}
-
-    //#[inline(always)]
-    //fn row(&self, y: usize) -> &[Self::Pixel] {
-        //let i = y * self.pitch();
-        //&self.pixels()[i..i + self.width()]
-    //}
-
-    //#[inline(always)]
-    //pub fn row_slice(&self, y: usize, left: usize, right: usize) -> &[P] {
-        //let i = y * self.width;
-        //&self.pixels[i + left..i + self.width - right]
-    //}
 
     //pub fn map<F,R>(&self, f: F) -> Image<R> where F: FnMut(&P) -> R {
         //let pixels = self.pixels.iter().map(f).collect();
