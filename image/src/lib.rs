@@ -1,3 +1,5 @@
+#![feature(decl_macro)]
+
 extern crate convert;
 extern crate regex;
 //extern crate turbojpeg;
@@ -7,7 +9,7 @@ extern crate quickersort;
 extern crate num;
 //extern crate fits;
 //extern crate imagemagick;
-#[cfg(test)] extern crate test;
+//#[cfg(test)] extern crate test;
 
 //mod rgb;
 //mod rgb_bayer;
