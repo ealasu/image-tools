@@ -6,6 +6,7 @@ use std::slice;
 //use std::ops::Deref;
 use std::convert::{AsRef, AsMut};
 use rand::{self, Rng, Rand};
+use num::Bounded;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ImageDimensions {
@@ -26,18 +27,18 @@ macro check_y($y:expr, $self:expr) {
 
 
 pub struct Image<P> {
-    dimensions: ImageDimensions,
-    pixels: Vec<P>,
+    pub dimensions: ImageDimensions,
+    pub pixels: Vec<P>,
 }
 
 pub struct ImageSlice<'a, P: 'a> {
-    dimensions: ImageDimensions,
-    pixels: &'a [P],
+    pub dimensions: ImageDimensions,
+    pub pixels: &'a [P],
 }
 
 pub struct ImageSliceMut<'a, P: 'a> {
-    dimensions: ImageDimensions,
-    pixels: &'a mut [P],
+    pub dimensions: ImageDimensions,
+    pub pixels: &'a mut [P],
 }
 
 
@@ -256,6 +257,38 @@ impl<P: Rand> Image<P> {
         }
     }
 }
+
+macro impl_cast($name:ident, $from:ty, $to:ty) {
+    impl<'a> ImageSlice<'a, $from> {
+        pub fn $name(&self) -> Image<$to> {
+            self.clone_map(|iter| {
+                iter.map(|&p| p as $to).collect()
+            })
+        }
+    }
+}
+impl_cast!(to_f64, f32, f64);
+impl_cast!(to_f32, f64, f32);
+
+macro impl_cast_scaling($name:ident, $from:ty, $to:ty) {
+    impl<'a> ImageSlice<'a, $from> {
+        pub fn $name(&self) -> Image<$to> {
+            let max = <$from as Bounded>::max_value() as $to;
+            self.clone_map(|iter| {
+                iter.map(|&p| p as $to / max).collect()
+            })
+        }
+    }
+}
+impl_cast_scaling!(to_f32, u8, f32);
+impl_cast_scaling!(to_f64, u8, f64);
+impl_cast_scaling!(to_f32, u16, f32);
+impl_cast_scaling!(to_f64, u16, f64);
+impl_cast_scaling!(to_f32, u32, f32);
+impl_cast_scaling!(to_f64, u32, f64);
+impl_cast_scaling!(to_f32, u64, f32);
+impl_cast_scaling!(to_f64, u64, f64);
+
 
 #[cfg(test)]
 mod tests {

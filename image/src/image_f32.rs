@@ -4,15 +4,14 @@ use std::u8;
 use std::f32;
 use std::u16;
 use std::io::{BufReader, BufWriter};
-use image::Image;
+use ::image::*;
 //use fits;
 use rgb::Rgb;
 use rgb_bayer::RgbBayer;
 use num::Float;
 use num::cast::NumCast;
-//use imagemagick::{convert_open, convert_save};
 
-impl<P: Float + Default> Image<P> {
+impl<'a, P: Float + Default> ImageSlice<'a, P> {
     pub fn average(&self) -> P {
         let start: P = P::zero();
         let count: P = NumCast::from(self.pixels.len()).unwrap();
@@ -37,25 +36,29 @@ impl<P: Float + Default> Image<P> {
         let (src_min, src_max) = self.min_max();
         let dst_d = dst_max - dst_min;
         let src_d = src_max - src_min;
-        self.map(|&p| {
-            ((p - src_min) * dst_d) / src_d
+        self.clone_map(|iter| {
+            iter.map(|&p| {
+                ((p - src_min) * dst_d) / src_d
+            }).collect()
         })
     }
 
     pub fn to_u16(&self) -> Image<u16> {
         self.stretch(P::from(u16::MIN).unwrap(), P::from(u16::MAX).unwrap())
-            .map(|p| p.to_u16().unwrap())
+            .as_ref()
+            .clone_map(|iter| iter.map(|p| p.to_u16().unwrap()).collect())
     }
 
     pub fn to_u8(&self) -> Image<u8> {
         self.stretch(P::from(u8::MIN).unwrap(), P::from(u8::MAX).unwrap())
-            .map(|p| p.to_u8().unwrap())
+            .as_ref()
+            .clone_map(|iter| iter.map(|p| p.to_u8().unwrap()).collect())
     }
 
     pub fn to_rggb(&self) -> Image<RgbBayer<P>> {
-        let mut pixels = Vec::with_capacity(self.width * self.height);
-        for y in 0..self.height {
-            for x in 0..self.width {
+        let mut pixels = Vec::with_capacity(self.dimensions.width * self.dimensions.height);
+        for y in 0..self.dimensions.height {
+            for x in 0..self.dimensions.width {
                 let gray = *self.pixel_at(x, y);
                 let x = x % 2;
                 let y = y % 2;
@@ -75,20 +78,19 @@ impl<P: Float + Default> Image<P> {
             }
         }
         Image {
-            width: self.width,
-            height: self.height,
+            dimensions: ImageDimensions {
+                width: self.dimensions.width,
+                height: self.dimensions.height,
+                pitch: self.dimensions.width,
+            },
             pixels: pixels,
         }
     }
 
-    pub fn to_f64(&self) -> Image<f64> {
-        self.map(|&p| {
-            p.to_f64().unwrap()
-        })
-    }
 }
 
-impl Image<f32> {
+impl<'a> ImageSlice<'a, f32> {
+
     //pub fn open<P: AsRef<Path>>(path: P) -> Self {
         //let (width, height, data) = convert_open(path, "gray");
         //Image {
