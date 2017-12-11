@@ -2,7 +2,6 @@ use std::default::Default;
 use std::fmt;
 use std::iter::repeat;
 use std::ops::*;
-use std::slice;
 //use std::ops::Deref;
 use std::convert::{AsRef, AsMut};
 use rand::{self, Rng, Rand};
@@ -85,11 +84,11 @@ impl<'a, P: 'a> AsMut<ImageSliceMut<'a, P>> for ImageSliceMut<'a, P> {
 
 impl<'a, Pixel: 'a> ImageSlice<'a, Pixel> {
     #[inline(always)]
-    pub fn clone_map<F, R>(&self, mut f: F) -> Image<R>
-    where F: FnMut(slice::Iter<'a, Pixel>) -> Vec<R> {
+    pub fn clone_map<F, R>(&self, f: F) -> Image<R>
+    where F: FnMut(&'a Pixel) -> R {
         Image {
             dimensions: self.dimensions,
-            pixels: f(self.pixels.iter()),
+            pixels: self.pixels.iter().map(f).collect(),
         }
     }
 
@@ -261,9 +260,7 @@ impl<P: Rand> Image<P> {
 macro impl_cast($name:ident, $from:ty, $to:ty) {
     impl<'a> ImageSlice<'a, $from> {
         pub fn $name(&self) -> Image<$to> {
-            self.clone_map(|iter| {
-                iter.map(|&p| p as $to).collect()
-            })
+            self.clone_map(|&p| p as $to)
         }
     }
 }
@@ -274,9 +271,7 @@ macro impl_cast_scaling($name:ident, $from:ty, $to:ty) {
     impl<'a> ImageSlice<'a, $from> {
         pub fn $name(&self) -> Image<$to> {
             let max = <$from as Bounded>::max_value() as $to;
-            self.clone_map(|iter| {
-                iter.map(|&p| p as $to / max).collect()
-            })
+            self.clone_map(|&p| p as $to / max)
         }
     }
 }

@@ -36,23 +36,19 @@ impl<'a, P: Float + Default> ImageSlice<'a, P> {
         let (src_min, src_max) = self.min_max();
         let dst_d = dst_max - dst_min;
         let src_d = src_max - src_min;
-        self.clone_map(|iter| {
-            iter.map(|&p| {
-                ((p - src_min) * dst_d) / src_d
-            }).collect()
-        })
+        self.clone_map(|&p| ((p - src_min) * dst_d) / src_d)
     }
 
     pub fn to_u16(&self) -> Image<u16> {
         self.stretch(P::from(u16::MIN).unwrap(), P::from(u16::MAX).unwrap())
             .as_ref()
-            .clone_map(|iter| iter.map(|p| p.to_u16().unwrap()).collect())
+            .clone_map(|p| p.to_u16().unwrap())
     }
 
     pub fn to_u8(&self) -> Image<u8> {
         self.stretch(P::from(u8::MIN).unwrap(), P::from(u8::MAX).unwrap())
             .as_ref()
-            .clone_map(|iter| iter.map(|p| p.to_u8().unwrap()).collect())
+            .clone_map(|p| p.to_u8().unwrap())
     }
 
     pub fn to_rggb(&self) -> Image<RgbBayer<P>> {
