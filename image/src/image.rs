@@ -2,7 +2,6 @@ use std::default::Default;
 use std::fmt;
 use std::iter::repeat;
 use std::ops::*;
-//use std::ops::Deref;
 use std::convert::{AsRef, AsMut};
 use rand::{self, Rng, Rand};
 use num::Bounded;
@@ -152,7 +151,8 @@ impl<'a, Pixel: 'a> ImageSliceMut<'a, Pixel> {
     }
 }
 
-//impl<'a, P> Deref for Image<P> {
+//impl<'a, P> Deref for &'a Image<P>
+//where P: 'a {
     //type Target = ImageSlice<'a, P>;
 
     //fn deref(&'a self) -> &ImageSlice<'a, P> {
