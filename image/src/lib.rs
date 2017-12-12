@@ -15,7 +15,7 @@ mod rgb;
 mod rgb_bayer;
 mod image;
 //mod image_u8;
-mod image_f32;
+//mod image_f32;
 //mod image_rgb_u8;
 //mod image_rgb_f32;
 //mod image_rgb_bayer;
