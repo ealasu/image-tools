@@ -1,0 +1,8 @@
+[package]
+name = "misc-tests"
+version = "0.1.0"
+
+[dependencies]
+image = { path = "../image" }
+rawspeed = { path = "../../rust-rawspeed" }
+turbojpeg = { path = "../../turbojpeg-rs" }

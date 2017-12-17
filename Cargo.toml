@@ -22,4 +22,5 @@ members = [
   "stack",
   "star_aligner",
   "star_stuff",
+  "misc-tests",
 ]

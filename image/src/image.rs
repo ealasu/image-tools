@@ -2,9 +2,12 @@ use std::default::Default;
 use std::fmt;
 use std::iter::repeat;
 use std::ops::*;
+use std::mem;
+use std::slice;
 use std::convert::{AsRef, AsMut};
 use rand::{self, Rng, Rand};
-use num::{Bounded, ToPrimitive, Float};
+use num::{Bounded, ToPrimitive, Float, NumCast, Num, Zero};
+use rgb::Rgb;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ImageDimensions {
@@ -138,11 +141,28 @@ pub trait Image {
     fn pixels(&self) -> &[Self::Pixel];
 
     #[inline(always)]
-    fn clone_map<'a, F, R>(&'a self, f: F) -> OwnedImage<R>
-    where F: FnMut(&'a Self::Pixel) -> R {
+    fn pitch_bytes(&self) -> usize {
+        self.dimensions().pitch * mem::size_of::<Self::Pixel>()
+    }
+
+    #[inline]
+    fn clone_map<'a, F, R>(&'a self, mut f: F) -> OwnedImage<R>
+    where Self::Pixel: Copy, F: FnMut(Self::Pixel) -> R {
+        let mut dest = Vec::with_capacity(self.dimensions().width * self.dimensions().height);
+        for y in 0..self.dimensions().height {
+            let offset = y * self.dimensions().pitch;
+            for x in 0..self.dimensions().width {
+                let p = self.pixels()[offset + x];
+                dest.push(f(p));
+            }
+        }
         OwnedImage {
-            dimensions: self.dimensions(),
-            pixels: self.pixels().iter().map(f).collect(),
+            dimensions: ImageDimensions {
+                width: self.dimensions().width,
+                height: self.dimensions().height,
+                pitch: self.dimensions().width,
+            },
+            pixels: dest,
         }
     }
 
@@ -169,11 +189,22 @@ pub trait Image {
         &self.pixels()[i + left..i + self.dimensions().width - right]
     }
 
+    #[inline]
+    fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            slice::from_raw_parts(
+                self.pixels().as_ptr() as *const u8,
+                self.pixels().len() * mem::size_of::<Self::Pixel>())
+        }
+    }
+
+    #[inline]
     fn min(&self) -> &Self::Pixel
     where Self::Pixel: PartialOrd {
         self.pixels().iter().min_by(|a,b| a.partial_cmp(b).unwrap()).unwrap()
     }
 
+    #[inline]
     fn max(&self) -> &Self::Pixel
     where Self::Pixel: PartialOrd {
         self.pixels().iter().max_by(|a,b| a.partial_cmp(b).unwrap()).unwrap()
@@ -194,6 +225,77 @@ pub trait Image {
 
     fn center_crop<'a>(&'a self, width: usize, height: usize) -> ImageSlice<'a, Self::Pixel> {
         self.crop((self.dimensions().width - width) / 2, (self.dimensions().height - height) / 2, width, height)
+    }
+
+    fn average(&self) -> Self::Pixel
+    where Self::Pixel: Float {
+        let start = <Self::Pixel as Zero>::zero();
+        let count: Self::Pixel = NumCast::from(self.pixels().len()).unwrap();
+        self.pixels().iter().fold(start, |acc, v| acc + *v) / count
+    }
+
+    fn min_max(&self) -> (Self::Pixel, Self::Pixel)
+    where Self::Pixel: Float {
+        let mut min = Self::Pixel::max_value();
+        let mut max = Self::Pixel::min_value();
+        for &p in self.pixels().iter() {
+            if p < min {
+                min = p;
+            }
+            if p > max {
+                max = p;
+            }
+        }
+        (min, max)
+    }
+
+    fn scale_to_f32(&self) -> OwnedImage<f32>
+    where Self::Pixel: Bounded + ToPrimitive + Copy {
+        let src_max = <Self::Pixel as Bounded>::max_value().to_f32().unwrap();
+        let dst_max = <f32 as Bounded>::max_value();
+        self.clone_map(|p| p.to_f32().unwrap_or(dst_max) / src_max)
+    }
+
+    fn scale_to_f64(&self) -> OwnedImage<f64>
+    where Self::Pixel: Bounded + ToPrimitive + Copy {
+        let src_max = <Self::Pixel as Bounded>::max_value().to_f64().unwrap();
+        let dst_max = <f64 as Bounded>::max_value();
+        self.clone_map(|p| p.to_f64().unwrap_or(dst_max) / src_max)
+    }
+
+    fn to_f32(&self) -> OwnedImage<f32>
+    where Self::Pixel: Bounded + Float {
+        let dst_max = <f32 as Bounded>::max_value();
+        self.clone_map(|p| p.to_f32().unwrap_or(dst_max))
+    }
+
+    fn to_f64(&self) -> OwnedImage<f64>
+    where Self::Pixel: Bounded + Float {
+        let dst_max = <f64 as Bounded>::max_value();
+        self.clone_map(|p| p.to_f64().unwrap_or(dst_max))
+    }
+
+    fn stretch(&self, dst_min: Self::Pixel, dst_max: Self::Pixel) -> OwnedImage<Self::Pixel>
+    where Self::Pixel: Float {
+        let (src_min, src_max) = self.min_max();
+        let dst_d = dst_max - dst_min;
+        let src_d = src_max - src_min;
+        self.clone_map(|p| ((p - src_min) * dst_d) / src_d)
+    }
+
+    fn stretch_to_bounds<Dest>(&self) -> OwnedImage<Dest>
+    where Self::Pixel: Float, Dest: Num + Bounded + NumCast {
+        let dst_min = <Dest as Bounded>::min_value();
+        let dst_max = <Dest as Bounded>::max_value();
+        let (src_min, src_max) = self.min_max();
+        let dst_d = <Self::Pixel as NumCast>::from(dst_max - dst_min).unwrap();
+        let src_d = src_max - src_min;
+        self.clone_map(|p| <Dest as NumCast>::from(((p - src_min) * dst_d) / src_d).unwrap())
+    }
+
+    fn to_rgb(&self) -> OwnedImage<Rgb<Self::Pixel>>
+    where Self::Pixel: Copy {
+        self.clone_map(|p| Rgb { r: p, g: p, b: p })
     }
 }
 
@@ -280,7 +382,7 @@ impl<'a, P: DivAssign + Copy> DivAssign<ImageSlice<'a, P>> for ImageSliceMut<'a,
 }
 
 impl<P: Copy + Clone + Default> OwnedImage<P> {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn zero(width: usize, height: usize) -> Self {
         let mut pixels = Vec::with_capacity(width * height);
         let zero: P = Default::default();
         pixels.extend(repeat(zero).take(width * height));
@@ -308,55 +410,15 @@ impl<P: Rand> OwnedImage<P> {
     }
 }
 
-pub trait ScaleCast {
-    fn scale_to_f32(&self) -> OwnedImage<f32>;
-    fn scale_to_f64(&self) -> OwnedImage<f64>;
-}
-
-impl<T, Pixel> ScaleCast for T
-where T: Image<Pixel=Pixel>,
-      Pixel: Bounded + ToPrimitive + Copy {
-    fn scale_to_f32(&self) -> OwnedImage<f32> {
-        let src_max = <Pixel as Bounded>::max_value().to_f32().unwrap();
-        let dst_max = <f32 as Bounded>::max_value();
-        self.clone_map(|&p| p.to_f32().unwrap_or(dst_max) / src_max)
-    }
-
-    fn scale_to_f64(&self) -> OwnedImage<f64> {
-        let src_max = <Pixel as Bounded>::max_value().to_f64().unwrap();
-        let dst_max = <f64 as Bounded>::max_value();
-        self.clone_map(|&p| p.to_f64().unwrap_or(dst_max) / src_max)
-    }
-}
-
-pub trait FloatCast {
-    fn to_f32(&self) -> OwnedImage<f32>;
-    fn to_f64(&self) -> OwnedImage<f64>;
-}
-
-impl<T, Pixel> FloatCast for T
-where T: Image<Pixel=Pixel>,
-      Pixel: Bounded + Float {
-    fn to_f32(&self) -> OwnedImage<f32> {
-        let dst_max = <f32 as Bounded>::max_value();
-        self.clone_map(|&p| p.to_f32().unwrap_or(dst_max))
-    }
-
-    fn to_f64(&self) -> OwnedImage<f64> {
-        let dst_max = <f64 as Bounded>::max_value();
-        self.clone_map(|&p| p.to_f64().unwrap_or(dst_max))
-    }
-}
-
-macro impl_cast($name:ident, $from:ty, $to:ty) {
-    impl<'a> ImageSlice<'a, $from> {
-        pub fn $name(&self) -> OwnedImage<$to> {
-            self.clone_map(|&p| p as $to)
-        }
-    }
-}
-impl_cast!(to_f64, f32, f64);
-impl_cast!(to_f32, f64, f32);
+//macro impl_cast($name:ident, $from:ty, $to:ty) {
+    //impl<'a> ImageSlice<'a, $from> {
+        //pub fn $name(&self) -> OwnedImage<$to> {
+            //self.clone_map(|&p| p as $to)
+        //}
+    //}
+//}
+//impl_cast!(to_f64, f32, f64);
+//impl_cast!(to_f32, f64, f32);
 
 #[cfg(test)]
 mod tests {
