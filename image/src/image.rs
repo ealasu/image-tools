@@ -235,9 +235,9 @@ pub trait Image {
     }
 
     fn min_max(&self) -> (Self::Pixel, Self::Pixel)
-    where Self::Pixel: Float {
-        let mut min = Self::Pixel::max_value();
-        let mut max = Self::Pixel::min_value();
+    where Self::Pixel: Num + Bounded + PartialOrd + Copy {
+        let mut min = <Self::Pixel as Bounded>::max_value();
+        let mut max = <Self::Pixel as Bounded>::min_value();
         for &p in self.pixels().iter() {
             if p < min {
                 min = p;
@@ -247,6 +247,12 @@ pub trait Image {
             }
         }
         (min, max)
+    }
+
+    fn invert(&self) -> OwnedImage<Self::Pixel>
+    where Self::Pixel: Num + Bounded + PartialOrd + Copy {
+        let (min, max) = self.min_max();
+        self.clone_map(|p| max - p)
     }
 
     fn scale_to_f32(&self) -> OwnedImage<f32>
@@ -275,22 +281,27 @@ pub trait Image {
         self.clone_map(|p| p.to_f64().unwrap_or(dst_max))
     }
 
-    fn stretch(&self, dst_min: Self::Pixel, dst_max: Self::Pixel) -> OwnedImage<Self::Pixel>
-    where Self::Pixel: Float {
-        let (src_min, src_max) = self.min_max();
-        let dst_d = dst_max - dst_min;
+    fn stretch<Dest>(&self, src_min: Self::Pixel, src_max: Self::Pixel, dst_min: Dest, dst_max: Dest) -> OwnedImage<Dest>
+    where Self::Pixel: Float + Bounded, Dest: Num + Bounded + NumCast {
+        let dst_d = <Self::Pixel as NumCast>::from(dst_max - dst_min).unwrap();
         let src_d = src_max - src_min;
-        self.clone_map(|p| ((p - src_min) * dst_d) / src_d)
+        self.clone_map(|mut p| {
+            if p < src_min {
+                p = src_min;
+            }
+            if p > src_max {
+                p = src_max;
+            }
+            <Dest as NumCast>::from((p - src_min) * dst_d / src_d).unwrap()
+        })
     }
 
     fn stretch_to_bounds<Dest>(&self) -> OwnedImage<Dest>
-    where Self::Pixel: Float, Dest: Num + Bounded + NumCast {
+    where Self::Pixel: Float + Bounded, Dest: Num + Bounded + NumCast {
         let dst_min = <Dest as Bounded>::min_value();
         let dst_max = <Dest as Bounded>::max_value();
         let (src_min, src_max) = self.min_max();
-        let dst_d = <Self::Pixel as NumCast>::from(dst_max - dst_min).unwrap();
-        let src_d = src_max - src_min;
-        self.clone_map(|p| <Dest as NumCast>::from(((p - src_min) * dst_d) / src_d).unwrap())
+        self.stretch(src_min, src_max, dst_min, dst_max)
     }
 
     fn to_rgb(&self) -> OwnedImage<Rgb<Self::Pixel>>
@@ -377,6 +388,16 @@ impl<'a, P: DivAssign + Copy> DivAssign<ImageSlice<'a, P>> for ImageSliceMut<'a,
     fn div_assign(&mut self, rhs: ImageSlice<'a, P>) {
         for (left, right) in self.pixels_mut().iter_mut().zip(rhs.pixels().iter()) {
             *left /= *right;
+        }
+    }
+}
+
+impl<'a, P: SubAssign + Copy> SubAssign<&'a OwnedImage<P>> for OwnedImage<P> {
+    fn sub_assign(&mut self, rhs: &'a OwnedImage<P>) {
+        assert_eq!(self.dimensions().width, rhs.dimensions().width);
+        assert_eq!(self.dimensions().height, rhs.dimensions().height);
+        for (l, &r) in self.pixels.iter_mut().zip(rhs.pixels().iter()) {
+            l.sub_assign(r);
         }
     }
 }

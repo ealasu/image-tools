@@ -6,12 +6,13 @@ version = "0.0.0"
 convert = { path = "../convert" }
 #imagemagick = { path = "../imagemagick" }
 #fits = { path = "../fits" }
-regex = "*"
+#regex = "*"
 #turbojpeg = { git = "https://github.com/ealasu/turbojpeg-rs" }
 rand = "*"
 byteorder = "*"
 quickersort = "2.x"
 num = "*"
+ndarray = "0.10"
 
 [dev-dependencies]
 bencher = "0.1"
