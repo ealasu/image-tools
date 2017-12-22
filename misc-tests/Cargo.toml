@@ -6,3 +6,5 @@ version = "0.1.0"
 image = { path = "../image" }
 rawspeed = { path = "../../rust-rawspeed" }
 turbojpeg = { path = "../../turbojpeg-rs" }
+glob = "0.2"
+ndarray = "0.10"
