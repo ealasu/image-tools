@@ -3,4 +3,4 @@ name = "jpeg-test"
 version = "0.1.0"
 
 [dependencies]
-turbojpeg = { git = "https://github.com/ealasu/turbojpeg-rs" }
+turbojpeg = { path = "../../turbojpeg-rs" }

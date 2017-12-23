@@ -8,3 +8,5 @@ rawspeed = { path = "../../rust-rawspeed" }
 turbojpeg = { path = "../../turbojpeg-rs" }
 glob = "0.2"
 ndarray = "0.10"
+crossbeam-channel = "0.1"
+crossbeam-utils = "0.2"
